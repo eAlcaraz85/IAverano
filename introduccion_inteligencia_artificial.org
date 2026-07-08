@@ -12,6 +12,432 @@
 
 
 
+
+
+
+
+*  Tutorial — Entornos virtuales en Python (Windows, Linux, macOS)
+
+
+
+
+Aprender a crear y usar *entornos virtuales* en Python cuando tienes *varias versiones* de Python instaladas (3.9, 3.10, 3.11, 3.12, 3.13…) en:
+
+- *Windows*
+- *Linux* (Debian/Ubuntu, Fedora, Arch…)
+- *macOS* (Intel y Apple Silicon)
+
+Al terminar sabrás:
+
+1. Qué es un entorno virtual y por qué no instalar todo con =pip= global.
+2. Cómo ver qué versiones de Python tienes en cada sistema.
+3. Cómo crear un =venv= con una versión *concreta*.
+4. Cómo gestionar muchas versiones con *pyenv* (recomendado).
+5. Cómo activar, desactivar, exportar dependencias y borrar entornos.
+6. Cómo resolver errores típicos.
+
+** Conceptos básicos
+
+*** ¿Qué es un entorno virtual?
+Un *entorno virtual* es una carpeta aislada que contiene:
+
+- Un intérprete de Python (o un enlace a uno concreto).
+- Su propio =pip=.
+- Sus propios paquetes en =site-packages=.
+
+Cada proyecto puede tener versiones distintas de Django, NumPy, etc., sin pelearse.
+
+*** Entorno virtual ≠ versión de Python
+| Idea | Qué es |
+|------+--------|
+| *Versión de Python* | 3.10, 3.12… el lenguaje en sí |
+| *Entorno virtual* | Carpeta aislada de paquetes *para un proyecto* |
+
+Puedes tener Python 3.12 instalado y crear tres entornos 3.12 con librerías diferentes.
+
+*** Herramientas que verás en este tutorial
+| Herramienta | Viene con Python | Varias versiones de Python | Uso típico |
+|-------------+------------------+----------------------------+------------|
+| =venv= | Sí (3.3+) | Solo si ya tienes ese binario | Proyectos simples, estándar |
+| =virtualenv= | No (=pip install=) | Igual que =venv= | Compatibilidad extra |
+| *pyenv* | No | *Sí*, instala y cambia versiones | Desarrollo con 3.9–3.13 |
+| *conda* / Miniconda | No | Sí (canales propios) | Ciencia de datos, CUDA |
+| *uv* | No | Sí, muy rápido | Proyectos modernos (mención) |
+
+*Recomendación general:*
+- *Principiante / curso:* =python3.12 -m venv .venv= (o la versión que pida tu materia).
+- *Varias versiones en la misma máquina:* *pyenv* + =pyenv virtualenv=.
+
+** Paso 0 — Ver qué Python tienes instalado
+
+*** Linux y macOS (terminal)
+
+#+begin_src shell :exports code
+# Versiones en PATH
+python3 --version
+python3.12 --version 2>/dev/null
+python3.11 --version 2>/dev/null
+
+# Dónde está cada binario
+which python3
+which python3.12 2>/dev/null
+
+# Todas las que encuentre el sistema (Debian/Ubuntu)
+ls -la /usr/bin/python3* 2>/dev/null
+#+end_src
+
+*** Windows (PowerShell o CMD)
+
+#+begin_src powershell :exports code
+python --version
+py --version
+py -0p
+#+end_src
+
+El lanzador =py= en Windows lista versiones instaladas. Ejemplo de salida:
+
+#+begin_example
+ -V:3.12 *        C:\Users\tu\AppData\Local\Programs\Python\Python312\python.exe
+ -V:3.11          C:\Users\tu\AppData\Local\Programs\Python\Python311\python.exe
+#+end_example
+
+*** Tabla rápida por sistema
+
+| Sistema | Comando habitual | Varias versiones |
+|---------+------------------+------------------|
+| Linux | =python3.12=, =python3.11= | Paquetes del sistema o pyenv |
+| macOS | =python3= (Homebrew) | =brew install python@3.12= o pyenv |
+| Windows | =py -3.12= | Instaladores python.org o pyenv-win |
+
+** Método 1 — =venv= (incluido en Python, el más estándar)
+
+*** Crear entorno con una versión específica
+
+La regla de oro:
+
+#+begin_example
+<python-DESEADA> -m venv <carpeta-del-entorno>
+#+end_example
+
+**** Linux
+
+#+begin_src shell :exports code
+cd ~/proyectos/mi_app
+python3.12 -m venv .venv
+# o con ruta explícita si hay varias:
+/usr/bin/python3.11 -m venv .venv311
+#+end_src
+
+**** macOS
+
+#+begin_src shell :exports code
+cd ~/proyectos/mi_app
+python3.12 -m venv .venv
+# Si usas Homebrew y el binario tiene otro nombre:
+/opt/homebrew/bin/python3.12 -m venv .venv
+#+end_src
+
+**** Windows (PowerShell)
+
+#+begin_src powershell :exports code
+cd $HOME\proyectos\mi_app
+py -3.12 -m venv .venv
+# o ruta completa:
+# C:\Users\tu\AppData\Local\Programs\Python\Python312\python.exe -m venv .venv
+#+end_src
+
+*** Activar el entorno
+
+| Sistema | Comando activar | Desactivar |
+|---------+-----------------+------------|
+| Linux / macOS | =source .venv/bin/activate= | =deactivate= |
+| Windows CMD | =.venv\Scripts\activate.bat= | =deactivate= |
+| Windows PowerShell | =.venv\Scripts\Activate.ps1= | =deactivate= |
+
+*PowerShell* puede bloquear scripts. Si falla:
+
+#+begin_src powershell :exports code
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+#+end_src
+
+*** Comprobar que usas el Python correcto
+
+Tras activar:
+
+#+begin_src shell :exports code
+which python
+python --version
+pip --version
+#+end_src
+
+En Windows:
+
+#+begin_src powershell :exports code
+Get-Command python
+python --version
+pip --version
+#+end_src
+
+Debe apuntar a =.venv= (Linux/Mac) o =.venv\Scripts\python.exe= (Windows).
+
+*** Instalar paquetes y guardar dependencias
+
+#+begin_src shell :exports code
+pip install --upgrade pip
+pip install requests pandas
+pip freeze > requirements.txt
+#+end_src
+
+En otra máquina o compañero:
+
+#+begin_src shell :exports code
+python3.12 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+#+end_src
+
+*** Borrar un entorno
+Solo elimina la carpeta (con el entorno *desactivado*):
+
+#+begin_src shell :exports code
+deactivate
+rm -rf .venv
+#+end_src
+
+Windows: =Remove-Item -Recurse -Force .venv=
+
+** Método 2 — *pyenv* (varias versiones de Python en una máquina)
+
+*** ¿Cuándo usar pyenv?
+- Necesitas 3.10 para un proyecto viejo y 3.12 para uno nuevo.
+- No quieres mezclar el Python del sistema (Linux/macOS) con tus proyectos.
+- Quieres un comando global: =pyenv local 3.11.9= en una carpeta.
+
+*** Instalación
+
+**** Linux (Debian/Ubuntu — dependencias + instalador oficial)
+
+#+begin_src shell :exports code
+sudo apt update
+sudo apt install -y make build-essential libssl-dev zlib1g-dev \
+  libbz2-dev libreadline-dev libsqlite3-dev curl git \
+  libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
+
+curl https://pyenv.run | bash
+# Añade a ~/.bashrc o ~/.zshrc:
+# export PYENV_ROOT="$HOME/.pyenv"
+# export PATH="$PYENV_ROOT/bin:$PATH"
+# eval "$(pyenv init -)"
+#+end_src
+
+Reinicia la terminal y:
+
+#+begin_src shell :exports code
+pyenv --version
+#+end_src
+
+**** macOS (Homebrew)
+
+#+begin_src shell :exports code
+brew update
+brew install pyenv
+# Añade a ~/.zshrc:
+# export PYENV_ROOT="$HOME/.pyenv"
+# export PATH="$PYENV_ROOT/bin:$PATH"
+# eval "$(pyenv init -)"
+#+end_src
+
+**** Windows — *pyenv-win*
+
+En Windows el proyecto equivalente es [[https://github.com/pyenv-win/pyenv-win][pyenv-win]] (no es el mismo binario que Linux, pero la idea es igual).
+
+#+begin_src powershell :exports code
+# Con winget (si está disponible):
+winget install pyenv-win.pyenv-win
+
+# O clonar en %USERPROFILE%\.pyenv\pyenv-win
+# y añadir a PATH las carpetas bin y shims
+#+end_src
+
+Consulta la wiki de pyenv-win para variables =PYENV=, =PYENV_ROOT=, =PYENV_HOME= en *Variables de entorno* de Windows.
+
+*** Instalar versiones de Python con pyenv
+
+#+begin_src shell :exports code
+pyenv install --list | grep " 3.1"
+pyenv install 3.11.9
+pyenv install 3.12.4
+pyenv versions
+#+end_src
+
+*** Elegir versión global o por carpeta
+
+#+begin_src shell :exports code
+pyenv global 3.12.4
+pyenv local 3.11.9
+cd ~/proyectos/legacy_app
+pyenv local 3.10.13
+python --version
+#+end_src
+
+=Crea archivo =.python-version= en la carpeta del proyecto.=
+
+*** Entorno virtual con pyenv
+
+Opción A — plugin =pyenv-virtualenv=:
+
+#+begin_src shell :exports code
+# Linux/macOS: instalar plugin pyenv-virtualenv (ver repo oficial)
+pyenv virtualenv 3.12.4 mi_proyecto_312
+pyenv local mi_proyecto_312
+#+end_src
+
+Opción B — =venv= clásico *después* de fijar versión con pyenv:
+
+#+begin_src shell :exports code
+pyenv local 3.12.4
+python -m venv .venv
+source .venv/bin/activate
+#+end_src
+
+** Método 3 — =virtualenv= (paquete pip)
+
+Similar a =venv=, útil si necesitas opciones extra o Python muy antiguo.
+
+#+begin_src shell :exports code
+python3.12 -m pip install --user virtualenv
+python3.12 -m user virtualenv .venv
+# o:
+virtualenv -p python3.11 .venv311
+source .venv311/bin/activate
+#+end_src
+
+En la práctica moderna, =python -m venv= suele bastar.
+
+** Método 4 — Conda / Miniconda (opcional, ciencia de datos)
+
+*** Idea
+Conda crea entornos con Python *y* librerías binarias (NumPy, CUDA) desde canales propios.
+
+#+begin_src shell :exports code
+conda create -n mi_env python=3.11
+conda activate mi_env
+conda install pandas numpy
+conda deactivate
+#+end_src
+
+*** Conda vs venv
+
+| Aspecto | venv / pyenv | conda |
+|---------+--------------+-------|
+| Peso | Ligero | Más pesado |
+| Paquetes no-Python | No | Sí (R, C libs) |
+| Curso general IA/Python | venv suele bastar | Si el curso pide Anaconda |
+
+** Flujo de trabajo recomendado por escenario
+
+*** Escenario A — Un solo proyecto, una versión fija (curso)
+
+#+begin_example
+1. Instalar Python 3.12 desde python.org / apt / brew
+2. cd proyecto
+3. python3.12 -m venv .venv
+4. activar → pip install -r requirements.txt
+5. Añadir .venv/ al .gitignore
+#+end_example
+
+*** Escenario B — Tres proyectos, tres versiones
+
+#+begin_example
+1. Instalar pyenv
+2. pyenv install 3.10.13 3.11.9 3.12.4
+3. En cada repo: pyenv local X.Y.Z && python -m venv .venv
+#+end_example
+
+*** Escenario C — Windows con lanzador py
+
+#+begin_example
+1. py -0p   (ver versiones)
+2. py -3.12 -m venv .venv
+3. .venv\Scripts\Activate.ps1
+4. pip install ...
+#+end_example
+
+** Buenas prácticas
+
+1. *Un entorno por proyecto* (carpeta =.venv= o =venv= dentro del repo).
+2. *No subas* =.venv= a Git; sí sube =requirements.txt= o =pyproject.toml=.
+3. *Nombra* la versión en el README: “Requiere Python ≥ 3.11”.
+4. En Linux, evita =sudo pip install= en el Python del sistema (rompe paquetes del SO).
+5. En macOS con Apple Silicon, prefiere builds *arm64* (Homebrew en =/opt/homebrew=).
+6. Usa =python -m pip install= en lugar de =pip= suelto (asegura el pip del entorno activo).
+
+** .gitignore mínimo
+
+#+begin_example
+.venv/
+venv/
+__pycache__/
+*.pyc
+.python-version   # opcional: algunos equipos sí lo versionan con pyenv
+#+end_example
+
+** Problemas frecuentes y soluciones
+
+| Síntoma | Causa probable | Solución |
+|---------+----------------+----------|
+| =python: command not found= | Python no en PATH | Instalar o usar ruta completa / pyenv |
+| =No module named venv= | Paquete =python3-venv= falta (Debian) | =sudo apt install python3.12-venv= |
+| Tras activar, =python= sigue siendo el del sistema | No activaste bien o orden PATH | =source .venv/bin/activate=; =which python= |
+| PowerShell no activa | ExecutionPolicy | =RemoteSigned= para CurrentUser |
+| =pip install= instala fuera del venv | Entorno no activo | Activar; usar =python -m pip= |
+| pyenv: version not installed | Falta =pyenv install= | =pyenv install 3.12.4= |
+| Mezcla 3.10 y 3.12 en mismo venv | Creaste venv con binario equivocado | Borrar .venv y recrear con binario correcto |
+
+** Cheat sheet 
+
+*** Linux / macOS
+
+#+begin_example
+# Crear
+python3.12 -m venv .venv
+
+# Activar / desactivar
+source .venv/bin/activate
+deactivate
+
+# Paquetes
+pip install -r requirements.txt
+pip freeze > requirements.txt
+
+# pyenv
+pyenv install 3.12.4
+pyenv local 3.12.4
+#+end_example
+
+*** Windows
+
+#+begin_example
+# Crear
+py -3.12 -m venv .venv
+
+# Activar (PowerShell)
+.venv\Scripts\Activate.ps1
+
+# Listar Pythons
+py -0p
+#+end_example
+
+** Referencias
+- Documentación oficial venv: https://docs.python.org/3/library/venv.html
+- pyenv: https://github.com/pyenv/pyenv
+- pyenv-win: https://github.com/pyenv-win/pyenv-win
+- Python en Windows (launcher py): https://docs.python.org/3/using/windows.html
+
+#+RESULTS:
+: None
+
+
 * Introducción a la Inteligencia Artificial
 
 Este documento desarrolla el temario de la unidad introductoria a la *Inteligencia Artificial (IA)*: definición, historia, bases cognitivas, lógica, filosofía del conocimiento, modelos cognitivos y de agente, y el papel de la *heurística* con algoritmos de búsqueda.
@@ -1012,4 +1438,236 @@ Regreso legal que avanza: A+C → E4 (g=4, h=2, f=6)
 - E2: g=2, faltan L y M en derecha → h=2, f=4.
 - A solo desde E3 dejaría L y C en la derecha sin arriero → coyote + cabra.
 - E5: solo falta C en la derecha → h=1.
+
+
+* Actividades
+
+**  Operación Dino Crash (EDA conceptual)
+
+*** Introducción a la Misión
+Agentes, el cuartel general *quiere que
+piensen como *analistas de datos*: qué dataset haría falta, qué
+preguntas hacerle a los datos y, *solo después de entenderlos*, qué tipo
+de modelo de IA tendría sentido.
+
+*Contexto:* el juego del dinosaurio de Chrome (*Dino Run*) — el que aparece sin internet.
+
+*Reglas de esta operación:*
+- *No se entrega código.* Solo análisis escrito (reporte en Markdown).
+- Justifica cada respuesta con razonamiento sobre *forma de los datos*, no con intuición vaga.
+- Usa tablas, listas y mini-ejemplos numéricos cuando ayuden.
+
+*Entregable único:* =reporte_dino_crash_eda.md=
+
+*** ¿Qué es EDA y por qué va *antes* del modelo?
+
+#+begin_example
+Datos crudos  →  EDA (entender)  →  Decisión de modelo  →  (luego) entrenar
+
+Si eliges el modelo primero, corres el riesgo de usar un martillo
+para un tornillo: datos desbalanceados, variables mal definidas,
+o un problema que no era clasificación sino regresión.
+#+end_example
+
+*** Bloque 1 — ¿Qué dataset necesitamos?
+
+**** Misión 1: Definir el problema y el dataset ideal
+***** La Historia
+Antes de “predecir algo”, hay que decidir *qué pregunta* respondes y *qué fila* representa cada observación.
+
+***** Escenarios posibles (elige analizar los tres en el reporte)
+
+| ID | Pregunta de negocio / juego                      | ¿Una fila = qué?        |
+|----+--------------------------------------------------+-------------------------|
+| P1 | ¿Morirá en el *siguiente* frame?                   | Un frame de una partida |
+| P2 | ¿Cuántos puntos alcanzará *esta* partida al morir? | Una partida completa    |
+| P3 | ¿Qué tipo de obstáculo viene *próximo*?            | Un frame o un evento    |
+
+***** Tu Tarea (escrito)
+Para *cada* escenario P1, P2 y P3:
+
+1. *Variable objetivo (Y):* ¿qué columna sería? ¿tipo? (numérica, categórica, binaria).
+2. *Variables de entrada (X):* lista *mínimo 5* columnas que pedirías y por qué cada una.
+3. *Granularidad:* ¿necesitas un frame cada 16 ms, cada salto, o un resumen por partida?
+4. *Tamaño mínimo razonable:* ¿cuántas filas o partidas harían falta para confiar? Argumenta.
+5. *Riesgo si el dataset está mal definido:* un error de diseño y su consecuencia.
+
+**** Misión 2: Diccionario de datos (qué debe traer el CSV)
+***** La Historia
+Interceptaste un borrador de telemetría. Revisa si alcanza para P1 o si le falta algo.
+
+***** Columnas propuestas
+| Columna       | Tipo sugerido | Descripción breve                      |
+|---------------+---------------+----------------------------------------|
+| =session_id=    | entero        | ID de partida                          |
+| =frame=         | entero        | Índice del frame en la partida         |
+| =time_ms=       | entero        | Tiempo desde que empezó la partida     |
+| =score=         | entero        | Puntuación en pantalla                 |
+| =speed=         | numérico      | Velocidad del escenario                |
+| =obstacle_type= | categórica    | =none=, =cactus_small=, =cactus_large=, =bird= |
+| =dist_obstacle= | numérico      | Distancia al próximo obstáculo (px)    |
+| =jump=          | binaria 0/1   | ¿El dino está saltando?                |
+| =died=          | binaria 0/1   | 1 solo en el último frame de la sesión |
+
+***** Muestra para analizar (10 filas — sesión 7)
+
+| frame | time_ms | score | speed | obstacle_type | dist_obstacle | jump | died |
+|-------+---------+-------+-------+---------------+---------------+------+------|
+| 0     | 0       | 0     | 6.0   | none          | 180           | 0    | 0    |
+| 40    | 640     | 8     | 6.4   | none          | 165           | 0    | 0    |
+| 80    | 1280    | 16    | 6.8   | cactus_small  | 55            | 1    | 0    |
+| 81    | 1296    | 16    | 6.8   | cactus_small  | 38            | 1    | 0    |
+| 82    | 1312    | 16    | 6.8   | cactus_small  | 12            | 0    | 1    |
+| 0     | 0       | 0     | 6.0   | none          | 200           | 0    | 0    |
+| 120   | 1920    | 24    | 7.2   | bird          | 48            | 1    | 0    |
+| 200   | 3200    | 40    | 8.0   | none          | 150           | 0    | 0    |
+| 280   | 4480    | 56    | 8.8   | cactus_large  | 22            | 0    | 1    |
+| 50    | 800     | 10    | 6.5   | cactus_small  | 90            | 0    | 0    |
+
+*(Filas 1–5: misma sesión que termina en frame 82; filas 6–9: otras sesiones resumidas.)*
+
+***** Tu Tarea (escrito)
+1. ¿Qué *patrón* ves en la fila donde =died=1= (frame 82)?
+2. ¿=score= es buena variable para predecir muerte *en el siguiente frame*? ¿Por qué sí o no?
+3. ¿Falta alguna columna crítica para P1? (pista: altura del dino, agachado, lag de reacción del jugador…)
+4. ¿=died= tal como está definida sirve para P1 o solo describe el *final* de la partida?
+
+*** Bloque 2 — Preguntas que todo EDA debe responder
+
+**** Misión 3: Las diez preguntas del analista
+***** La Historia
+Un dataset “bonito en papel” puede esconder trampas. El EDA responde esto *antes* de elegir modelo.
+
+***** Checklist EDA (completa en el reporte para el juego del dino)
+
+|  # | Pregunta EDA                             | ¿Qué buscas?                                   | Si la respuesta es mala, ¿qué modelo evitas o qué haces?  |
+|----+------------------------------------------+------------------------------------------------+-----------------------------------------------------------|
+|  1 | ¿Cuántas observaciones hay?              | Tamaño N, partidas                             | Modelos complejos con pocos datos                         |
+|  2 | ¿Hay valores faltantes?                  | % NA por columna                               | Algunos modelos no toleran NA; imputar o descartar        |
+|  3 | ¿La clase objetivo está balanceada? (P1) | % muerte vs no-muerte por frame                | Métrica accuracy engañosa; considerar F1, ponderar clases |
+|  4 | ¿Hay fugas de información (*leakage*)?     | ¿Y incluye el futuro?                          | Cualquier modelo “perfecto” en validación falsa           |
+|  5 | ¿Variables correlacionadas?              | score vs time_ms                               | Regresión inestable; redundancia                          |
+|  6 | ¿Distribución de =speed=?                  | ¿sube siempre? ¿tope?                          | Modelos que asumen linealidad infinita                    |
+|  7 | ¿Outliers?                               | dist_obstacle negativo, saltos imposibles      | Limpiar antes de entrenar                                 |
+|  8 | ¿Datos i.i.d.?                           | ¿frames de la misma sesión son independientes? | Train/test por *sesión*, no por fila suelta                 |
+|  9 | ¿Estacionariedad?                        | ¿misma distribución al inicio y al final?      | Modelo global puede fallar en partidas largas             |
+| 10 | ¿Sesgo de muestreo?                      | ¿solo expertos? ¿solo móvil?                   | Generalización dudosa                                     |
+
+***** Tu Tarea
+1. Elige *tres* preguntas del checklist y respóndelas *como si* tuvieras el dataset completo del dino (hipótesis razonables).
+2. Para la pregunta 8 (*i.i.d.*): explica por qué mezclar frames de la misma partida en entrenamiento y prueba es un error.
+3. Da un ejemplo concreto de *data leakage* usando =score= o =time_ms= en P1.
+
+**** Misión 4: Leer distribuciones sin gráfica (interpretación)
+***** La Historia
+Te pasan *resúmenes* estadísticos en lugar de código. Debes sacar conclusiones.
+
+***** Resumen hipotético (50 partidas, ~12 000 frames)
+
+| Variable          | Media | Mediana | Mín |  Máx | Comentario del analista previo  |
+|-------------------+-------+---------+-----+------+---------------------------------|
+| =score= (por frame) |    28 |      18 |   0 |  120 | Cola larga hacia la derecha     |
+| =speed=             |   8.5 |     8.2 | 6.0 | 13.0 | Sube con el tiempo de partida   |
+| =dist_obstacle=     |    95 |      88 |   5 |  220 | Muertes suelen con dist < 20    |
+| =died= (por frame)  |     — |       — |   — |    — | Solo 50 unos en todo el dataset |
+
+***** Conteos de =obstacle_type= (todos los frames)
+| Tipo          | % aprox. |
+|---------------+----------|
+| none          | 54%      |
+| cactus_small  | 20%      |
+| cactus_large  | 15%      |
+| bird          | 11%      |
+
+***** Tu Tarea (escrito)
+1. ¿El problema P1 (muerte en siguiente frame) está *desbalanceado*? Cuantifica con los números dados.
+2. ¿Qué implica eso para la *métrica* que usarías? (accuracy vs precision/recall/F1).
+3. ¿=dist_obstacle= parece útil como predictor? Argumenta con la fila de muertes.
+4. ¿La distribución de =score= sugiere regresión simple o necesitas transformación / otro enfoque?
+
+*** Bloque 3 — Del EDA a la elección del modelo
+
+**** Misión 5: Árbol de decisión “dataset → modelo”
+***** La Historia
+El mando quiere una *guía* para no elegir modelos de moda sin datos que los soporten.
+
+***** Tabla guía (completa y comenta en el reporte)
+
+| Si tu EDA encuentra…                     | Tipo de problema         | Modelos razonables                                       | Modelos poco razonables (y por qué)      |
+|------------------------------------------+--------------------------+----------------------------------------------------------+------------------------------------------|
+| Y binaria, tabular, N mediano            | Clasificación            | Regresión logística, árbol, Random Forest                | Red profunda sin más datos (overfitting) |
+| Y binaria *muy* desbalanceada              | Clasificación            | Mismo + class_weight, umbral, SMOTE (con cuidado)        | Accuracy como única métrica              |
+| Y numérica (score final)                 | Regresión                | Regresión lineal, árbol regresor                         | Clasificador binario                     |
+| Y categórica multiclase (tipo obstáculo) | Clasificación multiclase | Logística multinomial, árbol                             | Regresión lineal sobre códigos 1,2,3     |
+| Secuencia de frames por sesión           | Serie / secuencia        | Features + clasificador; LSTM/GRU *si* hay muchas sesiones | Ignorar orden temporal                   |
+| Relación clara y lineal pocas variables  | Interpretable            | Regresión logística / lineal                             | Ensemble opaco sin necesidad             |
+| Muchas variables categóricas             | Tabular                  | Árboles, encoding ordinal/one-hot                        | Distancia euclidiana cruda en texto      |
+
+***** Tu Tarea (escrito)
+Para cada escenario del inicio:
+
+| Escenario | Tras tu EDA, ¿qué fila de la guía aplica? | Modelo que propondrías | 2 condiciones del dataset que *deben* cumplirse |
+|-----------+-------------------------------------------+------------------------+-------------------------------------------------|
+| P1        |                                           |                        |                                                 |
+| P2        |                                           |                        |                                                 |
+| P3        |                                           |                        |                                                 |
+
+**** Misión 6: Contraejemplo — cuándo *no* usar un modelo
+***** La Historia
+A veces el EDA dice: *aún no hay datos suficientes* o *la pregunta está mal planteada*.
+
+***** Tu Tarea (escrito)
+1. Describe un escenario del dino donde un *árbol profundo* parecería buena idea pero el EDA lo desaconsejaría.
+2. Describe un escenario donde una *red neuronal* tendría sentido y qué deberías ver en el EDA para justificarla.
+3. ¿Se podría resolver P1 con *reglas fijas* (=si dist_obstacle < X y jump=0 entonces muerte=)? Compara con un modelo aprendido: ventajas y límites.
+
+**** Bloque 4 — Cierre
+
+***** Misión 7: Informe del analista (entregable final)
+****** Plantilla =reporte_dino_crash_eda.md=
+
+#+begin_example markdown
+# Reporte EDA — Operación Dino Crash
+**Analista:** [Nombre / Matrícula]
+
+## 1. Problema y dataset (Misión 1)
+### P1 — Muerte en el siguiente frame
+- Y:
+- X (mínimo 5 variables):
+- Granularidad:
+- Tamaño mínimo de dataset:
+
+(repite P2, P3)
+
+## 2. Diccionario y muestra (Misión 2)
+- Patrón en died=1:
+- ¿Falta alguna columna?
+
+## 3. Checklist EDA (Misión 3)
+(respuestas a 3 preguntas + leakage + i.i.d.)
+
+## 4. Interpretación de resúmenes (Misión 4)
+(desbalance, métricas, dist_obstacle)
+
+## 5. Elección de modelo (Misiones 5–6)
+(tabla P1/P2/P3 + contraejemplos)
+
+## Síntesis (5 líneas)
+¿Qué dataset pedirías primero y qué modelo *solo después* del EDA?
+#+end_example
+
+***** Rúbrica sugerida (docente)
+
+| Criterio                                             | Puntos |
+|------------------------------------------------------+--------|
+| Definición clara de Y y granularidad por escenario   |    25% |
+| Preguntas EDA pertinentes (balance, leakage, i.i.d.) |    25% |
+| Elección de modelo ligada a hallazgos del EDA        |    30% |
+| Claridad y coherencia del reporte                    |    20% |
+
+***** Sin programación en esta operación
+El objetivo es que el alumno entienda: *el modelo no se elige por fama; se elige porque el dataset, visto con EDA, tiene cierta forma.*
+
+#+RESULTS:
+: None
 

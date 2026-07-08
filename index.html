@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="es" xml:lang="es">
 <head>
-<!-- 2026-07-07 mar 13:44 -->
+<!-- 2026-07-08 mié 11:25 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Apuntes IA Verano</title>
@@ -242,191 +242,1083 @@
 <h2>&Iacute;ndice</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#orgcfb1dda">Introducción a la Inteligencia Artificial</a>
+<li><a href="#orgad70819">Tutorial — Entornos virtuales en Python (Windows, Linux, macOS)</a>
 <ul>
-<li><a href="#orgc01124c">1.1 Introducción a la Inteligencia Artificial</a>
+<li><a href="#org91da56d">Conceptos básicos</a>
 <ul>
-<li><a href="#org2af527a">¿Qué es la Inteligencia Artificial?</a></li>
-<li><a href="#org10c04d5">Problemas típicos de la IA</a></li>
-<li><a href="#org3ef231f">IA débil vs IA fuerte (distinción conceptual)</a></li>
-<li><a href="#org36da5ce">Relación con otras disciplinas</a></li>
-<li><a href="#org452c47b">Idea clave del curso</a></li>
+<li><a href="#org95cf701">¿Qué es un entorno virtual?</a></li>
+<li><a href="#org1ad4d87">Entorno virtual ≠ versión de Python</a></li>
+<li><a href="#orgca7b8f6">Herramientas que verás en este tutorial</a></li>
 </ul>
 </li>
-<li><a href="#org7f3f319">1.2 Historia de la Inteligencia Artificial</a>
+<li><a href="#org77fde86">Paso 0 — Ver qué Python tienes instalado</a>
 <ul>
-<li><a href="#org61d84a3">Orígenes (décadas de 1940–1950)</a></li>
-<li><a href="#org5995c6a">Era del optimismo (1956–1974)</a></li>
-<li><a href="#orga9ade83">Primer “invierno” de la IA (1974–1980)</a></li>
-<li><a href="#orgfc8b1ad">Sistemas expertos y boom comercial (1980–1987)</a></li>
-<li><a href="#orge840a43">Segundo invierno (1987–1993)</a></li>
-<li><a href="#orgab587df">Resurgimiento: aprendizaje automático y datos (1990–2010)</a></li>
-<li><a href="#org8072da7">Era del <b>deep learning</b> (2010–presente)</a></li>
-<li><a href="#org7d8682c">Línea de tiempo resumida</a></li>
+<li><a href="#orgaa941af">Linux y macOS (terminal)</a></li>
+<li><a href="#orge616016">Windows (PowerShell o CMD)</a></li>
+<li><a href="#orga7d4a84">Tabla rápida por sistema</a></li>
 </ul>
 </li>
-<li><a href="#orge24a91c">1.3 Habilidades cognoscitivas y teorías de la inteligencia</a>
+<li><a href="#org6c5b467">Método 1 — <code>venv</code> (incluido en Python, el más estándar)</a>
 <ul>
-<li><a href="#org773b50c">Habilidades cognoscitivas (psicología)</a></li>
-<li><a href="#orgf97f5d8">Teoría conductista (conductismo)</a></li>
-<li><a href="#org0346eac">Teoría de la inteligencia general (factor <b>g</b>)</a></li>
-<li><a href="#org04706c3">Inteligencias múltiples (Howard Gardner)</a></li>
-<li><a href="#orgc09ea87">Otras teorías (mención)</a></li>
+<li><a href="#org35ac8db">Crear entorno con una versión específica</a></li>
+<li><a href="#orgec0aea3">Activar el entorno</a></li>
+<li><a href="#org67d42dc">Comprobar que usas el Python correcto</a></li>
+<li><a href="#orge83e696">Instalar paquetes y guardar dependencias</a></li>
+<li><a href="#orgc1894e9">Borrar un entorno</a></li>
 </ul>
 </li>
-<li><a href="#org13c7c23">1.4 Razonamiento según la lógica</a>
+<li><a href="#org4b86f82">Método 2 — <b>pyenv</b> (varias versiones de Python en una máquina)</a>
 <ul>
-<li><a href="#orgce97c13">Lógica como fundamento del razonamiento automático</a></li>
-<li><a href="#orgcd752c2">Componentes básicos</a></li>
-<li><a href="#org464863f">Ejemplo mínimo (lógica proposicional)</a></li>
-<li><a href="#orge49df91">Sistemas formales relevantes en IA</a></li>
-<li><a href="#org8c3e3f0">Límites importantes</a></li>
+<li><a href="#org2a9cc31">¿Cuándo usar pyenv?</a></li>
+<li><a href="#orgfdd3ee9">Instalación</a></li>
+<li><a href="#org6f8473d">Instalar versiones de Python con pyenv</a></li>
+<li><a href="#orge54133d">Elegir versión global o por carpeta</a></li>
+<li><a href="#org9ff7cfe">Entorno virtual con pyenv</a></li>
 </ul>
 </li>
-<li><a href="#org26facac">1.5 Adquisición del conocimiento según la filosofía</a>
+<li><a href="#orgd49c492">Método 3 — <code>virtualenv</code> (paquete pip)</a></li>
+<li><a href="#org5821822">Método 4 — Conda / Miniconda (opcional, ciencia de datos)</a>
 <ul>
-<li><a href="#orgb5e4582">¿Qué es el conocimiento? (epistemología)</a></li>
-<li><a href="#org870eb95">Empirismo vs racionalismo</a></li>
-<li><a href="#org2378c8a">Fuentes de conocimiento en sistemas inteligentes</a></li>
-<li><a href="#org89ec163">Problema de la adquisición de conocimiento (<b>knowledge acquisition bottleneck</b>)</a></li>
-<li><a href="#orged5177b">Representación del conocimiento (puente filosofía → IA)</a></li>
+<li><a href="#orgcd895c8">Idea</a></li>
+<li><a href="#org7e43bc6">Conda vs venv</a></li>
 </ul>
 </li>
-<li><a href="#orgb9f5fc5">1.6 El modelo cognoscitivo</a>
+<li><a href="#org550510d">Flujo de trabajo recomendado por escenario</a>
 <ul>
-<li><a href="#org3183b7d">Definición</a></li>
-<li><a href="#org11b7c5f">Arquitecturas cognitivas clásicas</a></li>
-<li><a href="#orge5873b4">Componentes típicos de un modelo cognoscitivo</a></li>
-<li><a href="#org92d5f77">Modelo cognoscitivo vs modelo de agente</a></li>
-<li><a href="#org5992eba">Conexión con IA moderna</a></li>
+<li><a href="#orgcf7c380">Escenario A — Un solo proyecto, una versión fija (curso)</a></li>
+<li><a href="#orgcbdcfb7">Escenario B — Tres proyectos, tres versiones</a></li>
+<li><a href="#org5c5b53d">Escenario C — Windows con lanzador py</a></li>
 </ul>
 </li>
-<li><a href="#org4e68f45">1.7 Modelo del agente inteligente</a>
+<li><a href="#orgb1b7baf">Buenas prácticas</a></li>
+<li><a href="#org92c7766">.gitignore mínimo</a></li>
+<li><a href="#orga22795e">Problemas frecuentes y soluciones</a></li>
+<li><a href="#org35ca76a">Cheat sheet</a>
 <ul>
-<li><a href="#orgb46ccf0">Definición de agente</a></li>
-<li><a href="#org68f04f0">Función agente</a></li>
-<li><a href="#org0c7b4d5">Componentes de un agente racional</a></li>
-<li><a href="#orgb947364">Tipos de agentes (Jersey / Russell &amp; Norvig)</a></li>
-<li><a href="#org55a58c1">PEAS (ejemplo: taxi autónomo)</a></li>
-<li><a href="#orgc4de8f4">Propiedades del entorno (para elegir técnica)</a></li>
-<li><a href="#org030ed3c">Sistemas multiagente (SMA)</a></li>
-<li><a href="#orgab12818">Sistemas ubicuos (<b>ubicomp</b>)</a></li>
+<li><a href="#org070ae42">Linux / macOS</a></li>
+<li><a href="#orgdb1df7f">Windows</a></li>
 </ul>
 </li>
-<li><a href="#orgfb35339">1.8 El papel de la heurística</a>
-<ul>
-<li><a href="#orgcb935b5">¿Qué es una heurística?</a></li>
-<li><a href="#org6be8afe">Propiedades deseables</a></li>
-<li><a href="#org4bbe762">Búsqueda ciega vs informada vs local</a></li>
+<li><a href="#org3920d27">Referencias</a></li>
 </ul>
 </li>
-<li><a href="#orge508c33">1.8.1 Algoritmos de exploración de alternativas</a>
+<li><a href="#org78417fa">Introducción a la Inteligencia Artificial</a>
 <ul>
-<li><a href="#org5ed3021">Modelo de problema de búsqueda</a></li>
-<li><a href="#orgbaca8f8">Búsqueda en anchura (BFS)</a></li>
-<li><a href="#org5e8964d">Búsqueda en profundidad (DFS)</a></li>
-<li><a href="#org343c4a3">Costo uniforme (UCS / Dijkstra en grafo de estados)</a></li>
-<li><a href="#orgb83b349">Greedy best-first</a></li>
-<li><a href="#org6102259">Ejemplo: laberinto en Python (BFS)</a></li>
+<li><a href="#org15950e7">1.1 Introducción a la Inteligencia Artificial</a>
+<ul>
+<li><a href="#orge713d5f">¿Qué es la Inteligencia Artificial?</a></li>
+<li><a href="#org666fb99">Problemas típicos de la IA</a></li>
+<li><a href="#org03c86f6">IA débil vs IA fuerte (distinción conceptual)</a></li>
+<li><a href="#org41e6a26">Relación con otras disciplinas</a></li>
+<li><a href="#org47792dd">Idea clave del curso</a></li>
 </ul>
 </li>
-<li><a href="#orgfcbb713">1.8.2 Algoritmo A*</a>
+<li><a href="#orga07e4e1">1.2 Historia de la Inteligencia Artificial</a>
 <ul>
-<li><a href="#org09aad25">Idea</a></li>
-<li><a href="#org6c54156">Pseudocódigo (conceptual)</a></li>
-<li><a href="#orge2005be">Condiciones para optimalidad</a></li>
-<li><a href="#org7959809">Ejemplo: A* en cuadrícula (Manhattan)</a></li>
-<li><a href="#org80084c4">Cuándo usar A*</a></li>
+<li><a href="#orgad01b66">Orígenes (décadas de 1940–1950)</a></li>
+<li><a href="#orgd41a117">Era del optimismo (1956–1974)</a></li>
+<li><a href="#orgb4f85d8">Primer “invierno” de la IA (1974–1980)</a></li>
+<li><a href="#org1b736d8">Sistemas expertos y boom comercial (1980–1987)</a></li>
+<li><a href="#orge9bb24d">Segundo invierno (1987–1993)</a></li>
+<li><a href="#orgf4352b6">Resurgimiento: aprendizaje automático y datos (1990–2010)</a></li>
+<li><a href="#org4ef867a">Era del <b>deep learning</b> (2010–presente)</a></li>
+<li><a href="#org5adce46">Línea de tiempo resumida</a></li>
 </ul>
 </li>
-<li><a href="#org8fd7760">1.8.3 Algoritmos de búsqueda local</a>
+<li><a href="#org1f24d0d">1.3 Habilidades cognoscitivas y teorías de la inteligencia</a>
 <ul>
-<li><a href="#org281e0a7">Idea</a></li>
-<li><a href="#orga38d775">Hill climbing (escalada de colina)</a></li>
-<li><a href="#org433234c">Variantes</a></li>
-<li><a href="#orga64609d">Ejemplo: hill climbing (maximizar función 1D discreta)</a></li>
-<li><a href="#orgd186ce3">Búsqueda local vs A*</a></li>
+<li><a href="#org72b3768">Habilidades cognoscitivas (psicología)</a></li>
+<li><a href="#org0f9de86">Teoría conductista (conductismo)</a></li>
+<li><a href="#org3b326e8">Teoría de la inteligencia general (factor <b>g</b>)</a></li>
+<li><a href="#org2f0ee91">Inteligencias múltiples (Howard Gardner)</a></li>
+<li><a href="#orgfde6ca3">Otras teorías (mención)</a></li>
 </ul>
 </li>
-<li><a href="#org3a00fa1">Síntesis del temario</a></li>
-<li><a href="#org94921cd">Referencias sugeridas</a></li>
-<li><a href="#orgb7ec1bd">Preguntas de repaso</a></li>
+<li><a href="#orgd3021c4">1.4 Razonamiento según la lógica</a>
+<ul>
+<li><a href="#org593b839">Lógica como fundamento del razonamiento automático</a></li>
+<li><a href="#orgf5c82df">Componentes básicos</a></li>
+<li><a href="#orgdb1e915">Ejemplo mínimo (lógica proposicional)</a></li>
+<li><a href="#orgb7b7b2c">Sistemas formales relevantes en IA</a></li>
+<li><a href="#org030ea67">Límites importantes</a></li>
 </ul>
 </li>
-<li><a href="#orgb9e4cd1">Acertijos de IA: espacio de estados, lógica y poda</a>
+<li><a href="#org32cec4d">1.5 Adquisición del conocimiento según la filosofía</a>
 <ul>
-<li><a href="#org929188a">1. El problema de los maridos celosos</a>
-<ul>
-<li><a href="#orgb2d8004">Enunciado</a></li>
-<li><a href="#orgff101d9">Modelado del espacio de estados (sin enumerar todo a ciegas)</a></li>
-<li><a href="#org57b8e4b">Razonamiento guiado (lógica antes que fuerza bruta)</a></li>
-<li><a href="#org342170d">Solución óptima: <b>9 viajes</b></a></li>
+<li><a href="#org7ee6d35">¿Qué es el conocimiento? (epistemología)</a></li>
+<li><a href="#orgb3d33b4">Empirismo vs racionalismo</a></li>
+<li><a href="#orgfc7928c">Fuentes de conocimiento en sistemas inteligentes</a></li>
+<li><a href="#orgabe6efe">Problema de la adquisición de conocimiento (<b>knowledge acquisition bottleneck</b>)</a></li>
+<li><a href="#org3d4514e">Representación del conocimiento (puente filosofía → IA)</a></li>
 </ul>
 </li>
-<li><a href="#org0d3dd51">2. El puente y la linterna (optimización en 17 minutos)</a>
+<li><a href="#org06cac20">1.6 El modelo cognoscitivo</a>
 <ul>
-<li><a href="#orgdc18428">Enunciado</a></li>
-<li><a href="#org3425d2d">Modelado (estado acotado)</a></li>
-<li><a href="#org9a42574">Razonamiento lógico (sin BFS)</a></li>
-<li><a href="#org5ee65e6">Solución paso a paso</a></li>
+<li><a href="#orgae617b5">Definición</a></li>
+<li><a href="#orgf819a7c">Arquitecturas cognitivas clásicas</a></li>
+<li><a href="#org785198a">Componentes típicos de un modelo cognoscitivo</a></li>
+<li><a href="#orgfae425b">Modelo cognoscitivo vs modelo de agente</a></li>
+<li><a href="#org164dd7f">Conexión con IA moderna</a></li>
 </ul>
 </li>
-<li><a href="#org10399d1">3. Flavio Josefo y el círculo de la muerte</a>
+<li><a href="#orgc8ede65">1.7 Modelo del agente inteligente</a>
 <ul>
-<li><a href="#org18888ed">Historia</a></li>
-<li><a href="#orga36e459">Enunciado matemático</a></li>
-<li><a href="#org48318e2">¿Por qué no expandir el árbol completo?</a></li>
-<li><a href="#org802398d">Caso k = 2 (eliminar cada segundo)</a></li>
-<li><a href="#orgfb5526c">Ejemplo manual: n = 7, k = 2</a></li>
-<li><a href="#org6ee3084">Caso general k (algoritmo iterativo O(n))</a></li>
-<li><a href="#orgd54e201">Síntesis: lógica vs explosión combinatoria</a></li>
-<li><a href="#orgfe93d69">Preguntas de repaso</a></li>
+<li><a href="#org3c0353d">Definición de agente</a></li>
+<li><a href="#org4cf9ce4">Función agente</a></li>
+<li><a href="#org639386b">Componentes de un agente racional</a></li>
+<li><a href="#orgc28775c">Tipos de agentes (Jersey / Russell &amp; Norvig)</a></li>
+<li><a href="#orgd7e88c8">PEAS (ejemplo: taxi autónomo)</a></li>
+<li><a href="#orga171320">Propiedades del entorno (para elegir técnica)</a></li>
+<li><a href="#org88e292e">Sistemas multiagente (SMA)</a></li>
+<li><a href="#org60669cd">Sistemas ubicuos (<b>ubicomp</b>)</a></li>
+</ul>
+</li>
+<li><a href="#orgdcb80e7">1.8 El papel de la heurística</a>
+<ul>
+<li><a href="#org2f18260">¿Qué es una heurística?</a></li>
+<li><a href="#org3bde0e2">Propiedades deseables</a></li>
+<li><a href="#org505e359">Búsqueda ciega vs informada vs local</a></li>
+</ul>
+</li>
+<li><a href="#org803dfe6">1.8.1 Algoritmos de exploración de alternativas</a>
+<ul>
+<li><a href="#orga65be8d">Modelo de problema de búsqueda</a></li>
+<li><a href="#orgac52f96">Búsqueda en anchura (BFS)</a></li>
+<li><a href="#org0ef00d2">Búsqueda en profundidad (DFS)</a></li>
+<li><a href="#org1f39c65">Costo uniforme (UCS / Dijkstra en grafo de estados)</a></li>
+<li><a href="#org4e2ff68">Greedy best-first</a></li>
+<li><a href="#org03cfb1a">Ejemplo: laberinto en Python (BFS)</a></li>
+</ul>
+</li>
+<li><a href="#org8abc390">1.8.2 Algoritmo A*</a>
+<ul>
+<li><a href="#org025bd35">Idea</a></li>
+<li><a href="#org1af3e29">Pseudocódigo (conceptual)</a></li>
+<li><a href="#org1e7aa96">Condiciones para optimalidad</a></li>
+<li><a href="#orgd436111">Ejemplo: A* en cuadrícula (Manhattan)</a></li>
+<li><a href="#org30d3be0">Cuándo usar A*</a></li>
+</ul>
+</li>
+<li><a href="#orga7fb474">1.8.3 Algoritmos de búsqueda local</a>
+<ul>
+<li><a href="#org2723481">Idea</a></li>
+<li><a href="#org976d029">Hill climbing (escalada de colina)</a></li>
+<li><a href="#org41c7687">Variantes</a></li>
+<li><a href="#org486f19c">Ejemplo: hill climbing (maximizar función 1D discreta)</a></li>
+<li><a href="#org533139f">Búsqueda local vs A*</a></li>
+</ul>
+</li>
+<li><a href="#org96d6f5c">Síntesis del temario</a></li>
+<li><a href="#org8f8ef16">Referencias sugeridas</a></li>
+<li><a href="#orgc7fffc6">Preguntas de repaso</a></li>
+</ul>
+</li>
+<li><a href="#org787b17f">Acertijos de IA: espacio de estados, lógica y poda</a>
+<ul>
+<li><a href="#org623dc44">1. El problema de los maridos celosos</a>
+<ul>
+<li><a href="#orgbb7534c">Enunciado</a></li>
+<li><a href="#orgcd191f2">Modelado del espacio de estados (sin enumerar todo a ciegas)</a></li>
+<li><a href="#orgba5a81c">Razonamiento guiado (lógica antes que fuerza bruta)</a></li>
+<li><a href="#org5255b9e">Solución óptima: <b>9 viajes</b></a></li>
+</ul>
+</li>
+<li><a href="#org3b02efd">2. El puente y la linterna (optimización en 17 minutos)</a>
+<ul>
+<li><a href="#org17afd6f">Enunciado</a></li>
+<li><a href="#org8985ff5">Modelado (estado acotado)</a></li>
+<li><a href="#org106bccd">Razonamiento lógico (sin BFS)</a></li>
+<li><a href="#org7b8f757">Solución paso a paso</a></li>
+</ul>
+</li>
+<li><a href="#orged7471a">3. Flavio Josefo y el círculo de la muerte</a>
+<ul>
+<li><a href="#orgdc38775">Historia</a></li>
+<li><a href="#orga9e4c77">Enunciado matemático</a></li>
+<li><a href="#org5245d78">¿Por qué no expandir el árbol completo?</a></li>
+<li><a href="#org9ae4cae">Caso k = 2 (eliminar cada segundo)</a></li>
+<li><a href="#org5c7f275">Ejemplo manual: n = 7, k = 2</a></li>
+<li><a href="#org7d938cb">Caso general k (algoritmo iterativo O(n))</a></li>
+<li><a href="#org39314a1">Síntesis: lógica vs explosión combinatoria</a></li>
+<li><a href="#org5a6b81f">Preguntas de repaso</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a href="#org912f67d">A*  — Arriero, coyote, cabra y maíz</a>
+<li><a href="#orga08467f">A*  — Arriero, coyote, cabra y maíz</a>
 <ul>
-<li><a href="#org5e1acf3">Símbolos</a></li>
-<li><a href="#org1f8d699">Reglas del bote</a></li>
-<li><a href="#orga88ee10">Objetivo</a></li>
-<li><a href="#org3faa3cf">Parte 1 — ¿Qué es un estado? (la “fotografía” del río)</a></li>
-<li><a href="#org52457f0">Parte 2 — El espacio de estados (el mapa completo del camino bueno)</a>
+<li><a href="#org397c25b">Símbolos</a></li>
+<li><a href="#org47b424e">Reglas del bote</a></li>
+<li><a href="#org277ad02">Objetivo</a></li>
+<li><a href="#org7575966">Parte 1 — ¿Qué es un estado? (la “fotografía” del río)</a></li>
+<li><a href="#org6ff8c73">Parte 2 — El espacio de estados (el mapa completo del camino bueno)</a>
 <ul>
-<li><a href="#org9772e5e">Los 8 estados del camino más corto (7 cruces)</a></li>
-<li><a href="#org9a65d7c">Dibujo del camino (solo flechas hacia adelante)</a></li>
-<li><a href="#org95f9da0">¿Por qué no hay más estados en el camino bueno?</a></li>
-<li><a href="#orgcb6ea25">Ramas que se cortan desde E0 (ejemplo de poda)</a></li>
+<li><a href="#orgf4b2533">Los 8 estados del camino más corto (7 cruces)</a></li>
+<li><a href="#orgfd03d95">Dibujo del camino (solo flechas hacia adelante)</a></li>
+<li><a href="#org887da31">¿Por qué no hay más estados en el camino bueno?</a></li>
+<li><a href="#orgb286a87">Ramas que se cortan desde E0 (ejemplo de poda)</a></li>
 </ul>
 </li>
-<li><a href="#org6cdfd3f">Parte 3 — g, h y f</a>
+<li><a href="#org4fca604">Parte 3 — g, h y f</a>
 <ul>
-<li><a href="#org0391ee5">g = “¿Cuántos cruces ya hice?”</a></li>
-<li><a href="#org95cb3d4">h = “¿Cuántos cruces <b>creo</b> que faltan?” (estimación)</a></li>
-<li><a href="#orgf97df17">f = “¿Qué tan prioritario es este estado?”</a></li>
+<li><a href="#org0015303">g = “¿Cuántos cruces ya hice?”</a></li>
+<li><a href="#orgac1af8b">h = “¿Cuántos cruces <b>creo</b> que faltan?” (estimación)</a></li>
+<li><a href="#org3e49b27">f = “¿Qué tan prioritario es este estado?”</a></li>
 </ul>
 </li>
-<li><a href="#org6782abe">Parte 4 — A* paso a paso (tabla de “lista de pendientes”)</a>
+<li><a href="#orgd5a3a49">Parte 4 — A* paso a paso (tabla de “lista de pendientes”)</a>
 <ul>
-<li><a href="#org09d2ec7">Iteración 1</a></li>
-<li><a href="#org668ab86">Iteración 2</a></li>
-<li><a href="#org1c06f82">Iteración 3</a></li>
-<li><a href="#org997f397">Iteración 4</a></li>
-<li><a href="#org2afb8ff">Iteraciones 5–7 (resumen en una tabla)</a></li>
-<li><a href="#orgff0a4be">¿Qué aprendiste del proceso?</a></li>
+<li><a href="#org83752c9">Iteración 1</a></li>
+<li><a href="#org99c5ea6">Iteración 2</a></li>
+<li><a href="#org00feb9a">Iteración 3</a></li>
+<li><a href="#orgcb9a1d3">Iteración 4</a></li>
+<li><a href="#org56552bb">Iteraciones 5–7 (resumen en una tabla)</a></li>
+<li><a href="#orgefbe7b9">¿Qué aprendiste del proceso?</a></li>
 </ul>
 </li>
-<li><a href="#org5d5f703">Parte 5 — La solución contada como cuento (7 cruces)</a></li>
-<li><a href="#orgfb1b78e">Parte 6 — Comparación rápida</a></li>
-<li><a href="#org24af4d8">Parte 7 — Ejercicios con lápiz y papel</a></li>
+<li><a href="#orga6a7315">Parte 5 — La solución contada como cuento (7 cruces)</a></li>
+<li><a href="#org1fd15bd">Parte 6 — Comparación rápida</a></li>
+<li><a href="#org46b0bba">Parte 7 — Ejercicios con lápiz y papel</a></li>
+</ul>
+</li>
+<li><a href="#org42505cd">Actividades</a>
+<ul>
+<li><a href="#org494999e">Operación Dino Crash (EDA conceptual)</a>
+<ul>
+<li><a href="#org5efc777">Introducción a la Misión</a></li>
+<li><a href="#org4485cca">¿Qué es EDA y por qué va <b>antes</b> del modelo?</a></li>
+<li><a href="#orgbdd2d80">Bloque 1 — ¿Qué dataset necesitamos?</a></li>
+<li><a href="#orgf23db4b">Bloque 2 — Preguntas que todo EDA debe responder</a></li>
+<li><a href="#orgdc012ab">Bloque 3 — Del EDA a la elección del modelo</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
 </div>
 </div>
-<div id="outline-container-orgcfb1dda" class="outline-2">
-<h2 id="orgcfb1dda">Introducción a la Inteligencia Artificial</h2>
-<div class="outline-text-2" id="text-orgcfb1dda">
+<div id="outline-container-orgad70819" class="outline-2">
+<h2 id="orgad70819">Tutorial — Entornos virtuales en Python (Windows, Linux, macOS)</h2>
+<div class="outline-text-2" id="text-orgad70819">
+<p>
+Aprender a crear y usar <b>entornos virtuales</b> en Python cuando tienes <b>varias versiones</b> de Python instaladas (3.9, 3.10, 3.11, 3.12, 3.13…) en:
+</p>
+
+<ul class="org-ul">
+<li><b>Windows</b></li>
+<li><b>Linux</b> (Debian/Ubuntu, Fedora, Arch…)</li>
+<li><b>macOS</b> (Intel y Apple Silicon)</li>
+</ul>
+
+<p>
+Al terminar sabrás:
+</p>
+
+<ol class="org-ol">
+<li>Qué es un entorno virtual y por qué no instalar todo con <code>pip</code> global.</li>
+<li>Cómo ver qué versiones de Python tienes en cada sistema.</li>
+<li>Cómo crear un <code>venv</code> con una versión <b>concreta</b>.</li>
+<li>Cómo gestionar muchas versiones con <b>pyenv</b> (recomendado).</li>
+<li>Cómo activar, desactivar, exportar dependencias y borrar entornos.</li>
+<li>Cómo resolver errores típicos.</li>
+</ol>
+</div>
+<div id="outline-container-org91da56d" class="outline-3">
+<h3 id="org91da56d">Conceptos básicos</h3>
+<div class="outline-text-3" id="text-org91da56d">
+</div>
+<div id="outline-container-org95cf701" class="outline-4">
+<h4 id="org95cf701">¿Qué es un entorno virtual?</h4>
+<div class="outline-text-4" id="text-org95cf701">
+<p>
+Un <b>entorno virtual</b> es una carpeta aislada que contiene:
+</p>
+
+<ul class="org-ul">
+<li>Un intérprete de Python (o un enlace a uno concreto).</li>
+<li>Su propio <code>pip</code>.</li>
+<li>Sus propios paquetes en <code>site-packages</code>.</li>
+</ul>
+
+<p>
+Cada proyecto puede tener versiones distintas de Django, NumPy, etc., sin pelearse.
+</p>
+</div>
+</div>
+<div id="outline-container-org1ad4d87" class="outline-4">
+<h4 id="org1ad4d87">Entorno virtual ≠ versión de Python</h4>
+<div class="outline-text-4" id="text-org1ad4d87">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Idea</th>
+<th scope="col" class="org-left">Qué es</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><b>Versión de Python</b></td>
+<td class="org-left">3.10, 3.12… el lenguaje en sí</td>
+</tr>
+
+<tr>
+<td class="org-left"><b>Entorno virtual</b></td>
+<td class="org-left">Carpeta aislada de paquetes <b>para un proyecto</b></td>
+</tr>
+</tbody>
+</table>
+
+<p>
+Puedes tener Python 3.12 instalado y crear tres entornos 3.12 con librerías diferentes.
+</p>
+</div>
+</div>
+<div id="outline-container-orgca7b8f6" class="outline-4">
+<h4 id="orgca7b8f6">Herramientas que verás en este tutorial</h4>
+<div class="outline-text-4" id="text-orgca7b8f6">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Herramienta</th>
+<th scope="col" class="org-left">Viene con Python</th>
+<th scope="col" class="org-left">Varias versiones de Python</th>
+<th scope="col" class="org-left">Uso típico</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><code>venv</code></td>
+<td class="org-left">Sí (3.3+)</td>
+<td class="org-left">Solo si ya tienes ese binario</td>
+<td class="org-left">Proyectos simples, estándar</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>virtualenv</code></td>
+<td class="org-left">No (<code>pip install</code>)</td>
+<td class="org-left">Igual que <code>venv</code></td>
+<td class="org-left">Compatibilidad extra</td>
+</tr>
+
+<tr>
+<td class="org-left"><b>pyenv</b></td>
+<td class="org-left">No</td>
+<td class="org-left"><b>Sí</b>, instala y cambia versiones</td>
+<td class="org-left">Desarrollo con 3.9–3.13</td>
+</tr>
+
+<tr>
+<td class="org-left"><b>conda</b> / Miniconda</td>
+<td class="org-left">No</td>
+<td class="org-left">Sí (canales propios)</td>
+<td class="org-left">Ciencia de datos, CUDA</td>
+</tr>
+
+<tr>
+<td class="org-left"><b>uv</b></td>
+<td class="org-left">No</td>
+<td class="org-left">Sí, muy rápido</td>
+<td class="org-left">Proyectos modernos (mención)</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+<b>Recomendación general:</b>
+</p>
+<ul class="org-ul">
+<li><b>Principiante / curso:</b> <code>python3.12 -m venv .venv</code> (o la versión que pida tu materia).</li>
+<li><b>Varias versiones en la misma máquina:</b> <b>pyenv</b> + <code>pyenv virtualenv</code>.</li>
+</ul>
+</div>
+</div>
+</div>
+<div id="outline-container-org77fde86" class="outline-3">
+<h3 id="org77fde86">Paso 0 — Ver qué Python tienes instalado</h3>
+<div class="outline-text-3" id="text-org77fde86">
+</div>
+<div id="outline-container-orgaa941af" class="outline-4">
+<h4 id="orgaa941af">Linux y macOS (terminal)</h4>
+<div class="outline-text-4" id="text-orgaa941af">
+<div class="org-src-container">
+<pre class="src src-shell"><span style="color: #928374;"># </span><span style="color: #928374;">Versiones en PATH
+</span>python3 --version
+python3.12 --version 2&gt;/dev/null
+python3.11 --version 2&gt;/dev/null
+
+<span style="color: #928374;"># </span><span style="color: #928374;">D&#243;nde est&#225; cada binario
+</span><span style="color: #fe8019;">which</span> python3
+<span style="color: #fe8019;">which</span> python3.12 2&gt;/dev/null
+
+<span style="color: #928374;"># </span><span style="color: #928374;">Todas las que encuentre el sistema (Debian/Ubuntu)
+</span>ls -la /usr/bin/python3* 2&gt;/dev/null
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orge616016" class="outline-4">
+<h4 id="orge616016">Windows (PowerShell o CMD)</h4>
+<div class="outline-text-4" id="text-orge616016">
+<div class="org-src-container">
+<pre class="src src-powershell">python --version
+py --version
+py -0p
+</pre>
+</div>
+
+<p>
+El lanzador <code>py</code> en Windows lista versiones instaladas. Ejemplo de salida:
+</p>
+
+<pre class="example" id="org914d819">
+ -V:3.12 *        C:\Users\tu\AppData\Local\Programs\Python\Python312\python.exe
+ -V:3.11          C:\Users\tu\AppData\Local\Programs\Python\Python311\python.exe
+</pre>
+</div>
+</div>
+<div id="outline-container-orga7d4a84" class="outline-4">
+<h4 id="orga7d4a84">Tabla rápida por sistema</h4>
+<div class="outline-text-4" id="text-orga7d4a84">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Sistema</th>
+<th scope="col" class="org-left">Comando habitual</th>
+<th scope="col" class="org-left">Varias versiones</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Linux</td>
+<td class="org-left"><code>python3.12</code>, <code>python3.11</code></td>
+<td class="org-left">Paquetes del sistema o pyenv</td>
+</tr>
+
+<tr>
+<td class="org-left">macOS</td>
+<td class="org-left"><code>python3</code> (Homebrew)</td>
+<td class="org-left"><code>brew install python@3.12</code> o pyenv</td>
+</tr>
+
+<tr>
+<td class="org-left">Windows</td>
+<td class="org-left"><code>py -3.12</code></td>
+<td class="org-left">Instaladores python.org o pyenv-win</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="outline-container-org6c5b467" class="outline-3">
+<h3 id="org6c5b467">Método 1 — <code>venv</code> (incluido en Python, el más estándar)</h3>
+<div class="outline-text-3" id="text-org6c5b467">
+</div>
+<div id="outline-container-org35ac8db" class="outline-4">
+<h4 id="org35ac8db">Crear entorno con una versión específica</h4>
+<div class="outline-text-4" id="text-org35ac8db">
+<p>
+La regla de oro:
+</p>
+
+<pre class="example" id="org0ab6b90">
+&lt;python-DESEADA&gt; -m venv &lt;carpeta-del-entorno&gt;
+</pre>
+</div>
+<ul class="org-ul">
+<li><a id="org96651d6"></a>Linux<br />
+<div class="outline-text-5" id="text-org96651d6">
+<div class="org-src-container">
+<pre class="src src-shell"><span style="color: #fe8019;">cd</span> ~/proyectos/mi_app
+python3.12 -m venv .venv
+<span style="color: #928374;"># </span><span style="color: #928374;">o con ruta expl&#237;cita si hay varias:
+</span>/usr/bin/python3.11 -m venv .venv311
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org30e26bc"></a>macOS<br />
+<div class="outline-text-5" id="text-org30e26bc">
+<div class="org-src-container">
+<pre class="src src-shell"><span style="color: #fe8019;">cd</span> ~/proyectos/mi_app
+python3.12 -m venv .venv
+<span style="color: #928374;"># </span><span style="color: #928374;">Si usas Homebrew y el binario tiene otro nombre:
+</span>/opt/homebrew/bin/python3.12 -m venv .venv
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org8ad055f"></a>Windows (PowerShell)<br />
+<div class="outline-text-5" id="text-org8ad055f">
+<div class="org-src-container">
+<pre class="src src-powershell">cd $HOME\proyectos\mi_app
+py -3.12 -m venv .venv
+# o ruta completa:
+# C:\Users\tu\AppData\Local\Programs\Python\Python312\python.exe -m venv .venv
+</pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+<div id="outline-container-orgec0aea3" class="outline-4">
+<h4 id="orgec0aea3">Activar el entorno</h4>
+<div class="outline-text-4" id="text-orgec0aea3">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Sistema</th>
+<th scope="col" class="org-left">Comando activar</th>
+<th scope="col" class="org-left">Desactivar</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Linux / macOS</td>
+<td class="org-left"><code>source .venv/bin/activate</code></td>
+<td class="org-left"><code>deactivate</code></td>
+</tr>
+
+<tr>
+<td class="org-left">Windows CMD</td>
+<td class="org-left"><code>.venv\Scripts\activate.bat</code></td>
+<td class="org-left"><code>deactivate</code></td>
+</tr>
+
+<tr>
+<td class="org-left">Windows PowerShell</td>
+<td class="org-left"><code>.venv\Scripts\Activate.ps1</code></td>
+<td class="org-left"><code>deactivate</code></td>
+</tr>
+</tbody>
+</table>
+
+<p>
+<b>PowerShell</b> puede bloquear scripts. Si falla:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-powershell">Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org67d42dc" class="outline-4">
+<h4 id="org67d42dc">Comprobar que usas el Python correcto</h4>
+<div class="outline-text-4" id="text-org67d42dc">
+<p>
+Tras activar:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell"><span style="color: #fe8019;">which</span> python
+python --version
+pip --version
+</pre>
+</div>
+
+<p>
+En Windows:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-powershell">Get-Command python
+python --version
+pip --version
+</pre>
+</div>
+
+<p>
+Debe apuntar a <code>.venv</code> (Linux/Mac) o <code>.venv\Scripts\python.exe</code> (Windows).
+</p>
+</div>
+</div>
+<div id="outline-container-orge83e696" class="outline-4">
+<h4 id="orge83e696">Instalar paquetes y guardar dependencias</h4>
+<div class="outline-text-4" id="text-orge83e696">
+<div class="org-src-container">
+<pre class="src src-shell">pip install --upgrade pip
+pip install requests pandas
+pip freeze &gt; requirements.txt
+</pre>
+</div>
+
+<p>
+En otra máquina o compañero:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell">python3.12 -m venv .venv
+<span style="color: #fe8019;">source</span> .venv/bin/activate
+pip install -r requirements.txt
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgc1894e9" class="outline-4">
+<h4 id="orgc1894e9">Borrar un entorno</h4>
+<div class="outline-text-4" id="text-orgc1894e9">
+<p>
+Solo elimina la carpeta (con el entorno <b>desactivado</b>):
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell">deactivate
+rm -rf .venv
+</pre>
+</div>
+
+<p>
+Windows: <code>Remove-Item -Recurse -Force .venv</code>
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-org4b86f82" class="outline-3">
+<h3 id="org4b86f82">Método 2 — <b>pyenv</b> (varias versiones de Python en una máquina)</h3>
+<div class="outline-text-3" id="text-org4b86f82">
+</div>
+<div id="outline-container-org2a9cc31" class="outline-4">
+<h4 id="org2a9cc31">¿Cuándo usar pyenv?</h4>
+<div class="outline-text-4" id="text-org2a9cc31">
+<ul class="org-ul">
+<li>Necesitas 3.10 para un proyecto viejo y 3.12 para uno nuevo.</li>
+<li>No quieres mezclar el Python del sistema (Linux/macOS) con tus proyectos.</li>
+<li>Quieres un comando global: <code>pyenv local 3.11.9</code> en una carpeta.</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orgfdd3ee9" class="outline-4">
+<h4 id="orgfdd3ee9">Instalación</h4>
+<div class="outline-text-4" id="text-orgfdd3ee9">
+</div>
+<ul class="org-ul">
+<li><a id="orgd20fe0f"></a>Linux (Debian/Ubuntu — dependencias + instalador oficial)<br />
+<div class="outline-text-5" id="text-orgd20fe0f">
+<div class="org-src-container">
+<pre class="src src-shell">sudo apt update
+sudo apt install -y make build-essential libssl-dev zlib1g-dev <span style="color: #b8bb26;">\</span>
+  libbz2-dev libreadline-dev libsqlite3-dev curl git <span style="color: #b8bb26;">\</span>
+  libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
+
+curl https://pyenv.run | bash
+<span style="color: #928374;"># </span><span style="color: #928374;">A&#241;ade a ~/.bashrc o ~/.zshrc:
+</span><span style="color: #928374;"># </span><span style="color: #928374;">export PYENV_ROOT="$HOME/.pyenv"
+</span><span style="color: #928374;"># </span><span style="color: #928374;">export PATH="$PYENV_ROOT/bin:$PATH"
+</span><span style="color: #928374;"># </span><span style="color: #928374;">eval "$(pyenv init -)"</span>
+</pre>
+</div>
+
+<p>
+Reinicia la terminal y:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell">pyenv --version
+</pre>
+</div>
+</div>
+</li>
+<li><a id="orga10bf2b"></a>macOS (Homebrew)<br />
+<div class="outline-text-5" id="text-orga10bf2b">
+<div class="org-src-container">
+<pre class="src src-shell">brew update
+brew install pyenv
+<span style="color: #928374;"># </span><span style="color: #928374;">A&#241;ade a ~/.zshrc:
+</span><span style="color: #928374;"># </span><span style="color: #928374;">export PYENV_ROOT="$HOME/.pyenv"
+</span><span style="color: #928374;"># </span><span style="color: #928374;">export PATH="$PYENV_ROOT/bin:$PATH"
+</span><span style="color: #928374;"># </span><span style="color: #928374;">eval "$(pyenv init -)"</span>
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org0c71dc1"></a>Windows — <b>pyenv-win</b><br />
+<div class="outline-text-5" id="text-org0c71dc1">
+<p>
+En Windows el proyecto equivalente es <a href="https://github.com/pyenv-win/pyenv-win">pyenv-win</a> (no es el mismo binario que Linux, pero la idea es igual).
+</p>
+
+<div class="org-src-container">
+<pre class="src src-powershell"># Con winget (si está disponible):
+winget install pyenv-win.pyenv-win
+
+# O clonar en %USERPROFILE%\.pyenv\pyenv-win
+# y añadir a PATH las carpetas bin y shims
+</pre>
+</div>
+
+<p>
+Consulta la wiki de pyenv-win para variables <code>PYENV</code>, <code>PYENV_ROOT</code>, <code>PYENV_HOME</code> en <b>Variables de entorno</b> de Windows.
+</p>
+</div>
+</li>
+</ul>
+</div>
+<div id="outline-container-org6f8473d" class="outline-4">
+<h4 id="org6f8473d">Instalar versiones de Python con pyenv</h4>
+<div class="outline-text-4" id="text-org6f8473d">
+<div class="org-src-container">
+<pre class="src src-shell">pyenv install --list | grep <span style="color: #b8bb26;">" 3.1"</span>
+pyenv install 3.11.9
+pyenv install 3.12.4
+pyenv versions
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orge54133d" class="outline-4">
+<h4 id="orge54133d">Elegir versión global o por carpeta</h4>
+<div class="outline-text-4" id="text-orge54133d">
+<div class="org-src-container">
+<pre class="src src-shell">pyenv global 3.12.4
+pyenv local 3.11.9
+<span style="color: #fe8019;">cd</span> ~/proyectos/legacy_app
+pyenv local 3.10.13
+python --version
+</pre>
+</div>
+
+<p>
+<code>Crea archivo =.python-version</code> en la carpeta del proyecto.=
+</p>
+</div>
+</div>
+<div id="outline-container-org9ff7cfe" class="outline-4">
+<h4 id="org9ff7cfe">Entorno virtual con pyenv</h4>
+<div class="outline-text-4" id="text-org9ff7cfe">
+<p>
+Opción A — plugin <code>pyenv-virtualenv</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell"><span style="color: #928374;"># </span><span style="color: #928374;">Linux/macOS: instalar plugin pyenv-virtualenv (ver repo oficial)
+</span>pyenv virtualenv 3.12.4 mi_proyecto_312
+pyenv local mi_proyecto_312
+</pre>
+</div>
+
+<p>
+Opción B — <code>venv</code> clásico <b>después</b> de fijar versión con pyenv:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell">pyenv local 3.12.4
+python -m venv .venv
+<span style="color: #fe8019;">source</span> .venv/bin/activate
+</pre>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-orgd49c492" class="outline-3">
+<h3 id="orgd49c492">Método 3 — <code>virtualenv</code> (paquete pip)</h3>
+<div class="outline-text-3" id="text-orgd49c492">
+<p>
+Similar a <code>venv</code>, útil si necesitas opciones extra o Python muy antiguo.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell">python3.12 -m pip install --user virtualenv
+python3.12 -m user virtualenv .venv
+<span style="color: #928374;"># </span><span style="color: #928374;">o:
+</span>virtualenv -p python3.11 .venv311
+<span style="color: #fe8019;">source</span> .venv311/bin/activate
+</pre>
+</div>
+
+<p>
+En la práctica moderna, <code>python -m venv</code> suele bastar.
+</p>
+</div>
+</div>
+<div id="outline-container-org5821822" class="outline-3">
+<h3 id="org5821822">Método 4 — Conda / Miniconda (opcional, ciencia de datos)</h3>
+<div class="outline-text-3" id="text-org5821822">
+</div>
+<div id="outline-container-orgcd895c8" class="outline-4">
+<h4 id="orgcd895c8">Idea</h4>
+<div class="outline-text-4" id="text-orgcd895c8">
+<p>
+Conda crea entornos con Python <b>y</b> librerías binarias (NumPy, CUDA) desde canales propios.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell">conda create -n mi_env <span style="color: #83a598;">python</span>=3.11
+conda activate mi_env
+conda install pandas numpy
+conda deactivate
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org7e43bc6" class="outline-4">
+<h4 id="org7e43bc6">Conda vs venv</h4>
+<div class="outline-text-4" id="text-org7e43bc6">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Aspecto</th>
+<th scope="col" class="org-left">venv / pyenv</th>
+<th scope="col" class="org-left">conda</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Peso</td>
+<td class="org-left">Ligero</td>
+<td class="org-left">Más pesado</td>
+</tr>
+
+<tr>
+<td class="org-left">Paquetes no-Python</td>
+<td class="org-left">No</td>
+<td class="org-left">Sí (R, C libs)</td>
+</tr>
+
+<tr>
+<td class="org-left">Curso general IA/Python</td>
+<td class="org-left">venv suele bastar</td>
+<td class="org-left">Si el curso pide Anaconda</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="outline-container-org550510d" class="outline-3">
+<h3 id="org550510d">Flujo de trabajo recomendado por escenario</h3>
+<div class="outline-text-3" id="text-org550510d">
+</div>
+<div id="outline-container-orgcf7c380" class="outline-4">
+<h4 id="orgcf7c380">Escenario A — Un solo proyecto, una versión fija (curso)</h4>
+<div class="outline-text-4" id="text-orgcf7c380">
+<pre class="example" id="org32eca9d">
+1. Instalar Python 3.12 desde python.org / apt / brew
+2. cd proyecto
+3. python3.12 -m venv .venv
+4. activar → pip install -r requirements.txt
+5. Añadir .venv/ al .gitignore
+</pre>
+</div>
+</div>
+<div id="outline-container-orgcbdcfb7" class="outline-4">
+<h4 id="orgcbdcfb7">Escenario B — Tres proyectos, tres versiones</h4>
+<div class="outline-text-4" id="text-orgcbdcfb7">
+<pre class="example" id="org1733940">
+1. Instalar pyenv
+2. pyenv install 3.10.13 3.11.9 3.12.4
+3. En cada repo: pyenv local X.Y.Z &amp;&amp; python -m venv .venv
+</pre>
+</div>
+</div>
+<div id="outline-container-org5c5b53d" class="outline-4">
+<h4 id="org5c5b53d">Escenario C — Windows con lanzador py</h4>
+<div class="outline-text-4" id="text-org5c5b53d">
+<pre class="example" id="org18b36f2">
+1. py -0p   (ver versiones)
+2. py -3.12 -m venv .venv
+3. .venv\Scripts\Activate.ps1
+4. pip install ...
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgb1b7baf" class="outline-3">
+<h3 id="orgb1b7baf">Buenas prácticas</h3>
+<div class="outline-text-3" id="text-orgb1b7baf">
+<ol class="org-ol">
+<li><b>Un entorno por proyecto</b> (carpeta <code>.venv</code> o <code>venv</code> dentro del repo).</li>
+<li><b>No subas</b> <code>.venv</code> a Git; sí sube <code>requirements.txt</code> o <code>pyproject.toml</code>.</li>
+<li><b>Nombra</b> la versión en el README: “Requiere Python ≥ 3.11”.</li>
+<li>En Linux, evita <code>sudo pip install</code> en el Python del sistema (rompe paquetes del SO).</li>
+<li>En macOS con Apple Silicon, prefiere builds <b>arm64</b> (Homebrew en <code>/opt/homebrew</code>).</li>
+<li>Usa <code>python -m pip install</code> en lugar de <code>pip</code> suelto (asegura el pip del entorno activo).</li>
+</ol>
+</div>
+</div>
+<div id="outline-container-org92c7766" class="outline-3">
+<h3 id="org92c7766">.gitignore mínimo</h3>
+<div class="outline-text-3" id="text-org92c7766">
+<pre class="example" id="orga86556e">
+.venv/
+venv/
+__pycache__/
+*.pyc
+.python-version   # opcional: algunos equipos sí lo versionan con pyenv
+</pre>
+</div>
+</div>
+<div id="outline-container-orga22795e" class="outline-3">
+<h3 id="orga22795e">Problemas frecuentes y soluciones</h3>
+<div class="outline-text-3" id="text-orga22795e">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Síntoma</th>
+<th scope="col" class="org-left">Causa probable</th>
+<th scope="col" class="org-left">Solución</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><code>python: command not found</code></td>
+<td class="org-left">Python no en PATH</td>
+<td class="org-left">Instalar o usar ruta completa / pyenv</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>No module named venv</code></td>
+<td class="org-left">Paquete <code>python3-venv</code> falta (Debian)</td>
+<td class="org-left"><code>sudo apt install python3.12-venv</code></td>
+</tr>
+
+<tr>
+<td class="org-left">Tras activar, <code>python</code> sigue siendo el del sistema</td>
+<td class="org-left">No activaste bien o orden PATH</td>
+<td class="org-left"><code>source .venv/bin/activate</code>; <code>which python</code></td>
+</tr>
+
+<tr>
+<td class="org-left">PowerShell no activa</td>
+<td class="org-left">ExecutionPolicy</td>
+<td class="org-left"><code>RemoteSigned</code> para CurrentUser</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>pip install</code> instala fuera del venv</td>
+<td class="org-left">Entorno no activo</td>
+<td class="org-left">Activar; usar <code>python -m pip</code></td>
+</tr>
+
+<tr>
+<td class="org-left">pyenv: version not installed</td>
+<td class="org-left">Falta <code>pyenv install</code></td>
+<td class="org-left"><code>pyenv install 3.12.4</code></td>
+</tr>
+
+<tr>
+<td class="org-left">Mezcla 3.10 y 3.12 en mismo venv</td>
+<td class="org-left">Creaste venv con binario equivocado</td>
+<td class="org-left">Borrar .venv y recrear con binario correcto</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-org35ca76a" class="outline-3">
+<h3 id="org35ca76a">Cheat sheet</h3>
+<div class="outline-text-3" id="text-org35ca76a">
+</div>
+<div id="outline-container-org070ae42" class="outline-4">
+<h4 id="org070ae42">Linux / macOS</h4>
+<div class="outline-text-4" id="text-org070ae42">
+<pre class="example" id="org140fe05">
+# Crear
+python3.12 -m venv .venv
+
+# Activar / desactivar
+source .venv/bin/activate
+deactivate
+
+# Paquetes
+pip install -r requirements.txt
+pip freeze &gt; requirements.txt
+
+# pyenv
+pyenv install 3.12.4
+pyenv local 3.12.4
+</pre>
+</div>
+</div>
+<div id="outline-container-orgdb1df7f" class="outline-4">
+<h4 id="orgdb1df7f">Windows</h4>
+<div class="outline-text-4" id="text-orgdb1df7f">
+<pre class="example" id="orgf825441">
+# Crear
+py -3.12 -m venv .venv
+
+# Activar (PowerShell)
+.venv\Scripts\Activate.ps1
+
+# Listar Pythons
+py -0p
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org3920d27" class="outline-3">
+<h3 id="org3920d27">Referencias</h3>
+<div class="outline-text-3" id="text-org3920d27">
+<ul class="org-ul">
+<li>Documentación oficial venv: <a href="https://docs.python.org/3/library/venv.html">https://docs.python.org/3/library/venv.html</a></li>
+<li>pyenv: <a href="https://github.com/pyenv/pyenv">https://github.com/pyenv/pyenv</a></li>
+<li>pyenv-win: <a href="https://github.com/pyenv-win/pyenv-win">https://github.com/pyenv-win/pyenv-win</a></li>
+<li>Python en Windows (launcher py): <a href="https://docs.python.org/3/using/windows.html">https://docs.python.org/3/using/windows.html</a></li>
+</ul>
+
+<pre class="example">
+None
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org78417fa" class="outline-2">
+<h2 id="org78417fa">Introducción a la Inteligencia Artificial</h2>
+<div class="outline-text-2" id="text-org78417fa">
 <p>
 Este documento desarrolla el temario de la unidad introductoria a la <b>Inteligencia Artificial (IA)</b>: definición, historia, bases cognitivas, lógica, filosofía del conocimiento, modelos cognitivos y de agente, y el papel de la <b>heurística</b> con algoritmos de búsqueda.
 </p>
@@ -441,13 +1333,13 @@ Este documento desarrolla el temario de la unidad introductoria a la <b>Intelige
 <li>Aplicar algoritmos de búsqueda informada y local como base de la resolución de problemas.</li>
 </ul>
 </div>
-<div id="outline-container-orgc01124c" class="outline-3">
-<h3 id="orgc01124c">1.1 Introducción a la Inteligencia Artificial</h3>
-<div class="outline-text-3" id="text-orgc01124c">
+<div id="outline-container-org15950e7" class="outline-3">
+<h3 id="org15950e7">1.1 Introducción a la Inteligencia Artificial</h3>
+<div class="outline-text-3" id="text-org15950e7">
 </div>
-<div id="outline-container-org2af527a" class="outline-4">
-<h4 id="org2af527a">¿Qué es la Inteligencia Artificial?</h4>
-<div class="outline-text-4" id="text-org2af527a">
+<div id="outline-container-orge713d5f" class="outline-4">
+<h4 id="orge713d5f">¿Qué es la Inteligencia Artificial?</h4>
+<div class="outline-text-4" id="text-orge713d5f">
 <p>
 La <b>Inteligencia Artificial</b> es el campo de la informática y las ciencias cognitivas que estudia cómo construir sistemas capaces de realizar tareas que, si las hiciera un humano, requerirían <b>inteligencia</b>: percibir, razonar, aprender, planificar, comunicarse y actuar en entornos complejos.
 </p>
@@ -462,9 +1354,9 @@ Definiciones frecuentes en cursos introductorios:
 </ul>
 </div>
 </div>
-<div id="outline-container-org10c04d5" class="outline-4">
-<h4 id="org10c04d5">Problemas típicos de la IA</h4>
-<div class="outline-text-4" id="text-org10c04d5">
+<div id="outline-container-org666fb99" class="outline-4">
+<h4 id="org666fb99">Problemas típicos de la IA</h4>
+<div class="outline-text-4" id="text-org666fb99">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
@@ -513,18 +1405,18 @@ Definiciones frecuentes en cursos introductorios:
 </table>
 </div>
 </div>
-<div id="outline-container-org3ef231f" class="outline-4">
-<h4 id="org3ef231f">IA débil vs IA fuerte (distinción conceptual)</h4>
-<div class="outline-text-4" id="text-org3ef231f">
+<div id="outline-container-org03c86f6" class="outline-4">
+<h4 id="org03c86f6">IA débil vs IA fuerte (distinción conceptual)</h4>
+<div class="outline-text-4" id="text-org03c86f6">
 <ul class="org-ul">
 <li><b>IA débil (narrow AI):</b> sistemas especializados en una tarea (recomendador, detector de spam, asistente de voz). Es lo que existe hoy en producción.</li>
 <li><b>IA fuerte (AGI):</b> hipotética inteligencia general al nivel humano o superior en <b>cualquier</b> dominio. Sigue siendo objeto de debate y especulación.</li>
 </ul>
 </div>
 </div>
-<div id="outline-container-org36da5ce" class="outline-4">
-<h4 id="org36da5ce">Relación con otras disciplinas</h4>
-<div class="outline-text-4" id="text-org36da5ce">
+<div id="outline-container-org41e6a26" class="outline-4">
+<h4 id="org41e6a26">Relación con otras disciplinas</h4>
+<div class="outline-text-4" id="text-org41e6a26">
 <ul class="org-ul">
 <li><b>Psicología cognitiva:</b> modelos de memoria, atención, aprendizaje.</li>
 <li><b>Lógica y matemáticas:</b> formalización del razonamiento.</li>
@@ -534,22 +1426,22 @@ Definiciones frecuentes en cursos introductorios:
 </ul>
 </div>
 </div>
-<div id="outline-container-org452c47b" class="outline-4">
-<h4 id="org452c47b">Idea clave del curso</h4>
-<div class="outline-text-4" id="text-org452c47b">
+<div id="outline-container-org47792dd" class="outline-4">
+<h4 id="org47792dd">Idea clave del curso</h4>
+<div class="outline-text-4" id="text-org47792dd">
 <p>
 La IA no es un solo método: es un <b>conjunto de técnicas</b> (búsqueda, lógica, probabilidad, aprendizaje automático, etc.) unidas por la pregunta: <b>¿cómo representar el conocimiento y elegir acciones útiles en un entorno?</b>
 </p>
 </div>
 </div>
 </div>
-<div id="outline-container-org7f3f319" class="outline-3">
-<h3 id="org7f3f319">1.2 Historia de la Inteligencia Artificial</h3>
-<div class="outline-text-3" id="text-org7f3f319">
+<div id="outline-container-orga07e4e1" class="outline-3">
+<h3 id="orga07e4e1">1.2 Historia de la Inteligencia Artificial</h3>
+<div class="outline-text-3" id="text-orga07e4e1">
 </div>
-<div id="outline-container-org61d84a3" class="outline-4">
-<h4 id="org61d84a3">Orígenes (décadas de 1940–1950)</h4>
-<div class="outline-text-4" id="text-org61d84a3">
+<div id="outline-container-orgad01b66" class="outline-4">
+<h4 id="orgad01b66">Orígenes (décadas de 1940–1950)</h4>
+<div class="outline-text-4" id="text-orgad01b66">
 <ul class="org-ul">
 <li><b>Alan Turing</b> (1950): artículo “Computing Machinery and Intelligence”; propone el <b>Test de Turing</b> como criterio operativo de comportamiento inteligente.</li>
 <li><b>McCulloch y Pitts</b> (1943): modelo neuronal binario (antecedente de redes neuronales).</li>
@@ -557,9 +1449,9 @@ La IA no es un solo método: es un <b>conjunto de técnicas</b> (búsqueda, lóg
 </ul>
 </div>
 </div>
-<div id="outline-container-org5995c6a" class="outline-4">
-<h4 id="org5995c6a">Era del optimismo (1956–1974)</h4>
-<div class="outline-text-4" id="text-org5995c6a">
+<div id="outline-container-orgd41a117" class="outline-4">
+<h4 id="orgd41a117">Era del optimismo (1956–1974)</h4>
+<div class="outline-text-4" id="text-orgd41a117">
 <ul class="org-ul">
 <li>Programas pioneros: <b>Logic Theorist</b>, <b>General Problem Solver</b> (GPS), primeros juegos (damas, ajedrez simplificado).</li>
 <li>Lenguaje <b>LISP</b> (McCarthy, 1958) como herramienta simbólica.</li>
@@ -567,18 +1459,18 @@ La IA no es un solo método: es un <b>conjunto de técnicas</b> (búsqueda, lóg
 </ul>
 </div>
 </div>
-<div id="outline-container-orga9ade83" class="outline-4">
-<h4 id="orga9ade83">Primer “invierno” de la IA (1974–1980)</h4>
-<div class="outline-text-4" id="text-orga9ade83">
+<div id="outline-container-orgb4f85d8" class="outline-4">
+<h4 id="orgb4f85d8">Primer “invierno” de la IA (1974–1980)</h4>
+<div class="outline-text-4" id="text-orgb4f85d8">
 <ul class="org-ul">
 <li>Limitaciones computacionales y teóricas (combinatoria explosiva, conocimiento difícil de codificar).</li>
 <li>Informe <b>Lighthill</b> (Reino Unido, 1973): crítica severa → recortes de fondos.</li>
 </ul>
 </div>
 </div>
-<div id="outline-container-orgfc8b1ad" class="outline-4">
-<h4 id="orgfc8b1ad">Sistemas expertos y boom comercial (1980–1987)</h4>
-<div class="outline-text-4" id="text-orgfc8b1ad">
+<div id="outline-container-org1b736d8" class="outline-4">
+<h4 id="org1b736d8">Sistemas expertos y boom comercial (1980–1987)</h4>
+<div class="outline-text-4" id="text-org1b736d8">
 <ul class="org-ul">
 <li><b>Sistemas basados en reglas</b> (IF–THEN): MYCIN (diagnóstico), DENDRAL (química).</li>
 <li>Japón: <b>Fifth Generation</b>; EE.UU.: proyectos DARPA.</li>
@@ -586,18 +1478,18 @@ La IA no es un solo método: es un <b>conjunto de técnicas</b> (búsqueda, lóg
 </ul>
 </div>
 </div>
-<div id="outline-container-orge840a43" class="outline-4">
-<h4 id="orge840a43">Segundo invierno (1987–1993)</h4>
-<div class="outline-text-4" id="text-orge840a43">
+<div id="outline-container-orge9bb24d" class="outline-4">
+<h4 id="orge9bb24d">Segundo invierno (1987–1993)</h4>
+<div class="outline-text-4" id="text-orge9bb24d">
 <ul class="org-ul">
 <li>Caída del hardware LISP; sistemas expertos caros de mantener y frágiles fuera de su nicho.</li>
 <li>Necesidad de <b>aprendizaje</b> y <b>datos</b> frente a solo reglas manuales.</li>
 </ul>
 </div>
 </div>
-<div id="outline-container-orgab587df" class="outline-4">
-<h4 id="orgab587df">Resurgimiento: aprendizaje automático y datos (1990–2010)</h4>
-<div class="outline-text-4" id="text-orgab587df">
+<div id="outline-container-orgf4352b6" class="outline-4">
+<h4 id="orgf4352b6">Resurgimiento: aprendizaje automático y datos (1990–2010)</h4>
+<div class="outline-text-4" id="text-orgf4352b6">
 <ul class="org-ul">
 <li><b>Aprendizaje estadístico</b>: SVM, árboles, <b>boosting</b>.</li>
 <li>Éxitos prácticos: filtrado de spam, reconocimiento de escritura, recomendación.</li>
@@ -605,9 +1497,9 @@ La IA no es un solo método: es un <b>conjunto de técnicas</b> (búsqueda, lóg
 </ul>
 </div>
 </div>
-<div id="outline-container-org8072da7" class="outline-4">
-<h4 id="org8072da7">Era del <b>deep learning</b> (2010–presente)</h4>
-<div class="outline-text-4" id="text-org8072da7">
+<div id="outline-container-org4ef867a" class="outline-4">
+<h4 id="org4ef867a">Era del <b>deep learning</b> (2010–presente)</h4>
+<div class="outline-text-4" id="text-org4ef867a">
 <ul class="org-ul">
 <li>GPUs, grandes conjuntos de datos (ImageNet), arquitecturas profundas (CNN, RNN, Transformers).</li>
 <li>Hitos: AlexNet (2012), AlphaGo (2016), GPT y modelos de lenguaje a gran escala (2020+).</li>
@@ -615,10 +1507,10 @@ La IA no es un solo método: es un <b>conjunto de técnicas</b> (búsqueda, lóg
 </ul>
 </div>
 </div>
-<div id="outline-container-org7d8682c" class="outline-4">
-<h4 id="org7d8682c">Línea de tiempo resumida</h4>
-<div class="outline-text-4" id="text-org7d8682c">
-<pre class="example" id="org3705311">
+<div id="outline-container-org5adce46" class="outline-4">
+<h4 id="org5adce46">Línea de tiempo resumida</h4>
+<div class="outline-text-4" id="text-org5adce46">
+<pre class="example" id="org986d78f">
 1943  Modelo McCulloch-Pitts
 1950  Test de Turing
 1956  Dartmouth → nace el término "IA"
@@ -634,13 +1526,13 @@ La IA no es un solo método: es un <b>conjunto de técnicas</b> (búsqueda, lóg
 </div>
 </div>
 </div>
-<div id="outline-container-orge24a91c" class="outline-3">
-<h3 id="orge24a91c">1.3 Habilidades cognoscitivas y teorías de la inteligencia</h3>
-<div class="outline-text-3" id="text-orge24a91c">
+<div id="outline-container-org1f24d0d" class="outline-3">
+<h3 id="org1f24d0d">1.3 Habilidades cognoscitivas y teorías de la inteligencia</h3>
+<div class="outline-text-3" id="text-org1f24d0d">
 </div>
-<div id="outline-container-org773b50c" class="outline-4">
-<h4 id="org773b50c">Habilidades cognoscitivas (psicología)</h4>
-<div class="outline-text-4" id="text-org773b50c">
+<div id="outline-container-org72b3768" class="outline-4">
+<h4 id="org72b3768">Habilidades cognoscitivas (psicología)</h4>
+<div class="outline-text-4" id="text-org72b3768">
 <p>
 Desde la psicología cognitiva, la “inteligencia” en humanos se manifiesta en procesos interrelacionados:
 </p>
@@ -702,9 +1594,9 @@ La IA clásica intentó <b>modelar</b> o <b>replicar</b> estos procesos; la IA m
 </p>
 </div>
 </div>
-<div id="outline-container-orgf97f5d8" class="outline-4">
-<h4 id="orgf97f5d8">Teoría conductista (conductismo)</h4>
-<div class="outline-text-4" id="text-orgf97f5d8">
+<div id="outline-container-org0f9de86" class="outline-4">
+<h4 id="org0f9de86">Teoría conductista (conductismo)</h4>
+<div class="outline-text-4" id="text-org0f9de86">
 <ul class="org-ul">
 <li><b>Enfoque:</b> la mente no se observa directamente; se estudia el <b>comportamiento</b> ante estímulos y reforzadores.</li>
 <li><b>Skinner, Watson:</b> aprendizaje por condicionamiento y refuerzo.</li>
@@ -712,18 +1604,18 @@ La IA clásica intentó <b>modelar</b> o <b>replicar</b> estos procesos; la IA m
 </ul>
 </div>
 </div>
-<div id="outline-container-org0346eac" class="outline-4">
-<h4 id="org0346eac">Teoría de la inteligencia general (factor <b>g</b>)</h4>
-<div class="outline-text-4" id="text-org0346eac">
+<div id="outline-container-org3b326e8" class="outline-4">
+<h4 id="org3b326e8">Teoría de la inteligencia general (factor <b>g</b>)</h4>
+<div class="outline-text-4" id="text-org3b326e8">
 <ul class="org-ul">
 <li><b>Spearman:</b> un factor común subyace a varias pruebas cognitivas.</li>
 <li>En IA: analogía limitada; los sistemas suelen ser <b>especialistas</b> (alto rendimiento en una tarea, bajo en otras).</li>
 </ul>
 </div>
 </div>
-<div id="outline-container-org04706c3" class="outline-4">
-<h4 id="org04706c3">Inteligencias múltiples (Howard Gardner)</h4>
-<div class="outline-text-4" id="text-org04706c3">
+<div id="outline-container-org2f0ee91" class="outline-4">
+<h4 id="org2f0ee91">Inteligencias múltiples (Howard Gardner)</h4>
+<div class="outline-text-4" id="text-org2f0ee91">
 <p>
 Gardner propone varias inteligencias relativamente independientes:
 </p>
@@ -801,9 +1693,9 @@ Gardner propone varias inteligencias relativamente independientes:
 </p>
 </div>
 </div>
-<div id="outline-container-orgc09ea87" class="outline-4">
-<h4 id="orgc09ea87">Otras teorías (mención)</h4>
-<div class="outline-text-4" id="text-orgc09ea87">
+<div id="outline-container-orgfde6ca3" class="outline-4">
+<h4 id="orgfde6ca3">Otras teorías (mención)</h4>
+<div class="outline-text-4" id="text-orgfde6ca3">
 <ul class="org-ul">
 <li><b>Piaget:</b> desarrollo por etapas (sensoriomotor → formal). Útil como metáfora de complejidad creciente en agentes que aprenden.</li>
 <li><b>Vygotsky:</b> aprendizaje social y <b>zona de desarrollo próximo</b>. Paralelo: <b>aprendizaje con humano en el bucle</b> (RLHF, anotación humana).</li>
@@ -812,13 +1704,13 @@ Gardner propone varias inteligencias relativamente independientes:
 </div>
 </div>
 </div>
-<div id="outline-container-org13c7c23" class="outline-3">
-<h3 id="org13c7c23">1.4 Razonamiento según la lógica</h3>
-<div class="outline-text-3" id="text-org13c7c23">
+<div id="outline-container-orgd3021c4" class="outline-3">
+<h3 id="orgd3021c4">1.4 Razonamiento según la lógica</h3>
+<div class="outline-text-3" id="text-orgd3021c4">
 </div>
-<div id="outline-container-orgce97c13" class="outline-4">
-<h4 id="orgce97c13">Lógica como fundamento del razonamiento automático</h4>
-<div class="outline-text-4" id="text-orgce97c13">
+<div id="outline-container-org593b839" class="outline-4">
+<h4 id="org593b839">Lógica como fundamento del razonamiento automático</h4>
+<div class="outline-text-4" id="text-org593b839">
 <p>
 La lógica formal permite:
 </p>
@@ -829,9 +1721,9 @@ La lógica formal permite:
 </ul>
 </div>
 </div>
-<div id="outline-container-orgcd752c2" class="outline-4">
-<h4 id="orgcd752c2">Componentes básicos</h4>
-<div class="outline-text-4" id="text-orgcd752c2">
+<div id="outline-container-orgf5c82df" class="outline-4">
+<h4 id="orgf5c82df">Componentes básicos</h4>
+<div class="outline-text-4" id="text-orgf5c82df">
 <ul class="org-ul">
 <li><b>Lenguaje formal:</b> símbolos, conectivos (∧, ∨, ¬, →), cuantificadores (∀, ∃).</li>
 <li><b>Axiomas:</b> proposiciones <b>asumidas</b> sin demostración dentro del sistema (punto de partida).</li>
@@ -840,9 +1732,9 @@ La lógica formal permite:
 </ul>
 </div>
 </div>
-<div id="outline-container-org464863f" class="outline-4">
-<h4 id="org464863f">Ejemplo mínimo (lógica proposicional)</h4>
-<div class="outline-text-4" id="text-org464863f">
+<div id="outline-container-orgdb1e915" class="outline-4">
+<h4 id="orgdb1e915">Ejemplo mínimo (lógica proposicional)</h4>
+<div class="outline-text-4" id="text-orgdb1e915">
 <p>
 Premisas:
 </p>
@@ -860,9 +1752,9 @@ En notación: {(Lluvia → Mojada), Lluvia} ⊢ Mojada
 </p>
 </div>
 </div>
-<div id="outline-container-orge49df91" class="outline-4">
-<h4 id="orge49df91">Sistemas formales relevantes en IA</h4>
-<div class="outline-text-4" id="text-orge49df91">
+<div id="outline-container-orgb7b7b2c" class="outline-4">
+<h4 id="orgb7b7b2c">Sistemas formales relevantes en IA</h4>
+<div class="outline-text-4" id="text-orgb7b7b2c">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
@@ -901,9 +1793,9 @@ En notación: {(Lluvia → Mojada), Lluvia} ⊢ Mojada
 </table>
 </div>
 </div>
-<div id="outline-container-org8c3e3f0" class="outline-4">
-<h4 id="org8c3e3f0">Límites importantes</h4>
-<div class="outline-text-4" id="text-org8c3e3f0">
+<div id="outline-container-org030ea67" class="outline-4">
+<h4 id="org030ea67">Límites importantes</h4>
+<div class="outline-text-4" id="text-org030ea67">
 <ul class="org-ul">
 <li><b>Decidibilidad:</b> algunos problemas no tienen algoritmo que siempre termine con respuesta correcta.</li>
 <li><b>Complejidad:</b> el espacio de búsqueda de demostraciones crece muy rápido → hace falta <b>heurística</b> (sección 1.8).</li>
@@ -912,13 +1804,13 @@ En notación: {(Lluvia → Mojada), Lluvia} ⊢ Mojada
 </div>
 </div>
 </div>
-<div id="outline-container-org26facac" class="outline-3">
-<h3 id="org26facac">1.5 Adquisición del conocimiento según la filosofía</h3>
-<div class="outline-text-3" id="text-org26facac">
+<div id="outline-container-org32cec4d" class="outline-3">
+<h3 id="org32cec4d">1.5 Adquisición del conocimiento según la filosofía</h3>
+<div class="outline-text-3" id="text-org32cec4d">
 </div>
-<div id="outline-container-orgb5e4582" class="outline-4">
-<h4 id="orgb5e4582">¿Qué es el conocimiento? (epistemología)</h4>
-<div class="outline-text-4" id="text-orgb5e4582">
+<div id="outline-container-org7ee6d35" class="outline-4">
+<h4 id="org7ee6d35">¿Qué es el conocimiento? (epistemología)</h4>
+<div class="outline-text-4" id="text-org7ee6d35">
 <p>
 La <b>filosofía del conocimiento</b> pregunta:
 </p>
@@ -933,9 +1825,9 @@ Tradición clásica: <b>conocimiento = creencia verdadera justificada</b> (defin
 </p>
 </div>
 </div>
-<div id="outline-container-org870eb95" class="outline-4">
-<h4 id="org870eb95">Empirismo vs racionalismo</h4>
-<div class="outline-text-4" id="text-org870eb95">
+<div id="outline-container-orgb3d33b4" class="outline-4">
+<h4 id="orgb3d33b4">Empirismo vs racionalismo</h4>
+<div class="outline-text-4" id="text-orgb3d33b4">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
@@ -973,9 +1865,9 @@ Los sistemas reales suelen combinar <b>conocimiento codificado</b> (reglas, onto
 </p>
 </div>
 </div>
-<div id="outline-container-org2378c8a" class="outline-4">
-<h4 id="org2378c8a">Fuentes de conocimiento en sistemas inteligentes</h4>
-<div class="outline-text-4" id="text-org2378c8a">
+<div id="outline-container-orgfc7928c" class="outline-4">
+<h4 id="orgfc7928c">Fuentes de conocimiento en sistemas inteligentes</h4>
+<div class="outline-text-4" id="text-orgfc7928c">
 <ol class="org-ol">
 <li><b>Codificación manual:</b> expertos escriben reglas (sistemas expertos).</li>
 <li><b>Aprendizaje inductivo:</b> generalizar patrones desde ejemplos.</li>
@@ -984,9 +1876,9 @@ Los sistemas reales suelen combinar <b>conocimiento codificado</b> (reglas, onto
 </ol>
 </div>
 </div>
-<div id="outline-container-org89ec163" class="outline-4">
-<h4 id="org89ec163">Problema de la adquisición de conocimiento (<b>knowledge acquisition bottleneck</b>)</h4>
-<div class="outline-text-4" id="text-org89ec163">
+<div id="outline-container-orgabe6efe" class="outline-4">
+<h4 id="orgabe6efe">Problema de la adquisición de conocimiento (<b>knowledge acquisition bottleneck</b>)</h4>
+<div class="outline-text-4" id="text-orgabe6efe">
 <ul class="org-ul">
 <li>Los expertos no siempre saben articular lo que hacen.</li>
 <li>El mantenimiento de reglas es costoso.</li>
@@ -994,9 +1886,9 @@ Los sistemas reales suelen combinar <b>conocimiento codificado</b> (reglas, onto
 </ul>
 </div>
 </div>
-<div id="outline-container-orged5177b" class="outline-4">
-<h4 id="orged5177b">Representación del conocimiento (puente filosofía → IA)</h4>
-<div class="outline-text-4" id="text-orged5177b">
+<div id="outline-container-org3d4514e" class="outline-4">
+<h4 id="org3d4514e">Representación del conocimiento (puente filosofía → IA)</h4>
+<div class="outline-text-4" id="text-org3d4514e">
 <ul class="org-ul">
 <li><b>Hechos:</b> “París es capital de Francia.”</li>
 <li><b>Reglas:</b> “Si X es padre de Y, Y es hijo de X.”</li>
@@ -1006,21 +1898,21 @@ Los sistemas reales suelen combinar <b>conocimiento codificado</b> (reglas, onto
 </div>
 </div>
 </div>
-<div id="outline-container-orgb9f5fc5" class="outline-3">
-<h3 id="orgb9f5fc5">1.6 El modelo cognoscitivo</h3>
-<div class="outline-text-3" id="text-orgb9f5fc5">
+<div id="outline-container-org06cac20" class="outline-3">
+<h3 id="org06cac20">1.6 El modelo cognoscitivo</h3>
+<div class="outline-text-3" id="text-org06cac20">
 </div>
-<div id="outline-container-org3183b7d" class="outline-4">
-<h4 id="org3183b7d">Definición</h4>
-<div class="outline-text-4" id="text-org3183b7d">
+<div id="outline-container-orgae617b5" class="outline-4">
+<h4 id="orgae617b5">Definición</h4>
+<div class="outline-text-4" id="text-orgae617b5">
 <p>
 Un <b>modelo cognoscitivo</b> es una representación computacional de procesos mentales: cómo se percibe, se recuerda, se razona y se decide. Busca coherencia con evidencia psicológica o neurocientífica (a veces de forma simplificada).
 </p>
 </div>
 </div>
-<div id="outline-container-org11b7c5f" class="outline-4">
-<h4 id="org11b7c5f">Arquitecturas cognitivas clásicas</h4>
-<div class="outline-text-4" id="text-org11b7c5f">
+<div id="outline-container-orgf819a7c" class="outline-4">
+<h4 id="orgf819a7c">Arquitecturas cognitivas clásicas</h4>
+<div class="outline-text-4" id="text-orgf819a7c">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
@@ -1054,9 +1946,9 @@ Un <b>modelo cognoscitivo</b> es una representación computacional de procesos m
 </table>
 </div>
 </div>
-<div id="outline-container-orge5873b4" class="outline-4">
-<h4 id="orge5873b4">Componentes típicos de un modelo cognoscitivo</h4>
-<div class="outline-text-4" id="text-orge5873b4">
+<div id="outline-container-org785198a" class="outline-4">
+<h4 id="org785198a">Componentes típicos de un modelo cognoscitivo</h4>
+<div class="outline-text-4" id="text-org785198a">
 <ul class="org-ul">
 <li><b>Memoria de trabajo:</b> buffer limitado para información actual.</li>
 <li><b>Memoria a largo plazo:</b> hechos y procedimientos.</li>
@@ -1065,9 +1957,9 @@ Un <b>modelo cognoscitivo</b> es una representación computacional de procesos m
 </ul>
 </div>
 </div>
-<div id="outline-container-org92d5f77" class="outline-4">
-<h4 id="org92d5f77">Modelo cognoscitivo vs modelo de agente</h4>
-<div class="outline-text-4" id="text-org92d5f77">
+<div id="outline-container-orgfae425b" class="outline-4">
+<h4 id="orgfae425b">Modelo cognoscitivo vs modelo de agente</h4>
+<div class="outline-text-4" id="text-orgfae425b">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
@@ -1107,22 +1999,22 @@ Un <b>modelo cognoscitivo</b> es una representación computacional de procesos m
 </table>
 </div>
 </div>
-<div id="outline-container-org5992eba" class="outline-4">
-<h4 id="org5992eba">Conexión con IA moderna</h4>
-<div class="outline-text-4" id="text-org5992eba">
+<div id="outline-container-org164dd7f" class="outline-4">
+<h4 id="org164dd7f">Conexión con IA moderna</h4>
+<div class="outline-text-4" id="text-org164dd7f">
 <p>
 Las redes neuronales profundas no suelen pretender ser modelos cognitivos fieles, pero incorporan ideas inspiradas en cerebro (capas, atención). Los <b>LLMs</b> debaten si emergen capacidades “cognitivas” sin modelo explícito de mente.
 </p>
 </div>
 </div>
 </div>
-<div id="outline-container-org4e68f45" class="outline-3">
-<h3 id="org4e68f45">1.7 Modelo del agente inteligente</h3>
-<div class="outline-text-3" id="text-org4e68f45">
+<div id="outline-container-orgc8ede65" class="outline-3">
+<h3 id="orgc8ede65">1.7 Modelo del agente inteligente</h3>
+<div class="outline-text-3" id="text-orgc8ede65">
 </div>
-<div id="outline-container-orgb46ccf0" class="outline-4">
-<h4 id="orgb46ccf0">Definición de agente</h4>
-<div class="outline-text-4" id="text-orgb46ccf0">
+<div id="outline-container-org3c0353d" class="outline-4">
+<h4 id="org3c0353d">Definición de agente</h4>
+<div class="outline-text-4" id="text-org3c0353d">
 <p>
 Un <b>agente</b> es cualquier cosa que percibe su <b>entorno</b> mediante <b>sensores</b> y actúa sobre él mediante <b>actuadores</b>.
 </p>
@@ -1132,9 +2024,9 @@ Un <b>agente inteligente</b> elige acciones que maximizan una medida de <b>rendi
 </p>
 </div>
 </div>
-<div id="outline-container-org68f04f0" class="outline-4">
-<h4 id="org68f04f0">Función agente</h4>
-<div class="outline-text-4" id="text-org68f04f0">
+<div id="outline-container-org4cf9ce4" class="outline-4">
+<h4 id="org4cf9ce4">Función agente</h4>
+<div class="outline-text-4" id="text-org4cf9ce4">
 <p>
 \[ f: P^* \rightarrow A \]
 donde P es el conjunto de percepciones y A el de acciones.
@@ -1145,9 +2037,9 @@ En la práctica se implementa con <b>programa + arquitectura</b> (cuerpo físico
 </p>
 </div>
 </div>
-<div id="outline-container-org0c7b4d5" class="outline-4">
-<h4 id="org0c7b4d5">Componentes de un agente racional</h4>
-<div class="outline-text-4" id="text-org0c7b4d5">
+<div id="outline-container-org639386b" class="outline-4">
+<h4 id="org639386b">Componentes de un agente racional</h4>
+<div class="outline-text-4" id="text-org639386b">
 <ol class="org-ol">
 <li><b>Medida de rendimiento:</b> qué se considera éxito (seguridad, puntos, tiempo, costo).</li>
 <li><b>Conocimiento del entorno:</b> reglas, mapas, modelos probabilísticos.</li>
@@ -1156,9 +2048,9 @@ En la práctica se implementa con <b>programa + arquitectura</b> (cuerpo físico
 </ol>
 </div>
 </div>
-<div id="outline-container-orgb947364" class="outline-4">
-<h4 id="orgb947364">Tipos de agentes (Jersey / Russell &amp; Norvig)</h4>
-<div class="outline-text-4" id="text-orgb947364">
+<div id="outline-container-orgc28775c" class="outline-4">
+<h4 id="orgc28775c">Tipos de agentes (Jersey / Russell &amp; Norvig)</h4>
+<div class="outline-text-4" id="text-orgc28775c">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
@@ -1202,9 +2094,9 @@ En la práctica se implementa con <b>programa + arquitectura</b> (cuerpo físico
 </table>
 </div>
 </div>
-<div id="outline-container-org55a58c1" class="outline-4">
-<h4 id="org55a58c1">PEAS (ejemplo: taxi autónomo)</h4>
-<div class="outline-text-4" id="text-org55a58c1">
+<div id="outline-container-orgd7e88c8" class="outline-4">
+<h4 id="orgd7e88c8">PEAS (ejemplo: taxi autónomo)</h4>
+<div class="outline-text-4" id="text-orgd7e88c8">
 <ul class="org-ul">
 <li><b>Performance:</b> seguridad, rapidez, comodidad, legalidad.</li>
 <li><b>Environment:</b> calles, tráfico, peatones, clima.</li>
@@ -1213,9 +2105,9 @@ En la práctica se implementa con <b>programa + arquitectura</b> (cuerpo físico
 </ul>
 </div>
 </div>
-<div id="outline-container-orgc4de8f4" class="outline-4">
-<h4 id="orgc4de8f4">Propiedades del entorno (para elegir técnica)</h4>
-<div class="outline-text-4" id="text-orgc4de8f4">
+<div id="outline-container-orga171320" class="outline-4">
+<h4 id="orga171320">Propiedades del entorno (para elegir técnica)</h4>
+<div class="outline-text-4" id="text-orga171320">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
@@ -1264,9 +2156,9 @@ En la práctica se implementa con <b>programa + arquitectura</b> (cuerpo físico
 </table>
 </div>
 </div>
-<div id="outline-container-org030ed3c" class="outline-4">
-<h4 id="org030ed3c">Sistemas multiagente (SMA)</h4>
-<div class="outline-text-4" id="text-org030ed3c">
+<div id="outline-container-org88e292e" class="outline-4">
+<h4 id="org88e292e">Sistemas multiagente (SMA)</h4>
+<div class="outline-text-4" id="text-org88e292e">
 <ul class="org-ul">
 <li>Varios agentes en un <b>mismo entorno</b>; pueden cooperar, competir o ser neutros.</li>
 <li><b>Cooperación:</b> robots en almacén, enjambres.</li>
@@ -1275,16 +2167,16 @@ En la práctica se implementa con <b>programa + arquitectura</b> (cuerpo físico
 </ul>
 </div>
 </div>
-<div id="outline-container-orgab12818" class="outline-4">
-<h4 id="orgab12818">Sistemas ubicuos (<b>ubicomp</b>)</h4>
-<div class="outline-text-4" id="text-orgab12818">
+<div id="outline-container-org60669cd" class="outline-4">
+<h4 id="org60669cd">Sistemas ubicuos (<b>ubicomp</b>)</h4>
+<div class="outline-text-4" id="text-org60669cd">
 <ul class="org-ul">
 <li>Computación <b>integrada</b> en el entorno cotidiano (sensores, wearables, hogar inteligente, ciudades).</li>
 <li>Características: invisibilidad, contexto, movilidad, muchos dispositivos heterogéneos.</li>
 <li>Relación con IA: agentes distribuidos, percepción contextual, decisiones en tiempo real con recursos limitados.</li>
 </ul>
 
-<pre class="example" id="org6b043dd">
+<pre class="example" id="org2e58879">
         ┌─────────────┐
 Sensores│   AGENTE    │Actuadores
    ────►│  (programa) │────► Entorno
@@ -1295,13 +2187,13 @@ Sensores│   AGENTE    │Actuadores
 </div>
 </div>
 </div>
-<div id="outline-container-orgfb35339" class="outline-3">
-<h3 id="orgfb35339">1.8 El papel de la heurística</h3>
-<div class="outline-text-3" id="text-orgfb35339">
+<div id="outline-container-orgdcb80e7" class="outline-3">
+<h3 id="orgdcb80e7">1.8 El papel de la heurística</h3>
+<div class="outline-text-3" id="text-orgdcb80e7">
 </div>
-<div id="outline-container-orgcb935b5" class="outline-4">
-<h4 id="orgcb935b5">¿Qué es una heurística?</h4>
-<div class="outline-text-4" id="text-orgcb935b5">
+<div id="outline-container-org2f18260" class="outline-4">
+<h4 id="org2f18260">¿Qué es una heurística?</h4>
+<div class="outline-text-4" id="text-org2f18260">
 <p>
 Una <b>heurística</b> es una regla práctica, atajo o función estimadora que <b>guía la búsqueda</b> hacia soluciones prometedoras sin garantizar optimalidad ni completitud en todos los casos.
 </p>
@@ -1311,9 +2203,9 @@ Una <b>heurística</b> es una regla práctica, atajo o función estimadora que <
 </p>
 </div>
 </div>
-<div id="outline-container-org6be8afe" class="outline-4">
-<h4 id="org6be8afe">Propiedades deseables</h4>
-<div class="outline-text-4" id="text-org6be8afe">
+<div id="outline-container-org3bde0e2" class="outline-4">
+<h4 id="org3bde0e2">Propiedades deseables</h4>
+<div class="outline-text-4" id="text-org3bde0e2">
 <ul class="org-ul">
 <li><b>Admisibilidad (A</b>):* h(n) nunca sobreestima el costo real → solución óptima si existe.</li>
 <li><b>Consistencia (monotonicidad):</b> h(n) ≤ costo(n,n') + h(n') → facilita optimalidad.</li>
@@ -1321,9 +2213,9 @@ Una <b>heurística</b> es una regla práctica, atajo o función estimadora que <
 </ul>
 </div>
 </div>
-<div id="outline-container-org4bbe762" class="outline-4">
-<h4 id="org4bbe762">Búsqueda ciega vs informada vs local</h4>
-<div class="outline-text-4" id="text-org4bbe762">
+<div id="outline-container-org505e359" class="outline-4">
+<h4 id="org505e359">Búsqueda ciega vs informada vs local</h4>
+<div class="outline-text-4" id="text-org505e359">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
@@ -1364,13 +2256,13 @@ Una <b>heurística</b> es una regla práctica, atajo o función estimadora que <
 </div>
 </div>
 </div>
-<div id="outline-container-orge508c33" class="outline-3">
-<h3 id="orge508c33">1.8.1 Algoritmos de exploración de alternativas</h3>
-<div class="outline-text-3" id="text-orge508c33">
+<div id="outline-container-org803dfe6" class="outline-3">
+<h3 id="org803dfe6">1.8.1 Algoritmos de exploración de alternativas</h3>
+<div class="outline-text-3" id="text-org803dfe6">
 </div>
-<div id="outline-container-org5ed3021" class="outline-4">
-<h4 id="org5ed3021">Modelo de problema de búsqueda</h4>
-<div class="outline-text-4" id="text-org5ed3021">
+<div id="outline-container-orga65be8d" class="outline-4">
+<h4 id="orga65be8d">Modelo de problema de búsqueda</h4>
+<div class="outline-text-4" id="text-orga65be8d">
 <ul class="org-ul">
 <li><b>Estado:</b> configuración del mundo.</li>
 <li><b>Estado inicial</b> y <b>estados meta</b>.</li>
@@ -1380,9 +2272,9 @@ Una <b>heurística</b> es una regla práctica, atajo o función estimadora que <
 </ul>
 </div>
 </div>
-<div id="outline-container-orgbaca8f8" class="outline-4">
-<h4 id="orgbaca8f8">Búsqueda en anchura (BFS)</h4>
-<div class="outline-text-4" id="text-orgbaca8f8">
+<div id="outline-container-orgac52f96" class="outline-4">
+<h4 id="orgac52f96">Búsqueda en anchura (BFS)</h4>
+<div class="outline-text-4" id="text-orgac52f96">
 <ul class="org-ul">
 <li>Expande por <b>niveles</b> (frontera FIFO).</li>
 <li><b>Completa</b> si el factor de ramificación es finito.</li>
@@ -1391,9 +2283,9 @@ Una <b>heurística</b> es una regla práctica, atajo o función estimadora que <
 </ul>
 </div>
 </div>
-<div id="outline-container-org5e8964d" class="outline-4">
-<h4 id="org5e8964d">Búsqueda en profundidad (DFS)</h4>
-<div class="outline-text-4" id="text-org5e8964d">
+<div id="outline-container-org0ef00d2" class="outline-4">
+<h4 id="org0ef00d2">Búsqueda en profundidad (DFS)</h4>
+<div class="outline-text-4" id="text-org0ef00d2">
 <ul class="org-ul">
 <li>Expande el nodo más profundo primero (pila).</li>
 <li><b>Memoria:</b> baja (solo camino actual + frontera).</li>
@@ -1401,9 +2293,9 @@ Una <b>heurística</b> es una regla práctica, atajo o función estimadora que <
 </ul>
 </div>
 </div>
-<div id="outline-container-org343c4a3" class="outline-4">
-<h4 id="org343c4a3">Costo uniforme (UCS / Dijkstra en grafo de estados)</h4>
-<div class="outline-text-4" id="text-org343c4a3">
+<div id="outline-container-org1f39c65" class="outline-4">
+<h4 id="org1f39c65">Costo uniforme (UCS / Dijkstra en grafo de estados)</h4>
+<div class="outline-text-4" id="text-org1f39c65">
 <ul class="org-ul">
 <li>Expande el nodo de <b>menor g(n)</b> (cola de prioridad).</li>
 <li>Óptima con costos no negativos.</li>
@@ -1411,18 +2303,18 @@ Una <b>heurística</b> es una regla práctica, atajo o función estimadora que <
 </ul>
 </div>
 </div>
-<div id="outline-container-orgb83b349" class="outline-4">
-<h4 id="orgb83b349">Greedy best-first</h4>
-<div class="outline-text-4" id="text-orgb83b349">
+<div id="outline-container-org4e2ff68" class="outline-4">
+<h4 id="org4e2ff68">Greedy best-first</h4>
+<div class="outline-text-4" id="text-org4e2ff68">
 <ul class="org-ul">
 <li>Expande el nodo con menor h(n) (solo heurística).</li>
 <li>Rápida pero <b>no garantiza</b> optimalidad ni completitud en todos los grafos.</li>
 </ul>
 </div>
 </div>
-<div id="outline-container-org6102259" class="outline-4">
-<h4 id="org6102259">Ejemplo: laberinto en Python (BFS)</h4>
-<div class="outline-text-4" id="text-org6102259">
+<div id="outline-container-org03cfb1a" class="outline-4">
+<h4 id="org03cfb1a">Ejemplo: laberinto en Python (BFS)</h4>
+<div class="outline-text-4" id="text-org03cfb1a">
 <div class="org-src-container">
 <pre class="src src-python"><span style="color: #fb4934;">from</span> collections <span style="color: #fb4934;">import</span> deque
 
@@ -1455,13 +2347,13 @@ Una <b>heurística</b> es una regla práctica, atajo o función estimadora que <
 </div>
 </div>
 </div>
-<div id="outline-container-orgfcbb713" class="outline-3">
-<h3 id="orgfcbb713">1.8.2 Algoritmo A*</h3>
-<div class="outline-text-3" id="text-orgfcbb713">
+<div id="outline-container-org8abc390" class="outline-3">
+<h3 id="org8abc390">1.8.2 Algoritmo A*</h3>
+<div class="outline-text-3" id="text-org8abc390">
 </div>
-<div id="outline-container-org09aad25" class="outline-4">
-<h4 id="org09aad25">Idea</h4>
-<div class="outline-text-4" id="text-org09aad25">
+<div id="outline-container-org025bd35" class="outline-4">
+<h4 id="org025bd35">Idea</h4>
+<div class="outline-text-4" id="text-org025bd35">
 <p>
 A* combina:
 </p>
@@ -1479,10 +2371,10 @@ Expande siempre el nodo con <b>menor f(n)</b> en una cola de prioridad.
 </p>
 </div>
 </div>
-<div id="outline-container-org6c54156" class="outline-4">
-<h4 id="org6c54156">Pseudocódigo (conceptual)</h4>
-<div class="outline-text-4" id="text-org6c54156">
-<pre class="example" id="org08f53e6">
+<div id="outline-container-org1af3e29" class="outline-4">
+<h4 id="org1af3e29">Pseudocódigo (conceptual)</h4>
+<div class="outline-text-4" id="text-org1af3e29">
+<pre class="example" id="orge81f2fd">
 OPEN ← {nodo_inicial}
 g(inicio) ← 0
 mientras OPEN no vacío:
@@ -1498,9 +2390,9 @@ mientras OPEN no vacío:
 </pre>
 </div>
 </div>
-<div id="outline-container-orge2005be" class="outline-4">
-<h4 id="orge2005be">Condiciones para optimalidad</h4>
-<div class="outline-text-4" id="text-orge2005be">
+<div id="outline-container-org1e7aa96" class="outline-4">
+<h4 id="org1e7aa96">Condiciones para optimalidad</h4>
+<div class="outline-text-4" id="text-org1e7aa96">
 <ul class="org-ul">
 <li>El grafo es finito o hay criterio de corte.</li>
 <li>h es <b>admisible</b> (no sobreestima).</li>
@@ -1508,9 +2400,9 @@ mientras OPEN no vacío:
 </ul>
 </div>
 </div>
-<div id="outline-container-org7959809" class="outline-4">
-<h4 id="org7959809">Ejemplo: A* en cuadrícula (Manhattan)</h4>
-<div class="outline-text-4" id="text-org7959809">
+<div id="outline-container-orgd436111" class="outline-4">
+<h4 id="orgd436111">Ejemplo: A* en cuadrícula (Manhattan)</h4>
+<div class="outline-text-4" id="text-orgd436111">
 <div class="org-src-container">
 <pre class="src src-python"><span style="color: #fb4934;">import</span> heapq
 
@@ -1560,9 +2452,9 @@ mientras OPEN no vacío:
 </div>
 </div>
 </div>
-<div id="outline-container-org80084c4" class="outline-4">
-<h4 id="org80084c4">Cuándo usar A*</h4>
-<div class="outline-text-4" id="text-org80084c4">
+<div id="outline-container-org30d3be0" class="outline-4">
+<h4 id="org30d3be0">Cuándo usar A*</h4>
+<div class="outline-text-4" id="text-org30d3be0">
 <ul class="org-ul">
 <li>Mapas, planificación de rutas, puzzles con costo en aristas.</li>
 <li>Cuando existe una h admisible razonable (distancia euclidiana, Manhattan, patrón desajustado en 8-puzzle).</li>
@@ -1570,13 +2462,13 @@ mientras OPEN no vacío:
 </div>
 </div>
 </div>
-<div id="outline-container-org8fd7760" class="outline-3">
-<h3 id="org8fd7760">1.8.3 Algoritmos de búsqueda local</h3>
-<div class="outline-text-3" id="text-org8fd7760">
+<div id="outline-container-orga7fb474" class="outline-3">
+<h3 id="orga7fb474">1.8.3 Algoritmos de búsqueda local</h3>
+<div class="outline-text-3" id="text-orga7fb474">
 </div>
-<div id="outline-container-org281e0a7" class="outline-4">
-<h4 id="org281e0a7">Idea</h4>
-<div class="outline-text-4" id="text-org281e0a7">
+<div id="outline-container-org2723481" class="outline-4">
+<h4 id="org2723481">Idea</h4>
+<div class="outline-text-4" id="text-org2723481">
 <p>
 En lugar de explorar sistemáticamente todo un árbol, la <b>búsqueda local</b> parte de una <b>solución candidato</b> y la va <b>mejorando</b> iterativamente según una <b>función objetivo</b> (o energía).
 </p>
@@ -1590,9 +2482,9 @@ En lugar de explorar sistemáticamente todo un árbol, la <b>búsqueda local</b>
 </ul>
 </div>
 </div>
-<div id="outline-container-orga38d775" class="outline-4">
-<h4 id="orga38d775">Hill climbing (escalada de colina)</h4>
-<div class="outline-text-4" id="text-orga38d775">
+<div id="outline-container-org976d029" class="outline-4">
+<h4 id="org976d029">Hill climbing (escalada de colina)</h4>
+<div class="outline-text-4" id="text-org976d029">
 <ol class="org-ol">
 <li>Estado actual s.</li>
 <li>Evaluar vecinos; moverse al vecino con <b>mejor</b> valor.</li>
@@ -1604,9 +2496,9 @@ En lugar de explorar sistemáticamente todo un árbol, la <b>búsqueda local</b>
 </p>
 </div>
 </div>
-<div id="outline-container-org433234c" class="outline-4">
-<h4 id="org433234c">Variantes</h4>
-<div class="outline-text-4" id="text-org433234c">
+<div id="outline-container-org41c7687" class="outline-4">
+<h4 id="org41c7687">Variantes</h4>
+<div class="outline-text-4" id="text-org41c7687">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
@@ -1650,9 +2542,9 @@ En lugar de explorar sistemáticamente todo un árbol, la <b>búsqueda local</b>
 </table>
 </div>
 </div>
-<div id="outline-container-orga64609d" class="outline-4">
-<h4 id="orga64609d">Ejemplo: hill climbing (maximizar función 1D discreta)</h4>
-<div class="outline-text-4" id="text-orga64609d">
+<div id="outline-container-org486f19c" class="outline-4">
+<h4 id="org486f19c">Ejemplo: hill climbing (maximizar función 1D discreta)</h4>
+<div class="outline-text-4" id="text-org486f19c">
 <div class="org-src-container">
 <pre class="src src-python"><span style="color: #fb4934;">import</span> random
 
@@ -1687,9 +2579,9 @@ En lugar de explorar sistemáticamente todo un árbol, la <b>búsqueda local</b>
 </div>
 </div>
 </div>
-<div id="outline-container-orgd186ce3" class="outline-4">
-<h4 id="orgd186ce3">Búsqueda local vs A*</h4>
-<div class="outline-text-4" id="text-orgd186ce3">
+<div id="outline-container-org533139f" class="outline-4">
+<h4 id="org533139f">Búsqueda local vs A*</h4>
+<div class="outline-text-4" id="text-org533139f">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
@@ -1730,9 +2622,9 @@ En lugar de explorar sistemáticamente todo un árbol, la <b>búsqueda local</b>
 </div>
 </div>
 </div>
-<div id="outline-container-org3a00fa1" class="outline-3">
-<h3 id="org3a00fa1">Síntesis del temario</h3>
-<div class="outline-text-3" id="text-org3a00fa1">
+<div id="outline-container-org96d6f5c" class="outline-3">
+<h3 id="org96d6f5c">Síntesis del temario</h3>
+<div class="outline-text-3" id="text-org96d6f5c">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
@@ -1791,9 +2683,9 @@ En lugar de explorar sistemáticamente todo un árbol, la <b>búsqueda local</b>
 </table>
 </div>
 </div>
-<div id="outline-container-org94921cd" class="outline-3">
-<h3 id="org94921cd">Referencias sugeridas</h3>
-<div class="outline-text-3" id="text-org94921cd">
+<div id="outline-container-org8f8ef16" class="outline-3">
+<h3 id="org8f8ef16">Referencias sugeridas</h3>
+<div class="outline-text-3" id="text-org8f8ef16">
 <ul class="org-ul">
 <li>Russell, S. &amp; Norvig, P. <b>Artificial Intelligence: A Modern Approach</b> (capítulos 1–4).</li>
 <li>Turing, A. (1950). Computing Machinery and Intelligence.</li>
@@ -1802,9 +2694,9 @@ En lugar de explorar sistemáticamente todo un árbol, la <b>búsqueda local</b>
 </ul>
 </div>
 </div>
-<div id="outline-container-orgb7ec1bd" class="outline-3">
-<h3 id="orgb7ec1bd">Preguntas de repaso</h3>
-<div class="outline-text-3" id="text-orgb7ec1bd">
+<div id="outline-container-orgc7fffc6" class="outline-3">
+<h3 id="orgc7fffc6">Preguntas de repaso</h3>
+<div class="outline-text-3" id="text-orgc7fffc6">
 <ol class="org-ol">
 <li>¿En qué se diferencia un agente <b>reflejo</b> de uno <b>basado en objetivos</b>?</li>
 <li>¿Por qué A* necesita que h sea admisible para garantizar optimalidad?</li>
@@ -1819,9 +2711,9 @@ None
 </div>
 </div>
 </div>
-<div id="outline-container-orgb9e4cd1" class="outline-2">
-<h2 id="orgb9e4cd1">Acertijos de IA: espacio de estados, lógica y poda</h2>
-<div class="outline-text-2" id="text-orgb9e4cd1">
+<div id="outline-container-org787b17f" class="outline-2">
+<h2 id="org787b17f">Acertijos de IA: espacio de estados, lógica y poda</h2>
+<div class="outline-text-2" id="text-org787b17f">
 <p>
 Estos acertijos se resuelven como <b>problemas de búsqueda</b> en un <b>espacio
 de estados</b>, pero <b><b>no hace falta expandir el espacio completo</b></b>: las
@@ -1871,13 +2763,13 @@ inicio.
 <b>Herramientas:</b> representación lógica, invariantes, búsqueda con poda (BFS acotado), razonamiento guiado.
 </p>
 </div>
-<div id="outline-container-org929188a" class="outline-3">
-<h3 id="org929188a">1. El problema de los maridos celosos</h3>
-<div class="outline-text-3" id="text-org929188a">
+<div id="outline-container-org623dc44" class="outline-3">
+<h3 id="org623dc44">1. El problema de los maridos celosos</h3>
+<div class="outline-text-3" id="text-org623dc44">
 </div>
-<div id="outline-container-orgb2d8004" class="outline-4">
-<h4 id="orgb2d8004">Enunciado</h4>
-<div class="outline-text-4" id="text-orgb2d8004">
+<div id="outline-container-orgbb7534c" class="outline-4">
+<h4 id="orgbb7534c">Enunciado</h4>
+<div class="outline-text-4" id="text-orgbb7534c">
 <p>
 Tres parejas (tres maridos y sus tres esposas) deben cruzar un río usando un bote con capacidad máxima para <b>dos personas</b>.
 </p>
@@ -1891,13 +2783,13 @@ Tres parejas (tres maridos y sus tres esposas) deben cruzar un río usando un bo
 </p>
 </div>
 </div>
-<div id="outline-container-orgff101d9" class="outline-4">
-<h4 id="orgff101d9">Modelado del espacio de estados (sin enumerar todo a ciegas)</h4>
-<div class="outline-text-4" id="text-orgff101d9">
+<div id="outline-container-orgcd191f2" class="outline-4">
+<h4 id="orgcd191f2">Modelado del espacio de estados (sin enumerar todo a ciegas)</h4>
+<div class="outline-text-4" id="text-orgcd191f2">
 </div>
 <ul class="org-ul">
-<li><a id="orgec03526"></a>Variables<br />
-<div class="outline-text-5" id="text-orgec03526">
+<li><a id="org648350f"></a>Variables<br />
+<div class="outline-text-5" id="text-org648350f">
 <ul class="org-ul">
 <li>Conjunto <code>L</code> (orilla izquierda) y <code>R</code> (orilla derecha), con <code>L ⊔ R = {H1,W1,H2,W2,H3,W3}</code>.</li>
 <li>Posición del bote: <code>bote ∈ {izquierda, derecha}</code>.</li>
@@ -1905,20 +2797,20 @@ Tres parejas (tres maridos y sus tres esposas) deben cruzar un río usando un bo
 </ul>
 </div>
 </li>
-<li><a id="org70d8320"></a>Acciones<br />
-<div class="outline-text-5" id="text-org70d8320">
+<li><a id="org43f2dd5"></a>Acciones<br />
+<div class="outline-text-5" id="text-org43f2dd5">
 <p>
 Desde la orilla donde está el bote, elegir 1 o 2 personas que cruzan.
 </p>
 </div>
 </li>
-<li><a id="orgb464b5f"></a>Predicado lógico de seguridad (poda)<br />
-<div class="outline-text-5" id="text-orgb464b5f">
+<li><a id="org586ed96"></a>Predicado lógico de seguridad (poda)<br />
+<div class="outline-text-5" id="text-org586ed96">
 <p>
 Para cada orilla <code>X</code>:
 </p>
 
-<pre class="example" id="orge9f6318">
+<pre class="example" id="orgf27f74b">
 segura(X) ≡ ∀ mujer Wi ∈ X, ∀ hombre Hj ∈ X con j≠i:
               (Hj ∈ X) → (Hi ∈ X)
 
@@ -1930,8 +2822,8 @@ Si Wi está con un hombre que NO es su marido, su marido Hi también debe estar 
 </p>
 </div>
 </li>
-<li><a id="orgb630492"></a>Tamaño del espacio<br />
-<div class="outline-text-5" id="text-orgb630492">
+<li><a id="org15204ff"></a>Tamaño del espacio<br />
+<div class="outline-text-5" id="text-org15204ff">
 <ul class="org-ul">
 <li>Bruto: <code>2^6 × 2 = 128</code> estados.</li>
 <li>Con poda lógica: el BFS explora ~*40* estados (orden de magnitud), no un árbol exponencial de secuencias de movimientos.</li>
@@ -1940,9 +2832,9 @@ Si Wi está con un hombre que NO es su marido, su marido Hi también debe estar 
 </li>
 </ul>
 </div>
-<div id="outline-container-org57b8e4b" class="outline-4">
-<h4 id="org57b8e4b">Razonamiento guiado (lógica antes que fuerza bruta)</h4>
-<div class="outline-text-4" id="text-org57b8e4b">
+<div id="outline-container-orgba5a81c" class="outline-4">
+<h4 id="orgba5a81c">Razonamiento guiado (lógica antes que fuerza bruta)</h4>
+<div class="outline-text-4" id="text-orgba5a81c">
 <ol class="org-ol">
 <li><b>Mover dos esposas primero</b> es seguro (no hay hombres en la orilla de llegada).</li>
 <li><b>Regresar una esposa</b> devuelve el bote sin dejar a una mujer con hombres ajenos sin su marido.</li>
@@ -1952,9 +2844,9 @@ Si Wi está con un hombre que NO es su marido, su marido Hi también debe estar 
 </ol>
 </div>
 </div>
-<div id="outline-container-org342170d" class="outline-4">
-<h4 id="org342170d">Solución óptima: <b>9 viajes</b></h4>
-<div class="outline-text-4" id="text-org342170d">
+<div id="outline-container-org5255b9e" class="outline-4">
+<h4 id="org5255b9e">Solución óptima: <b>9 viajes</b></h4>
+<div class="outline-text-4" id="text-org5255b9e">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
@@ -2067,13 +2959,13 @@ Si Wi está con un hombre que NO es su marido, su marido Hi también debe estar 
 </div>
 </div>
 </div>
-<div id="outline-container-org0d3dd51" class="outline-3">
-<h3 id="org0d3dd51">2. El puente y la linterna (optimización en 17 minutos)</h3>
-<div class="outline-text-3" id="text-org0d3dd51">
+<div id="outline-container-org3b02efd" class="outline-3">
+<h3 id="org3b02efd">2. El puente y la linterna (optimización en 17 minutos)</h3>
+<div class="outline-text-3" id="text-org3b02efd">
 </div>
-<div id="outline-container-orgdc18428" class="outline-4">
-<h4 id="orgdc18428">Enunciado</h4>
-<div class="outline-text-4" id="text-orgdc18428">
+<div id="outline-container-org17afd6f" class="outline-4">
+<h4 id="org17afd6f">Enunciado</h4>
+<div class="outline-text-4" id="text-org17afd6f">
 <p>
 Cuatro personas deben cruzar un puente de noche. El puente soporta <b>dos</b> personas. Hay <b>una</b> linterna.
 </p>
@@ -2124,13 +3016,13 @@ Dos personas cruzan a la velocidad de la <b>más lenta</b>. La linterna debe vol
 </p>
 </div>
 </div>
-<div id="outline-container-org3425d2d" class="outline-4">
-<h4 id="org3425d2d">Modelado (estado acotado)</h4>
-<div class="outline-text-4" id="text-org3425d2d">
+<div id="outline-container-org8985ff5" class="outline-4">
+<h4 id="org8985ff5">Modelado (estado acotado)</h4>
+<div class="outline-text-4" id="text-org8985ff5">
 </div>
 <ul class="org-ul">
-<li><a id="orgabed7e0"></a>Estado <code>(C, ℓ, t)</code><br />
-<div class="outline-text-5" id="text-orgabed7e0">
+<li><a id="orga277e34"></a>Estado <code>(C, ℓ, t)</code><br />
+<div class="outline-text-5" id="text-orga277e34">
 <ul class="org-ul">
 <li><code>C ⊆ {A,B,C,D}</code>: quienes ya cruzaron.</li>
 <li><code>ℓ</code>: linterna en lado <b>cerca</b> o <b>lejos</b>.</li>
@@ -2138,8 +3030,8 @@ Dos personas cruzan a la velocidad de la <b>más lenta</b>. La linterna debe vol
 </ul>
 </div>
 </li>
-<li><a id="org0835a57"></a>Poda (evita explosión)<br />
-<div class="outline-text-5" id="text-org0835a57">
+<li><a id="org2016f59"></a>Poda (evita explosión)<br />
+<div class="outline-text-5" id="text-org2016f59">
 <ol class="org-ol">
 <li>Si <code>t &gt; 17</code> → <b>cortar rama</b>.</li>
 <li><b>Dominancia:</b> para igual <code>(C, ℓ)</code>, quedarse solo con el camino de menor <code>t</code>.</li>
@@ -2149,9 +3041,9 @@ Dos personas cruzan a la velocidad de la <b>más lenta</b>. La linterna debe vol
 </li>
 </ul>
 </div>
-<div id="outline-container-org9a42574" class="outline-4">
-<h4 id="org9a42574">Razonamiento lógico (sin BFS)</h4>
-<div class="outline-text-4" id="text-org9a42574">
+<div id="outline-container-org106bccd" class="outline-4">
+<h4 id="org106bccd">Razonamiento lógico (sin BFS)</h4>
+<div class="outline-text-4" id="text-org106bccd">
 <p>
 <b>Lema informal:</b> los lentos <code>C</code> y <code>D</code> deben cruzar juntos <b>como máximo una vez</b> en la solución óptima (cuesta 10 min). Si cada uno cruzara por separado con escolta, se pagan más de 10 min solo en esos cruces.
 </p>
@@ -2172,9 +3064,9 @@ Total: 2+1+10+2+2 = <b>17</b>.
 </p>
 </div>
 </div>
-<div id="outline-container-org5ee65e6" class="outline-4">
-<h4 id="org5ee65e6">Solución paso a paso</h4>
-<div class="outline-text-4" id="text-org5ee65e6">
+<div id="outline-container-org7b8f757" class="outline-4">
+<h4 id="org7b8f757">Solución paso a paso</h4>
+<div class="outline-text-4" id="text-org7b8f757">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
@@ -2243,21 +3135,21 @@ Total: 2+1+10+2+2 = <b>17</b>.
 </div>
 </div>
 </div>
-<div id="outline-container-org10399d1" class="outline-3">
-<h3 id="org10399d1">3. Flavio Josefo y el círculo de la muerte</h3>
-<div class="outline-text-3" id="text-org10399d1">
+<div id="outline-container-orged7471a" class="outline-3">
+<h3 id="orged7471a">3. Flavio Josefo y el círculo de la muerte</h3>
+<div class="outline-text-3" id="text-orged7471a">
 </div>
-<div id="outline-container-org18888ed" class="outline-4">
-<h4 id="org18888ed">Historia</h4>
-<div class="outline-text-4" id="text-org18888ed">
+<div id="outline-container-orgdc38775" class="outline-4">
+<h4 id="orgdc38775">Historia</h4>
+<div class="outline-text-4" id="text-orgdc38775">
 <p>
 <b>Flavio Josefo</b> relata que, sitiado en Yodfat con 40 compañeros (41 hombres en total), convinieron en morir por sorteo circular antes que rendirse. Josefo calculó la posición segura y sobrevivió — de ahí el <b>problema de Josefo</b>.
 </p>
 </div>
 </div>
-<div id="outline-container-orga36e459" class="outline-4">
-<h4 id="orga36e459">Enunciado matemático</h4>
-<div class="outline-text-4" id="text-orga36e459">
+<div id="outline-container-orga9e4c77" class="outline-4">
+<h4 id="orga9e4c77">Enunciado matemático</h4>
+<div class="outline-text-4" id="text-orga9e4c77">
 <ul class="org-ul">
 <li><code>n</code> personas en círculo, numeradas <code>1 … n</code>.</li>
 <li>Se cuenta en círculo y se elimina cada <code>k</code>-ésima persona <b>viva</b>.</li>
@@ -2266,9 +3158,9 @@ Total: 2+1+10+2+2 = <b>17</b>.
 </ul>
 </div>
 </div>
-<div id="outline-container-org48318e2" class="outline-4">
-<h4 id="org48318e2">¿Por qué no expandir el árbol completo?</h4>
-<div class="outline-text-4" id="text-org48318e2">
+<div id="outline-container-org5245d78" class="outline-4">
+<h4 id="org5245d78">¿Por qué no expandir el árbol completo?</h4>
+<div class="outline-text-4" id="text-org5245d78">
 <p>
 Un árbol de “quién se elimina en cada ronda” tiene ramificación variable y profundidad <code>n-1</code>; para <code>n</code> grande es innecesario.
 </p>
@@ -2312,13 +3204,13 @@ Un árbol de “quién se elimina en cada ronda” tiene ramificación variable 
 </table>
 </div>
 </div>
-<div id="outline-container-org802398d" class="outline-4">
-<h4 id="org802398d">Caso k = 2 (eliminar cada segundo)</h4>
-<div class="outline-text-4" id="text-org802398d">
+<div id="outline-container-org9ae4cae" class="outline-4">
+<h4 id="org9ae4cae">Caso k = 2 (eliminar cada segundo)</h4>
+<div class="outline-text-4" id="text-org9ae4cae">
 </div>
 <ul class="org-ul">
-<li><a id="orgd13d593"></a>Fórmula cerrada<br />
-<div class="outline-text-5" id="text-orgd13d593">
+<li><a id="orgda3f56d"></a>Fórmula cerrada<br />
+<div class="outline-text-5" id="text-orgda3f56d">
 <p>
 Sea <code>m = ⌊log₂ n⌋</code> y <code>2^m ≤ n &lt; 2^(m+1)</code>:
 </p>
@@ -2328,15 +3220,15 @@ Sea <code>m = ⌊log₂ n⌋</code> y <code>2^m ≤ n &lt; 2^(m+1)</code>:
 </p>
 </div>
 </li>
-<li><a id="orgc7f42c9"></a>Intuición<br />
-<div class="outline-text-5" id="text-orgc7f42c9">
+<li><a id="org62101d1"></a>Intuición<br />
+<div class="outline-text-5" id="text-org62101d1">
 <p>
 Cada ronda con <code>k=2</code> elimina la mitad (aprox.) de los vivos; la posición sobreviviente se obtiene “reflejando” el índice respecto a la mayor potencia de 2 ≤ <code>n</code>.
 </p>
 </div>
 </li>
-<li><a id="orged4d590"></a>Historia: n = 41 soldados<br />
-<div class="outline-text-5" id="text-orged4d590">
+<li><a id="org0df7fa2"></a>Historia: n = 41 soldados<br />
+<div class="outline-text-5" id="text-org0df7fa2">
 <ul class="org-ul">
 <li><code>2^5 = 32 ≤ 41 &lt; 64</code> → <code>m = 5</code>.</li>
 <li><code>J(41, 2) = 2·(41 - 32) + 1 = 19</code>.</li>
@@ -2349,14 +3241,14 @@ Cada ronda con <code>k=2</code> elimina la mitad (aprox.) de los vivos; la posic
 </li>
 </ul>
 </div>
-<div id="outline-container-orgfb5526c" class="outline-4">
-<h4 id="orgfb5526c">Ejemplo manual: n = 7, k = 2</h4>
-<div class="outline-text-4" id="text-orgfb5526c">
+<div id="outline-container-org5c7f275" class="outline-4">
+<h4 id="org5c7f275">Ejemplo manual: n = 7, k = 2</h4>
+<div class="outline-text-4" id="text-org5c7f275">
 <p>
 Con la convención estándar (<code>J(1,2)=1</code>, <code>J(2n)=2J(n)-1</code>, <code>J(2n+1)=2J(n)+1</code>):
 </p>
 
-<pre class="example" id="orga9eb43e">
+<pre class="example" id="org176a9e9">
 J(1)=1, J(2)=1, J(3)=3, J(4)=1, J(5)=3, J(6)=5, J(7)=7
 </pre>
 
@@ -2365,10 +3257,10 @@ Fórmula potencias de 2: <code>2·(7-4)+1 = 7</code>. La posición segura es la 
 </p>
 </div>
 </div>
-<div id="outline-container-org6ee3084" class="outline-4">
-<h4 id="org6ee3084">Caso general k (algoritmo iterativo O(n))</h4>
-<div class="outline-text-4" id="text-org6ee3084">
-<pre class="example" id="org52325d4">
+<div id="outline-container-org7d938cb" class="outline-4">
+<h4 id="org7d938cb">Caso general k (algoritmo iterativo O(n))</h4>
+<div class="outline-text-4" id="text-org7d938cb">
+<pre class="example" id="orgf2c2108">
 J ← 0
 para i = 1 … n:
     J ← (J + k) mod i
@@ -2380,9 +3272,9 @@ Este algoritmo evita simular el círculo completo (<code>O(n²)</code>) y coinci
 </p>
 </div>
 </div>
-<div id="outline-container-orgd54e201" class="outline-4">
-<h4 id="orgd54e201">Síntesis: lógica vs explosión combinatoria</h4>
-<div class="outline-text-4" id="text-orgd54e201">
+<div id="outline-container-org39314a1" class="outline-4">
+<h4 id="org39314a1">Síntesis: lógica vs explosión combinatoria</h4>
+<div class="outline-text-4" id="text-org39314a1">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
@@ -2422,9 +3314,9 @@ Este algoritmo evita simular el círculo completo (<code>O(n²)</code>) y coinci
 </table>
 </div>
 </div>
-<div id="outline-container-orgfe93d69" class="outline-4">
-<h4 id="orgfe93d69">Preguntas de repaso</h4>
-<div class="outline-text-4" id="text-orgfe93d69">
+<div id="outline-container-org5a6b81f" class="outline-4">
+<h4 id="org5a6b81f">Preguntas de repaso</h4>
+<div class="outline-text-4" id="text-org5a6b81f">
 <ol class="org-ol">
 <li>¿Qué estado del problema de maridos celosos es inválido aunque el bote tenga capacidad 2?</li>
 <li>¿Por qué mandar <code>A</code> dos veces de vuelta no mejora necesariamente el puente frente a devolver <code>B</code> una vez?</li>
@@ -2448,13 +3340,13 @@ None
 </div>
 </div>
 </div>
-<div id="outline-container-org912f67d" class="outline-2">
-<h2 id="org912f67d">A*  — Arriero, coyote, cabra y maíz</h2>
-<div class="outline-text-2" id="text-org912f67d">
+<div id="outline-container-orga08467f" class="outline-2">
+<h2 id="orga08467f">A*  — Arriero, coyote, cabra y maíz</h2>
+<div class="outline-text-2" id="text-orga08467f">
 </div>
-<div id="outline-container-org5e1acf3" class="outline-3">
-<h3 id="org5e1acf3">Símbolos</h3>
-<div class="outline-text-3" id="text-org5e1acf3">
+<div id="outline-container-org397c25b" class="outline-3">
+<h3 id="org397c25b">Símbolos</h3>
+<div class="outline-text-3" id="text-org397c25b">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
@@ -2493,9 +3385,9 @@ None
 </table>
 </div>
 </div>
-<div id="outline-container-org1f8d699" class="outline-3">
-<h3 id="org1f8d699">Reglas del bote</h3>
-<div class="outline-text-3" id="text-org1f8d699">
+<div id="outline-container-org47b424e" class="outline-3">
+<h3 id="org47b424e">Reglas del bote</h3>
+<div class="outline-text-3" id="text-org47b424e">
 <ul class="org-ul">
 <li>Viajan el arriero y <b>como máximo uno</b> más.</li>
 <li>Sin arriero, <b>nunca</b> pueden quedar solos en una orilla:
@@ -2506,22 +3398,22 @@ None
 </ul>
 </div>
 </div>
-<div id="outline-container-orga88ee10" class="outline-3">
-<h3 id="orga88ee10">Objetivo</h3>
-<div class="outline-text-3" id="text-orga88ee10">
+<div id="outline-container-org277ad02" class="outline-3">
+<h3 id="org277ad02">Objetivo</h3>
+<div class="outline-text-3" id="text-org277ad02">
 <p>
 Que los cuatro terminen en la <b>orilla derecha</b>.
 </p>
 </div>
 </div>
-<div id="outline-container-org3faa3cf" class="outline-3">
-<h3 id="org3faa3cf">Parte 1 — ¿Qué es un estado? (la “fotografía” del río)</h3>
-<div class="outline-text-3" id="text-org3faa3cf">
+<div id="outline-container-org7575966" class="outline-3">
+<h3 id="org7575966">Parte 1 — ¿Qué es un estado? (la “fotografía” del río)</h3>
+<div class="outline-text-3" id="text-org7575966">
 <p>
 En cada momento anotas <b>tres cosas</b>:
 </p>
 
-<pre class="example" id="org18d984d">
+<pre class="example" id="org32f06af">
 [ Quién está a la IZQUIERDA | Quién está a la DERECHA ]   BOTE
 
 Ejemplo inicio:
@@ -2536,13 +3428,13 @@ Cada vez que el bote cruza, cambias de fotografía → eso es moverte en el <b>e
 </p>
 </div>
 </div>
-<div id="outline-container-org52457f0" class="outline-3">
-<h3 id="org52457f0">Parte 2 — El espacio de estados (el mapa completo del camino bueno)</h3>
-<div class="outline-text-3" id="text-org52457f0">
+<div id="outline-container-org6ff8c73" class="outline-3">
+<h3 id="org6ff8c73">Parte 2 — El espacio de estados (el mapa completo del camino bueno)</h3>
+<div class="outline-text-3" id="text-org6ff8c73">
 </div>
-<div id="outline-container-org9772e5e" class="outline-4">
-<h4 id="org9772e5e">Los 8 estados del camino más corto (7 cruces)</h4>
-<div class="outline-text-4" id="text-org9772e5e">
+<div id="outline-container-orgf4b2533" class="outline-4">
+<h4 id="orgf4b2533">Los 8 estados del camino más corto (7 cruces)</h4>
+<div class="outline-text-4" id="text-orgf4b2533">
 <p>
 Usamos códigos E0, E1, … E* para no repetir dibujos.
 </p>
@@ -2638,26 +3530,26 @@ Usamos códigos E0, E1, … E* para no repetir dibujos.
 </table>
 </div>
 </div>
-<div id="outline-container-org9a65d7c" class="outline-4">
-<h4 id="org9a65d7c">Dibujo del camino (solo flechas hacia adelante)</h4>
-<div class="outline-text-4" id="text-org9a65d7c">
-<pre class="example" id="org979b35d">
+<div id="outline-container-orgfd03d95" class="outline-4">
+<h4 id="orgfd03d95">Dibujo del camino (solo flechas hacia adelante)</h4>
+<div class="outline-text-4" id="text-orgfd03d95">
+<pre class="example" id="orgd0e0c35">
 E0 ──A+C──► E1 ──A──► E2 ──A+L──► E3 ──A+C──► E4 ──A+M──► E5 ──A──► E6 ──A+C──► E*
  ◄          ►         ◄          ►          ◄          ►         ◄          ►
 </pre>
 </div>
 </div>
-<div id="outline-container-org95f9da0" class="outline-4">
-<h4 id="org95f9da0">¿Por qué no hay más estados en el camino bueno?</h4>
-<div class="outline-text-4" id="text-org95f9da0">
+<div id="outline-container-org887da31" class="outline-4">
+<h4 id="org887da31">¿Por qué no hay más estados en el camino bueno?</h4>
+<div class="outline-text-4" id="text-org887da31">
 <p>
 Porque en cada paso solo hay <b>pocas</b> opciones legales; muchas combinaciones se descartan al instante (coyote con cabra, etc.). El espacio <b>total</b> válido es pequeño (unas 16 fotografías); no hace falta dibujarlas todas si A* te guía.
 </p>
 </div>
 </div>
-<div id="outline-container-orgcb6ea25" class="outline-4">
-<h4 id="orgcb6ea25">Ramas que se cortan desde E0 (ejemplo de poda)</h4>
-<div class="outline-text-4" id="text-orgcb6ea25">
+<div id="outline-container-orgb286a87" class="outline-4">
+<h4 id="orgb286a87">Ramas que se cortan desde E0 (ejemplo de poda)</h4>
+<div class="outline-text-4" id="text-orgb286a87">
 <p>
 Desde E0 el arriero está a la izquierda. Prueba mental:
 </p>
@@ -2712,13 +3604,13 @@ Desde E0 el arriero está a la izquierda. Prueba mental:
 </div>
 </div>
 </div>
-<div id="outline-container-org6cdfd3f" class="outline-3">
-<h3 id="org6cdfd3f">Parte 3 — g, h y f</h3>
-<div class="outline-text-3" id="text-org6cdfd3f">
+<div id="outline-container-org4fca604" class="outline-3">
+<h3 id="org4fca604">Parte 3 — g, h y f</h3>
+<div class="outline-text-3" id="text-org4fca604">
 </div>
-<div id="outline-container-org0391ee5" class="outline-4">
-<h4 id="org0391ee5">g = “¿Cuántos cruces ya hice?”</h4>
-<div class="outline-text-4" id="text-org0391ee5">
+<div id="outline-container-org0015303" class="outline-4">
+<h4 id="org0015303">g = “¿Cuántos cruces ya hice?”</h4>
+<div class="outline-text-4" id="text-org0015303">
 <ul class="org-ul">
 <li>Empiezas en E0 con <b>g = 0</b>.</li>
 <li>Cada cruce del bote: <b>g sube 1</b>.</li>
@@ -2726,14 +3618,14 @@ Desde E0 el arriero está a la izquierda. Prueba mental:
 </ul>
 </div>
 </div>
-<div id="outline-container-org95cb3d4" class="outline-4">
-<h4 id="org95cb3d4">h = “¿Cuántos cruces <b>creo</b> que faltan?” (estimación)</h4>
-<div class="outline-text-4" id="text-org95cb3d4">
+<div id="outline-container-orgac1af8b" class="outline-4">
+<h4 id="orgac1af8b">h = “¿Cuántos cruces <b>creo</b> que faltan?” (estimación)</h4>
+<div class="outline-text-4" id="text-orgac1af8b">
 <p>
 Regla que usamos (fácil de contar a mano):
 </p>
 
-<pre class="example" id="org0edb890">
+<pre class="example" id="orga483763">
 Mira la orilla DERECHA.
 Cuenta cuántas de estas piezas AÚN NO están ahí:
   □ Coyote (L)
@@ -2813,14 +3705,15 @@ Ejemplos:
 </table>
 
 <p>
-<b>Truco:</b> nunca decimos “falta 0 cruces” cuando aún falta una pieza → la estimación no miente en exceso (<b>admisible</b>).
+<b>Truco:</b> nunca decimos “falta 0 cruces” cuando aún falta una pieza → la
+estimación no miente en exceso (<b>admisible</b>).
 </p>
 </div>
 </div>
-<div id="outline-container-orgf97df17" class="outline-4">
-<h4 id="orgf97df17">f = “¿Qué tan prioritario es este estado?”</h4>
-<div class="outline-text-4" id="text-orgf97df17">
-<pre class="example" id="orgb542104">
+<div id="outline-container-org3e49b27" class="outline-4">
+<h4 id="org3e49b27">f = “¿Qué tan prioritario es este estado?”</h4>
+<div class="outline-text-4" id="text-org3e49b27">
+<pre class="example" id="orgf934b0f">
 f = g + h
 </pre>
 
@@ -2909,16 +3802,17 @@ A* siempre mira primero el estado <b>pendiente</b> con <b>f más bajo</b>.
 </div>
 </div>
 </div>
-<div id="outline-container-org6782abe" class="outline-3">
-<h3 id="org6782abe">Parte 4 — A* paso a paso (tabla de “lista de pendientes”)</h3>
-<div class="outline-text-3" id="text-org6782abe">
+<div id="outline-container-orgd5a3a49" class="outline-3">
+<h3 id="orgd5a3a49">Parte 4 — A* paso a paso (tabla de “lista de pendientes”)</h3>
+<div class="outline-text-3" id="text-orgd5a3a49">
 <p>
-Imagina una <b>lista de tareas</b> llamada OPEN. Sacas la tarea con menor <b>f</b>, la miras, generas hijos, y repites.
+Imagina una <b>lista de tareas</b> llamada OPEN. Sacas la tarea con menor <b>f</b>,
+la miras, generas hijos, y repites.
 </p>
 </div>
-<div id="outline-container-org09d2ec7" class="outline-4">
-<h4 id="org09d2ec7">Iteración 1</h4>
-<div class="outline-text-4" id="text-org09d2ec7">
+<div id="outline-container-org83752c9" class="outline-4">
+<h4 id="org83752c9">Iteración 1</h4>
+<div class="outline-text-4" id="text-org83752c9">
 <p>
 <b>Sacas:</b> E0 (f=3)
 </p>
@@ -2963,9 +3857,9 @@ OPEN ahora: { E1 (f=3) }
 </p>
 </div>
 </div>
-<div id="outline-container-org668ab86" class="outline-4">
-<h4 id="org668ab86">Iteración 2</h4>
-<div class="outline-text-4" id="text-org668ab86">
+<div id="outline-container-org99c5ea6" class="outline-4">
+<h4 id="org99c5ea6">Iteración 2</h4>
+<div class="outline-text-4" id="text-org99c5ea6">
 <p>
 <b>Sacas:</b> E1 (f=3)
 </p>
@@ -3025,9 +3919,9 @@ OPEN: { E2 (f=4) }
 </p>
 </div>
 </div>
-<div id="outline-container-org1c06f82" class="outline-4">
-<h4 id="org1c06f82">Iteración 3</h4>
-<div class="outline-text-4" id="text-org1c06f82">
+<div id="outline-container-org00feb9a" class="outline-4">
+<h4 id="org00feb9a">Iteración 3</h4>
+<div class="outline-text-4" id="text-org00feb9a">
 <p>
 <b>Sacas:</b> E2 (f=4)
 </p>
@@ -3046,9 +3940,9 @@ OPEN: { E3 (f=4), otros con f=5 si existen }
 </p>
 </div>
 </div>
-<div id="outline-container-org997f397" class="outline-4">
-<h4 id="org997f397">Iteración 4</h4>
-<div class="outline-text-4" id="text-org997f397">
+<div id="outline-container-orgcb9a1d3" class="outline-4">
+<h4 id="orgcb9a1d3">Iteración 4</h4>
+<div class="outline-text-4" id="text-orgcb9a1d3">
 <p>
 <b>Sacas:</b> E3 (f=4) — en la derecha están A, L, C; falta solo M (h=1)
 </p>
@@ -3058,9 +3952,9 @@ Regreso legal que avanza: A+C → E4 (g=4, h=2, f=6)
 </p>
 </div>
 </div>
-<div id="outline-container-org2afb8ff" class="outline-4">
-<h4 id="org2afb8ff">Iteraciones 5–7 (resumen en una tabla)</h4>
-<div class="outline-text-4" id="text-org2afb8ff">
+<div id="outline-container-org56552bb" class="outline-4">
+<h4 id="org56552bb">Iteraciones 5–7 (resumen en una tabla)</h4>
+<div class="outline-text-4" id="text-org56552bb">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
@@ -3128,9 +4022,9 @@ Regreso legal que avanza: A+C → E4 (g=4, h=2, f=6)
 </p>
 </div>
 </div>
-<div id="outline-container-orgff0a4be" class="outline-4">
-<h4 id="orgff0a4be">¿Qué aprendiste del proceso?</h4>
-<div class="outline-text-4" id="text-orgff0a4be">
+<div id="outline-container-orgefbe7b9" class="outline-4">
+<h4 id="orgefbe7b9">¿Qué aprendiste del proceso?</h4>
+<div class="outline-text-4" id="text-orgefbe7b9">
 <ol class="org-ol">
 <li>No probaste “todas las historias posibles” a lo loco.</li>
 <li>En cada paso calculaste <b>g</b>, <b>h</b> y <b>f</b> con sumas sencillas.</li>
@@ -3140,9 +4034,9 @@ Regreso legal que avanza: A+C → E4 (g=4, h=2, f=6)
 </div>
 </div>
 </div>
-<div id="outline-container-org5d5f703" class="outline-3">
-<h3 id="org5d5f703">Parte 5 — La solución contada como cuento (7 cruces)</h3>
-<div class="outline-text-3" id="text-org5d5f703">
+<div id="outline-container-orga6a7315" class="outline-3">
+<h3 id="orga6a7315">Parte 5 — La solución contada como cuento (7 cruces)</h3>
+<div class="outline-text-3" id="text-orga6a7315">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
@@ -3230,9 +4124,9 @@ Regreso legal que avanza: A+C → E4 (g=4, h=2, f=6)
 </p>
 </div>
 </div>
-<div id="outline-container-orgfb1b78e" class="outline-3">
-<h3 id="orgfb1b78e">Parte 6 — Comparación rápida</h3>
-<div class="outline-text-3" id="text-orgfb1b78e">
+<div id="outline-container-org1fd15bd" class="outline-3">
+<h3 id="org1fd15bd">Parte 6 — Comparación rápida</h3>
+<div class="outline-text-3" id="text-org1fd15bd">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
@@ -3272,9 +4166,9 @@ Regreso legal que avanza: A+C → E4 (g=4, h=2, f=6)
 </table>
 </div>
 </div>
-<div id="outline-container-org24af4d8" class="outline-3">
-<h3 id="org24af4d8">Parte 7 — Ejercicios con lápiz y papel</h3>
-<div class="outline-text-3" id="text-org24af4d8">
+<div id="outline-container-org46b0bba" class="outline-3">
+<h3 id="org46b0bba">Parte 7 — Ejercicios con lápiz y papel</h3>
+<div class="outline-text-3" id="text-org46b0bba">
 <ol class="org-ol">
 <li>En <b>E2</b> (<code>[ A L M | C ]</code>), calcula g, h y f sin mirar la tabla.</li>
 <li>Desde <b>E3</b>, ¿por qué <b>A solo</b> hacia la izquierda es ilegal? (mira la orilla derecha.)</li>
@@ -3293,10 +4187,892 @@ Regreso legal que avanza: A+C → E4 (g=4, h=2, f=6)
 </div>
 </div>
 </div>
+<div id="outline-container-org42505cd" class="outline-2">
+<h2 id="org42505cd">Actividades</h2>
+<div class="outline-text-2" id="text-org42505cd">
+</div>
+<div id="outline-container-org494999e" class="outline-3">
+<h3 id="org494999e">Operación Dino Crash (EDA conceptual)</h3>
+<div class="outline-text-3" id="text-org494999e">
+</div>
+<div id="outline-container-org5efc777" class="outline-4">
+<h4 id="org5efc777">Introducción a la Misión</h4>
+<div class="outline-text-4" id="text-org5efc777">
+<p>
+Agentes, el cuartel general <b>quiere que
+piensen como *analistas de datos</b>: qué dataset haría falta, qué
+preguntas hacerle a los datos y, <b>solo después de entenderlos</b>, qué tipo
+de modelo de IA tendría sentido.
+</p>
+
+<p>
+<b>Contexto:</b> el juego del dinosaurio de Chrome (<b>Dino Run</b>) — el que aparece sin internet.
+</p>
+
+<p>
+<b>Reglas de esta operación:</b>
+</p>
+<ul class="org-ul">
+<li><b>No se entrega código.</b> Solo análisis escrito (reporte en Markdown).</li>
+<li>Justifica cada respuesta con razonamiento sobre <b>forma de los datos</b>, no con intuición vaga.</li>
+<li>Usa tablas, listas y mini-ejemplos numéricos cuando ayuden.</li>
+</ul>
+
+<p>
+<b>Entregable único:</b> <code>reporte_dino_crash_eda.md</code>
+</p>
+</div>
+</div>
+<div id="outline-container-org4485cca" class="outline-4">
+<h4 id="org4485cca">¿Qué es EDA y por qué va <b>antes</b> del modelo?</h4>
+<div class="outline-text-4" id="text-org4485cca">
+<pre class="example" id="org63f5e0f">
+Datos crudos  →  EDA (entender)  →  Decisión de modelo  →  (luego) entrenar
+
+Si eliges el modelo primero, corres el riesgo de usar un martillo
+para un tornillo: datos desbalanceados, variables mal definidas,
+o un problema que no era clasificación sino regresión.
+</pre>
+</div>
+</div>
+<div id="outline-container-orgbdd2d80" class="outline-4">
+<h4 id="orgbdd2d80">Bloque 1 — ¿Qué dataset necesitamos?</h4>
+<div class="outline-text-4" id="text-orgbdd2d80">
+</div>
+<ul class="org-ul">
+<li><a id="org9351cdf"></a>Misión 1: Definir el problema y el dataset ideal<br />
+<ul class="org-ul">
+<li><a id="org58c3ee3"></a>La Historia<br />
+<div class="outline-text-6" id="text-org58c3ee3">
+<p>
+Antes de “predecir algo”, hay que decidir <b>qué pregunta</b> respondes y <b>qué fila</b> representa cada observación.
+</p>
+</div>
+</li>
+<li><a id="org30d8782"></a>Escenarios posibles (elige analizar los tres en el reporte)<br />
+<div class="outline-text-6" id="text-org30d8782">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">ID</th>
+<th scope="col" class="org-left">Pregunta de negocio / juego</th>
+<th scope="col" class="org-left">¿Una fila = qué?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">P1</td>
+<td class="org-left">¿Morirá en el <b>siguiente</b> frame?</td>
+<td class="org-left">Un frame de una partida</td>
+</tr>
+
+<tr>
+<td class="org-left">P2</td>
+<td class="org-left">¿Cuántos puntos alcanzará <b>esta</b> partida al morir?</td>
+<td class="org-left">Una partida completa</td>
+</tr>
+
+<tr>
+<td class="org-left">P3</td>
+<td class="org-left">¿Qué tipo de obstáculo viene <b>próximo</b>?</td>
+<td class="org-left">Un frame o un evento</td>
+</tr>
+</tbody>
+</table>
+</div>
+</li>
+<li><a id="org1b216c5"></a>Tu Tarea (escrito)<br />
+<div class="outline-text-6" id="text-org1b216c5">
+<p>
+Para <b>cada</b> escenario P1, P2 y P3:
+</p>
+
+<ol class="org-ol">
+<li><b>Variable objetivo (Y):</b> ¿qué columna sería? ¿tipo? (numérica, categórica, binaria).</li>
+<li><b>Variables de entrada (X):</b> lista <b>mínimo 5</b> columnas que pedirías y por qué cada una.</li>
+<li><b>Granularidad:</b> ¿necesitas un frame cada 16 ms, cada salto, o un resumen por partida?</li>
+<li><b>Tamaño mínimo razonable:</b> ¿cuántas filas o partidas harían falta para confiar? Argumenta.</li>
+<li><b>Riesgo si el dataset está mal definido:</b> un error de diseño y su consecuencia.</li>
+</ol>
+</div>
+</li>
+</ul>
+</li>
+<li><a id="orgf9f4ec1"></a>Misión 2: Diccionario de datos (qué debe traer el CSV)<br />
+<ul class="org-ul">
+<li><a id="org4202cf6"></a>La Historia<br />
+<div class="outline-text-6" id="text-org4202cf6">
+<p>
+Interceptaste un borrador de telemetría. Revisa si alcanza para P1 o si le falta algo.
+</p>
+</div>
+</li>
+<li><a id="orgdfb4f03"></a>Columnas propuestas<br />
+<div class="outline-text-6" id="text-orgdfb4f03">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Columna</th>
+<th scope="col" class="org-left">Tipo sugerido</th>
+<th scope="col" class="org-left">Descripción breve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><code>session_id</code></td>
+<td class="org-left">entero</td>
+<td class="org-left">ID de partida</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>frame</code></td>
+<td class="org-left">entero</td>
+<td class="org-left">Índice del frame en la partida</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>time_ms</code></td>
+<td class="org-left">entero</td>
+<td class="org-left">Tiempo desde que empezó la partida</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>score</code></td>
+<td class="org-left">entero</td>
+<td class="org-left">Puntuación en pantalla</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>speed</code></td>
+<td class="org-left">numérico</td>
+<td class="org-left">Velocidad del escenario</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>obstacle_type</code></td>
+<td class="org-left">categórica</td>
+<td class="org-left"><code>none</code>, <code>cactus_small</code>, <code>cactus_large</code>, <code>bird</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>dist_obstacle</code></td>
+<td class="org-left">numérico</td>
+<td class="org-left">Distancia al próximo obstáculo (px)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>jump</code></td>
+<td class="org-left">binaria 0/1</td>
+<td class="org-left">¿El dino está saltando?</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>died</code></td>
+<td class="org-left">binaria 0/1</td>
+<td class="org-left">1 solo en el último frame de la sesión</td>
+</tr>
+</tbody>
+</table>
+</div>
+</li>
+<li><a id="org21747dc"></a>Muestra para analizar (10 filas — sesión 7)<br />
+<div class="outline-text-6" id="text-org21747dc">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-right">frame</th>
+<th scope="col" class="org-right">time<sub>ms</sub></th>
+<th scope="col" class="org-right">score</th>
+<th scope="col" class="org-right">speed</th>
+<th scope="col" class="org-left">obstacle<sub>type</sub></th>
+<th scope="col" class="org-right">dist<sub>obstacle</sub></th>
+<th scope="col" class="org-right">jump</th>
+<th scope="col" class="org-right">died</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">6.0</td>
+<td class="org-left">none</td>
+<td class="org-right">180</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+</tr>
+
+<tr>
+<td class="org-right">40</td>
+<td class="org-right">640</td>
+<td class="org-right">8</td>
+<td class="org-right">6.4</td>
+<td class="org-left">none</td>
+<td class="org-right">165</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+</tr>
+
+<tr>
+<td class="org-right">80</td>
+<td class="org-right">1280</td>
+<td class="org-right">16</td>
+<td class="org-right">6.8</td>
+<td class="org-left">cactus<sub>small</sub></td>
+<td class="org-right">55</td>
+<td class="org-right">1</td>
+<td class="org-right">0</td>
+</tr>
+
+<tr>
+<td class="org-right">81</td>
+<td class="org-right">1296</td>
+<td class="org-right">16</td>
+<td class="org-right">6.8</td>
+<td class="org-left">cactus<sub>small</sub></td>
+<td class="org-right">38</td>
+<td class="org-right">1</td>
+<td class="org-right">0</td>
+</tr>
+
+<tr>
+<td class="org-right">82</td>
+<td class="org-right">1312</td>
+<td class="org-right">16</td>
+<td class="org-right">6.8</td>
+<td class="org-left">cactus<sub>small</sub></td>
+<td class="org-right">12</td>
+<td class="org-right">0</td>
+<td class="org-right">1</td>
+</tr>
+
+<tr>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">6.0</td>
+<td class="org-left">none</td>
+<td class="org-right">200</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+</tr>
+
+<tr>
+<td class="org-right">120</td>
+<td class="org-right">1920</td>
+<td class="org-right">24</td>
+<td class="org-right">7.2</td>
+<td class="org-left">bird</td>
+<td class="org-right">48</td>
+<td class="org-right">1</td>
+<td class="org-right">0</td>
+</tr>
+
+<tr>
+<td class="org-right">200</td>
+<td class="org-right">3200</td>
+<td class="org-right">40</td>
+<td class="org-right">8.0</td>
+<td class="org-left">none</td>
+<td class="org-right">150</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+</tr>
+
+<tr>
+<td class="org-right">280</td>
+<td class="org-right">4480</td>
+<td class="org-right">56</td>
+<td class="org-right">8.8</td>
+<td class="org-left">cactus<sub>large</sub></td>
+<td class="org-right">22</td>
+<td class="org-right">0</td>
+<td class="org-right">1</td>
+</tr>
+
+<tr>
+<td class="org-right">50</td>
+<td class="org-right">800</td>
+<td class="org-right">10</td>
+<td class="org-right">6.5</td>
+<td class="org-left">cactus<sub>small</sub></td>
+<td class="org-right">90</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+<b>(Filas 1–5: misma sesión que termina en frame 82; filas 6–9: otras sesiones resumidas.)</b>
+</p>
+</div>
+</li>
+<li><a id="org521a68b"></a>Tu Tarea (escrito)<br />
+<div class="outline-text-6" id="text-org521a68b">
+<ol class="org-ol">
+<li>¿Qué <b>patrón</b> ves en la fila donde <code>died=1</code> (frame 82)?</li>
+<li>¿=score= es buena variable para predecir muerte <b>en el siguiente frame</b>? ¿Por qué sí o no?</li>
+<li>¿Falta alguna columna crítica para P1? (pista: altura del dino, agachado, lag de reacción del jugador…)</li>
+<li>¿=died= tal como está definida sirve para P1 o solo describe el <b>final</b> de la partida?</li>
+</ol>
+</div>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<div id="outline-container-orgf23db4b" class="outline-4">
+<h4 id="orgf23db4b">Bloque 2 — Preguntas que todo EDA debe responder</h4>
+<div class="outline-text-4" id="text-orgf23db4b">
+</div>
+<ul class="org-ul">
+<li><a id="org65dfe5a"></a>Misión 3: Las diez preguntas del analista<br />
+<ul class="org-ul">
+<li><a id="org4069922"></a>La Historia<br />
+<div class="outline-text-6" id="text-org4069922">
+<p>
+Un dataset “bonito en papel” puede esconder trampas. El EDA responde esto <b>antes</b> de elegir modelo.
+</p>
+</div>
+</li>
+<li><a id="org364203a"></a>Checklist EDA (completa en el reporte para el juego del dino)<br />
+<div class="outline-text-6" id="text-org364203a">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-right" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-right">#</th>
+<th scope="col" class="org-left">Pregunta EDA</th>
+<th scope="col" class="org-left">¿Qué buscas?</th>
+<th scope="col" class="org-left">Si la respuesta es mala, ¿qué modelo evitas o qué haces?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-right">1</td>
+<td class="org-left">¿Cuántas observaciones hay?</td>
+<td class="org-left">Tamaño N, partidas</td>
+<td class="org-left">Modelos complejos con pocos datos</td>
+</tr>
+
+<tr>
+<td class="org-right">2</td>
+<td class="org-left">¿Hay valores faltantes?</td>
+<td class="org-left">% NA por columna</td>
+<td class="org-left">Algunos modelos no toleran NA; imputar o descartar</td>
+</tr>
+
+<tr>
+<td class="org-right">3</td>
+<td class="org-left">¿La clase objetivo está balanceada? (P1)</td>
+<td class="org-left">% muerte vs no-muerte por frame</td>
+<td class="org-left">Métrica accuracy engañosa; considerar F1, ponderar clases</td>
+</tr>
+
+<tr>
+<td class="org-right">4</td>
+<td class="org-left">¿Hay fugas de información (<b>leakage</b>)?</td>
+<td class="org-left">¿Y incluye el futuro?</td>
+<td class="org-left">Cualquier modelo “perfecto” en validación falsa</td>
+</tr>
+
+<tr>
+<td class="org-right">5</td>
+<td class="org-left">¿Variables correlacionadas?</td>
+<td class="org-left">score vs time<sub>ms</sub></td>
+<td class="org-left">Regresión inestable; redundancia</td>
+</tr>
+
+<tr>
+<td class="org-right">6</td>
+<td class="org-left">¿Distribución de <code>speed</code>?</td>
+<td class="org-left">¿sube siempre? ¿tope?</td>
+<td class="org-left">Modelos que asumen linealidad infinita</td>
+</tr>
+
+<tr>
+<td class="org-right">7</td>
+<td class="org-left">¿Outliers?</td>
+<td class="org-left">dist<sub>obstacle</sub> negativo, saltos imposibles</td>
+<td class="org-left">Limpiar antes de entrenar</td>
+</tr>
+
+<tr>
+<td class="org-right">8</td>
+<td class="org-left">¿Datos i.i.d.?</td>
+<td class="org-left">¿frames de la misma sesión son independientes?</td>
+<td class="org-left">Train/test por <b>sesión</b>, no por fila suelta</td>
+</tr>
+
+<tr>
+<td class="org-right">9</td>
+<td class="org-left">¿Estacionariedad?</td>
+<td class="org-left">¿misma distribución al inicio y al final?</td>
+<td class="org-left">Modelo global puede fallar en partidas largas</td>
+</tr>
+
+<tr>
+<td class="org-right">10</td>
+<td class="org-left">¿Sesgo de muestreo?</td>
+<td class="org-left">¿solo expertos? ¿solo móvil?</td>
+<td class="org-left">Generalización dudosa</td>
+</tr>
+</tbody>
+</table>
+</div>
+</li>
+<li><a id="org8f5cd9b"></a>Tu Tarea<br />
+<div class="outline-text-6" id="text-org8f5cd9b">
+<ol class="org-ol">
+<li>Elige <b>tres</b> preguntas del checklist y respóndelas <b>como si</b> tuvieras el dataset completo del dino (hipótesis razonables).</li>
+<li>Para la pregunta 8 (<b>i.i.d.</b>): explica por qué mezclar frames de la misma partida en entrenamiento y prueba es un error.</li>
+<li>Da un ejemplo concreto de <b>data leakage</b> usando <code>score</code> o <code>time_ms</code> en P1.</li>
+</ol>
+</div>
+</li>
+</ul>
+</li>
+<li><a id="org46c8690"></a>Misión 4: Leer distribuciones sin gráfica (interpretación)<br />
+<ul class="org-ul">
+<li><a id="orgf9bd3a5"></a>La Historia<br />
+<div class="outline-text-6" id="text-orgf9bd3a5">
+<p>
+Te pasan <b>resúmenes</b> estadísticos en lugar de código. Debes sacar conclusiones.
+</p>
+</div>
+</li>
+<li><a id="orga8fd9da"></a>Resumen hipotético (50 partidas, ~12 000 frames)<br />
+<div class="outline-text-6" id="text-orga8fd9da">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Variable</th>
+<th scope="col" class="org-right">Media</th>
+<th scope="col" class="org-right">Mediana</th>
+<th scope="col" class="org-right">Mín</th>
+<th scope="col" class="org-right">Máx</th>
+<th scope="col" class="org-left">Comentario del analista previo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><code>score</code> (por frame)</td>
+<td class="org-right">28</td>
+<td class="org-right">18</td>
+<td class="org-right">0</td>
+<td class="org-right">120</td>
+<td class="org-left">Cola larga hacia la derecha</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>speed</code></td>
+<td class="org-right">8.5</td>
+<td class="org-right">8.2</td>
+<td class="org-right">6.0</td>
+<td class="org-right">13.0</td>
+<td class="org-left">Sube con el tiempo de partida</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>dist_obstacle</code></td>
+<td class="org-right">95</td>
+<td class="org-right">88</td>
+<td class="org-right">5</td>
+<td class="org-right">220</td>
+<td class="org-left">Muertes suelen con dist &lt; 20</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>died</code> (por frame)</td>
+<td class="org-right">—</td>
+<td class="org-right">—</td>
+<td class="org-right">—</td>
+<td class="org-right">—</td>
+<td class="org-left">Solo 50 unos en todo el dataset</td>
+</tr>
+</tbody>
+</table>
+</div>
+</li>
+<li><a id="org6b8947f"></a>Conteos de <code>obstacle_type</code> (todos los frames)<br />
+<div class="outline-text-6" id="text-org6b8947f">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-right" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Tipo</th>
+<th scope="col" class="org-right">% aprox.</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">none</td>
+<td class="org-right">54%</td>
+</tr>
+
+<tr>
+<td class="org-left">cactus<sub>small</sub></td>
+<td class="org-right">20%</td>
+</tr>
+
+<tr>
+<td class="org-left">cactus<sub>large</sub></td>
+<td class="org-right">15%</td>
+</tr>
+
+<tr>
+<td class="org-left">bird</td>
+<td class="org-right">11%</td>
+</tr>
+</tbody>
+</table>
+</div>
+</li>
+<li><a id="org1d8c065"></a>Tu Tarea (escrito)<br />
+<div class="outline-text-6" id="text-org1d8c065">
+<ol class="org-ol">
+<li>¿El problema P1 (muerte en siguiente frame) está <b>desbalanceado</b>? Cuantifica con los números dados.</li>
+<li>¿Qué implica eso para la <b>métrica</b> que usarías? (accuracy vs precision/recall/F1).</li>
+<li>¿=dist<sub>obstacle</sub>= parece útil como predictor? Argumenta con la fila de muertes.</li>
+<li>¿La distribución de <code>score</code> sugiere regresión simple o necesitas transformación / otro enfoque?</li>
+</ol>
+</div>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<div id="outline-container-orgdc012ab" class="outline-4">
+<h4 id="orgdc012ab">Bloque 3 — Del EDA a la elección del modelo</h4>
+<div class="outline-text-4" id="text-orgdc012ab">
+</div>
+<ul class="org-ul">
+<li><a id="orge20fa13"></a>Misión 5: Árbol de decisión “dataset → modelo”<br />
+<ul class="org-ul">
+<li><a id="org4f7e215"></a>La Historia<br />
+<div class="outline-text-6" id="text-org4f7e215">
+<p>
+El mando quiere una <b>guía</b> para no elegir modelos de moda sin datos que los soporten.
+</p>
+</div>
+</li>
+<li><a id="org09eced3"></a>Tabla guía (completa y comenta en el reporte)<br />
+<div class="outline-text-6" id="text-org09eced3">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Si tu EDA encuentra…</th>
+<th scope="col" class="org-left">Tipo de problema</th>
+<th scope="col" class="org-left">Modelos razonables</th>
+<th scope="col" class="org-left">Modelos poco razonables (y por qué)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Y binaria, tabular, N mediano</td>
+<td class="org-left">Clasificación</td>
+<td class="org-left">Regresión logística, árbol, Random Forest</td>
+<td class="org-left">Red profunda sin más datos (overfitting)</td>
+</tr>
+
+<tr>
+<td class="org-left">Y binaria <b>muy</b> desbalanceada</td>
+<td class="org-left">Clasificación</td>
+<td class="org-left">Mismo + class<sub>weight</sub>, umbral, SMOTE (con cuidado)</td>
+<td class="org-left">Accuracy como única métrica</td>
+</tr>
+
+<tr>
+<td class="org-left">Y numérica (score final)</td>
+<td class="org-left">Regresión</td>
+<td class="org-left">Regresión lineal, árbol regresor</td>
+<td class="org-left">Clasificador binario</td>
+</tr>
+
+<tr>
+<td class="org-left">Y categórica multiclase (tipo obstáculo)</td>
+<td class="org-left">Clasificación multiclase</td>
+<td class="org-left">Logística multinomial, árbol</td>
+<td class="org-left">Regresión lineal sobre códigos 1,2,3</td>
+</tr>
+
+<tr>
+<td class="org-left">Secuencia de frames por sesión</td>
+<td class="org-left">Serie / secuencia</td>
+<td class="org-left">Features + clasificador; LSTM/GRU <b>si</b> hay muchas sesiones</td>
+<td class="org-left">Ignorar orden temporal</td>
+</tr>
+
+<tr>
+<td class="org-left">Relación clara y lineal pocas variables</td>
+<td class="org-left">Interpretable</td>
+<td class="org-left">Regresión logística / lineal</td>
+<td class="org-left">Ensemble opaco sin necesidad</td>
+</tr>
+
+<tr>
+<td class="org-left">Muchas variables categóricas</td>
+<td class="org-left">Tabular</td>
+<td class="org-left">Árboles, encoding ordinal/one-hot</td>
+<td class="org-left">Distancia euclidiana cruda en texto</td>
+</tr>
+</tbody>
+</table>
+</div>
+</li>
+<li><a id="orgd6817e0"></a>Tu Tarea (escrito)<br />
+<div class="outline-text-6" id="text-orgd6817e0">
+<p>
+Para cada escenario del inicio:
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Escenario</th>
+<th scope="col" class="org-left">Tras tu EDA, ¿qué fila de la guía aplica?</th>
+<th scope="col" class="org-left">Modelo que propondrías</th>
+<th scope="col" class="org-left">2 condiciones del dataset que <b>deben</b> cumplirse</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">P1</td>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left">P2</td>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left">P3</td>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+<td class="org-left">&#xa0;</td>
+</tr>
+</tbody>
+</table>
+</div>
+</li>
+</ul>
+</li>
+<li><a id="orgb678c48"></a>Misión 6: Contraejemplo — cuándo <b>no</b> usar un modelo<br />
+<ul class="org-ul">
+<li><a id="org0efddd6"></a>La Historia<br />
+<div class="outline-text-6" id="text-org0efddd6">
+<p>
+A veces el EDA dice: <b>aún no hay datos suficientes</b> o <b>la pregunta está mal planteada</b>.
+</p>
+</div>
+</li>
+<li><a id="orgd2e8fec"></a>Tu Tarea (escrito)<br />
+<div class="outline-text-6" id="text-orgd2e8fec">
+<ol class="org-ol">
+<li>Describe un escenario del dino donde un <b>árbol profundo</b> parecería buena idea pero el EDA lo desaconsejaría.</li>
+<li>Describe un escenario donde una <b>red neuronal</b> tendría sentido y qué deberías ver en el EDA para justificarla.</li>
+<li>¿Se podría resolver P1 con <b>reglas fijas</b> (<code>si dist_obstacle &lt; X y jump=0 entonces muerte</code>)? Compara con un modelo aprendido: ventajas y límites.</li>
+</ol>
+</div>
+</li>
+</ul>
+</li>
+<li><a id="org0aa19d0"></a>Bloque 4 — Cierre<br />
+<ul class="org-ul">
+<li><a id="orgcbbc5ae"></a>Misión 7: Informe del analista (entregable final)<br />
+<ul class="org-ul">
+<li><a id="org39086cf"></a>Plantilla <code>reporte_dino_crash_eda.md</code><br />
+<div class="outline-text-7" id="text-org39086cf">
+<pre class="example" id="org645e3a4">
+# Reporte EDA — Operación Dino Crash
+**Analista:** [Nombre / Matrícula]
+
+## 1. Problema y dataset (Misión 1)
+### P1 — Muerte en el siguiente frame
+- Y:
+- X (mínimo 5 variables):
+- Granularidad:
+- Tamaño mínimo de dataset:
+
+(repite P2, P3)
+
+## 2. Diccionario y muestra (Misión 2)
+- Patrón en died=1:
+- ¿Falta alguna columna?
+
+## 3. Checklist EDA (Misión 3)
+(respuestas a 3 preguntas + leakage + i.i.d.)
+
+## 4. Interpretación de resúmenes (Misión 4)
+(desbalance, métricas, dist_obstacle)
+
+## 5. Elección de modelo (Misiones 5–6)
+(tabla P1/P2/P3 + contraejemplos)
+
+## Síntesis (5 líneas)
+¿Qué dataset pedirías primero y qué modelo *solo después* del EDA?
+</pre>
+</div>
+</li>
+</ul>
+</li>
+<li><a id="org22f0389"></a>Rúbrica sugerida (docente)<br />
+<div class="outline-text-6" id="text-org22f0389">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-right" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Criterio</th>
+<th scope="col" class="org-right">Puntos</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Definición clara de Y y granularidad por escenario</td>
+<td class="org-right">25%</td>
+</tr>
+
+<tr>
+<td class="org-left">Preguntas EDA pertinentes (balance, leakage, i.i.d.)</td>
+<td class="org-right">25%</td>
+</tr>
+
+<tr>
+<td class="org-left">Elección de modelo ligada a hallazgos del EDA</td>
+<td class="org-right">30%</td>
+</tr>
+
+<tr>
+<td class="org-left">Claridad y coherencia del reporte</td>
+<td class="org-right">20%</td>
+</tr>
+</tbody>
+</table>
+</div>
+</li>
+<li><a id="org118126d"></a>Sin programación en esta operación<br />
+<div class="outline-text-6" id="text-org118126d">
+<p>
+El objetivo es que el alumno entienda: <b>el modelo no se elige por fama; se elige porque el dataset, visto con EDA, tiene cierta forma.</b>
+</p>
+
+<pre class="example">
+None
+</pre>
+</div>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+</div>
 </div>
 <div id="postamble" class="status">
 <p class="author">Autor: Eduardo Alcaraz</p>
-<p class="date">Created: 2026-07-07 mar 13:44</p>
+<p class="date">Created: 2026-07-08 mié 11:25</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

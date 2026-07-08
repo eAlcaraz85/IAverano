@@ -1,0 +1,3303 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="es" xml:lang="es">
+<head>
+<!-- 2026-07-07 mar 13:44 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Apuntes IA Verano</title>
+<meta name="author" content="Eduardo Alcaraz" />
+<meta name="generator" content="Org Mode" />
+<style type="text/css">
+  #content { max-width: 60em; margin: auto; }
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #e6e6e6;
+    border-radius: 3px;
+    background-color: #f2f2f2;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: auto;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    top: -8px;
+    right: 12px;
+    padding: 3px;
+    color: #555;
+    background-color: #f2f2f299;
+  }
+  pre.src:hover:before { display: inline; margin-top: 14px;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-authinfo::before { content: 'Authinfo'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .equation-container {
+    display: table;
+    text-align: center;
+    width: 100%;
+  }
+  .equation {
+    vertical-align: middle;
+  }
+  .equation-label {
+    display: table-cell;
+    text-align: right;
+    vertical-align: middle;
+  }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { }
+</style>
+<link rel="stylesheet" type="text/css" href="src/readtheorg_theme/css/htmlize.css"/>
+<link rel="stylesheet" type="text/css" href="src/readtheorg_theme/css/readtheorg.css"/>
+<link rel="stylesheet" type="text/css" href="src/readtheorg_theme/css/minimal-sobrio.css"/>
+<script type="text/javascript" src="src/lib/js/jquery.min.js"></script>
+<script type="text/javascript" src="src/lib/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="src/lib/js/jquery.stickytableheaders.min.js"></script>
+<script type="text/javascript" src="src/readtheorg_theme/js/readtheorg.js"></script>
+<script type="text/javascript" src="src/readtheorg_theme/js/toc-search.js"></script>
+<style> #content{max-width:1800px;}</style>
+<script>
+  window.MathJax = {
+    tex: {
+      ams: {
+        multlineWidth: '85%'
+      },
+      tags: 'ams',
+      tagSide: 'right',
+      tagIndent: '.8em'
+    },
+    chtml: {
+      scale: 1.0,
+      displayAlign: 'center',
+      displayIndent: '0em'
+    },
+    svg: {
+      scale: 1.0,
+      displayAlign: 'center',
+      displayIndent: '0em'
+    },
+    output: {
+      font: 'mathjax-modern',
+      displayOverflow: 'overflow'
+    }
+  };
+</script>
+
+<script
+  id="MathJax-script"
+  async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+</head>
+<body>
+<div id="content" class="content">
+<h1 class="title">Apuntes IA Verano</h1>
+<div id="table-of-contents" role="doc-toc">
+<h2>&Iacute;ndice</h2>
+<div id="text-table-of-contents" role="doc-toc">
+<ul>
+<li><a href="#orgcfb1dda">Introducción a la Inteligencia Artificial</a>
+<ul>
+<li><a href="#orgc01124c">1.1 Introducción a la Inteligencia Artificial</a>
+<ul>
+<li><a href="#org2af527a">¿Qué es la Inteligencia Artificial?</a></li>
+<li><a href="#org10c04d5">Problemas típicos de la IA</a></li>
+<li><a href="#org3ef231f">IA débil vs IA fuerte (distinción conceptual)</a></li>
+<li><a href="#org36da5ce">Relación con otras disciplinas</a></li>
+<li><a href="#org452c47b">Idea clave del curso</a></li>
+</ul>
+</li>
+<li><a href="#org7f3f319">1.2 Historia de la Inteligencia Artificial</a>
+<ul>
+<li><a href="#org61d84a3">Orígenes (décadas de 1940–1950)</a></li>
+<li><a href="#org5995c6a">Era del optimismo (1956–1974)</a></li>
+<li><a href="#orga9ade83">Primer “invierno” de la IA (1974–1980)</a></li>
+<li><a href="#orgfc8b1ad">Sistemas expertos y boom comercial (1980–1987)</a></li>
+<li><a href="#orge840a43">Segundo invierno (1987–1993)</a></li>
+<li><a href="#orgab587df">Resurgimiento: aprendizaje automático y datos (1990–2010)</a></li>
+<li><a href="#org8072da7">Era del <b>deep learning</b> (2010–presente)</a></li>
+<li><a href="#org7d8682c">Línea de tiempo resumida</a></li>
+</ul>
+</li>
+<li><a href="#orge24a91c">1.3 Habilidades cognoscitivas y teorías de la inteligencia</a>
+<ul>
+<li><a href="#org773b50c">Habilidades cognoscitivas (psicología)</a></li>
+<li><a href="#orgf97f5d8">Teoría conductista (conductismo)</a></li>
+<li><a href="#org0346eac">Teoría de la inteligencia general (factor <b>g</b>)</a></li>
+<li><a href="#org04706c3">Inteligencias múltiples (Howard Gardner)</a></li>
+<li><a href="#orgc09ea87">Otras teorías (mención)</a></li>
+</ul>
+</li>
+<li><a href="#org13c7c23">1.4 Razonamiento según la lógica</a>
+<ul>
+<li><a href="#orgce97c13">Lógica como fundamento del razonamiento automático</a></li>
+<li><a href="#orgcd752c2">Componentes básicos</a></li>
+<li><a href="#org464863f">Ejemplo mínimo (lógica proposicional)</a></li>
+<li><a href="#orge49df91">Sistemas formales relevantes en IA</a></li>
+<li><a href="#org8c3e3f0">Límites importantes</a></li>
+</ul>
+</li>
+<li><a href="#org26facac">1.5 Adquisición del conocimiento según la filosofía</a>
+<ul>
+<li><a href="#orgb5e4582">¿Qué es el conocimiento? (epistemología)</a></li>
+<li><a href="#org870eb95">Empirismo vs racionalismo</a></li>
+<li><a href="#org2378c8a">Fuentes de conocimiento en sistemas inteligentes</a></li>
+<li><a href="#org89ec163">Problema de la adquisición de conocimiento (<b>knowledge acquisition bottleneck</b>)</a></li>
+<li><a href="#orged5177b">Representación del conocimiento (puente filosofía → IA)</a></li>
+</ul>
+</li>
+<li><a href="#orgb9f5fc5">1.6 El modelo cognoscitivo</a>
+<ul>
+<li><a href="#org3183b7d">Definición</a></li>
+<li><a href="#org11b7c5f">Arquitecturas cognitivas clásicas</a></li>
+<li><a href="#orge5873b4">Componentes típicos de un modelo cognoscitivo</a></li>
+<li><a href="#org92d5f77">Modelo cognoscitivo vs modelo de agente</a></li>
+<li><a href="#org5992eba">Conexión con IA moderna</a></li>
+</ul>
+</li>
+<li><a href="#org4e68f45">1.7 Modelo del agente inteligente</a>
+<ul>
+<li><a href="#orgb46ccf0">Definición de agente</a></li>
+<li><a href="#org68f04f0">Función agente</a></li>
+<li><a href="#org0c7b4d5">Componentes de un agente racional</a></li>
+<li><a href="#orgb947364">Tipos de agentes (Jersey / Russell &amp; Norvig)</a></li>
+<li><a href="#org55a58c1">PEAS (ejemplo: taxi autónomo)</a></li>
+<li><a href="#orgc4de8f4">Propiedades del entorno (para elegir técnica)</a></li>
+<li><a href="#org030ed3c">Sistemas multiagente (SMA)</a></li>
+<li><a href="#orgab12818">Sistemas ubicuos (<b>ubicomp</b>)</a></li>
+</ul>
+</li>
+<li><a href="#orgfb35339">1.8 El papel de la heurística</a>
+<ul>
+<li><a href="#orgcb935b5">¿Qué es una heurística?</a></li>
+<li><a href="#org6be8afe">Propiedades deseables</a></li>
+<li><a href="#org4bbe762">Búsqueda ciega vs informada vs local</a></li>
+</ul>
+</li>
+<li><a href="#orge508c33">1.8.1 Algoritmos de exploración de alternativas</a>
+<ul>
+<li><a href="#org5ed3021">Modelo de problema de búsqueda</a></li>
+<li><a href="#orgbaca8f8">Búsqueda en anchura (BFS)</a></li>
+<li><a href="#org5e8964d">Búsqueda en profundidad (DFS)</a></li>
+<li><a href="#org343c4a3">Costo uniforme (UCS / Dijkstra en grafo de estados)</a></li>
+<li><a href="#orgb83b349">Greedy best-first</a></li>
+<li><a href="#org6102259">Ejemplo: laberinto en Python (BFS)</a></li>
+</ul>
+</li>
+<li><a href="#orgfcbb713">1.8.2 Algoritmo A*</a>
+<ul>
+<li><a href="#org09aad25">Idea</a></li>
+<li><a href="#org6c54156">Pseudocódigo (conceptual)</a></li>
+<li><a href="#orge2005be">Condiciones para optimalidad</a></li>
+<li><a href="#org7959809">Ejemplo: A* en cuadrícula (Manhattan)</a></li>
+<li><a href="#org80084c4">Cuándo usar A*</a></li>
+</ul>
+</li>
+<li><a href="#org8fd7760">1.8.3 Algoritmos de búsqueda local</a>
+<ul>
+<li><a href="#org281e0a7">Idea</a></li>
+<li><a href="#orga38d775">Hill climbing (escalada de colina)</a></li>
+<li><a href="#org433234c">Variantes</a></li>
+<li><a href="#orga64609d">Ejemplo: hill climbing (maximizar función 1D discreta)</a></li>
+<li><a href="#orgd186ce3">Búsqueda local vs A*</a></li>
+</ul>
+</li>
+<li><a href="#org3a00fa1">Síntesis del temario</a></li>
+<li><a href="#org94921cd">Referencias sugeridas</a></li>
+<li><a href="#orgb7ec1bd">Preguntas de repaso</a></li>
+</ul>
+</li>
+<li><a href="#orgb9e4cd1">Acertijos de IA: espacio de estados, lógica y poda</a>
+<ul>
+<li><a href="#org929188a">1. El problema de los maridos celosos</a>
+<ul>
+<li><a href="#orgb2d8004">Enunciado</a></li>
+<li><a href="#orgff101d9">Modelado del espacio de estados (sin enumerar todo a ciegas)</a></li>
+<li><a href="#org57b8e4b">Razonamiento guiado (lógica antes que fuerza bruta)</a></li>
+<li><a href="#org342170d">Solución óptima: <b>9 viajes</b></a></li>
+</ul>
+</li>
+<li><a href="#org0d3dd51">2. El puente y la linterna (optimización en 17 minutos)</a>
+<ul>
+<li><a href="#orgdc18428">Enunciado</a></li>
+<li><a href="#org3425d2d">Modelado (estado acotado)</a></li>
+<li><a href="#org9a42574">Razonamiento lógico (sin BFS)</a></li>
+<li><a href="#org5ee65e6">Solución paso a paso</a></li>
+</ul>
+</li>
+<li><a href="#org10399d1">3. Flavio Josefo y el círculo de la muerte</a>
+<ul>
+<li><a href="#org18888ed">Historia</a></li>
+<li><a href="#orga36e459">Enunciado matemático</a></li>
+<li><a href="#org48318e2">¿Por qué no expandir el árbol completo?</a></li>
+<li><a href="#org802398d">Caso k = 2 (eliminar cada segundo)</a></li>
+<li><a href="#orgfb5526c">Ejemplo manual: n = 7, k = 2</a></li>
+<li><a href="#org6ee3084">Caso general k (algoritmo iterativo O(n))</a></li>
+<li><a href="#orgd54e201">Síntesis: lógica vs explosión combinatoria</a></li>
+<li><a href="#orgfe93d69">Preguntas de repaso</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#org912f67d">A*  — Arriero, coyote, cabra y maíz</a>
+<ul>
+<li><a href="#org5e1acf3">Símbolos</a></li>
+<li><a href="#org1f8d699">Reglas del bote</a></li>
+<li><a href="#orga88ee10">Objetivo</a></li>
+<li><a href="#org3faa3cf">Parte 1 — ¿Qué es un estado? (la “fotografía” del río)</a></li>
+<li><a href="#org52457f0">Parte 2 — El espacio de estados (el mapa completo del camino bueno)</a>
+<ul>
+<li><a href="#org9772e5e">Los 8 estados del camino más corto (7 cruces)</a></li>
+<li><a href="#org9a65d7c">Dibujo del camino (solo flechas hacia adelante)</a></li>
+<li><a href="#org95f9da0">¿Por qué no hay más estados en el camino bueno?</a></li>
+<li><a href="#orgcb6ea25">Ramas que se cortan desde E0 (ejemplo de poda)</a></li>
+</ul>
+</li>
+<li><a href="#org6cdfd3f">Parte 3 — g, h y f</a>
+<ul>
+<li><a href="#org0391ee5">g = “¿Cuántos cruces ya hice?”</a></li>
+<li><a href="#org95cb3d4">h = “¿Cuántos cruces <b>creo</b> que faltan?” (estimación)</a></li>
+<li><a href="#orgf97df17">f = “¿Qué tan prioritario es este estado?”</a></li>
+</ul>
+</li>
+<li><a href="#org6782abe">Parte 4 — A* paso a paso (tabla de “lista de pendientes”)</a>
+<ul>
+<li><a href="#org09d2ec7">Iteración 1</a></li>
+<li><a href="#org668ab86">Iteración 2</a></li>
+<li><a href="#org1c06f82">Iteración 3</a></li>
+<li><a href="#org997f397">Iteración 4</a></li>
+<li><a href="#org2afb8ff">Iteraciones 5–7 (resumen en una tabla)</a></li>
+<li><a href="#orgff0a4be">¿Qué aprendiste del proceso?</a></li>
+</ul>
+</li>
+<li><a href="#org5d5f703">Parte 5 — La solución contada como cuento (7 cruces)</a></li>
+<li><a href="#orgfb1b78e">Parte 6 — Comparación rápida</a></li>
+<li><a href="#org24af4d8">Parte 7 — Ejercicios con lápiz y papel</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orgcfb1dda" class="outline-2">
+<h2 id="orgcfb1dda">Introducción a la Inteligencia Artificial</h2>
+<div class="outline-text-2" id="text-orgcfb1dda">
+<p>
+Este documento desarrolla el temario de la unidad introductoria a la <b>Inteligencia Artificial (IA)</b>: definición, historia, bases cognitivas, lógica, filosofía del conocimiento, modelos cognitivos y de agente, y el papel de la <b>heurística</b> con algoritmos de búsqueda.
+</p>
+
+<p>
+<b>Objetivos generales:</b>
+</p>
+<ul class="org-ul">
+<li>Comprender qué se entiende por IA y cómo ha evolucionado históricamente.</li>
+<li>Relacionar la IA con psicología, lógica y filosofía del conocimiento.</li>
+<li>Describir el <b>modelo del agente inteligente</b> y sus extensiones (multiagente, ubicuo).</li>
+<li>Aplicar algoritmos de búsqueda informada y local como base de la resolución de problemas.</li>
+</ul>
+</div>
+<div id="outline-container-orgc01124c" class="outline-3">
+<h3 id="orgc01124c">1.1 Introducción a la Inteligencia Artificial</h3>
+<div class="outline-text-3" id="text-orgc01124c">
+</div>
+<div id="outline-container-org2af527a" class="outline-4">
+<h4 id="org2af527a">¿Qué es la Inteligencia Artificial?</h4>
+<div class="outline-text-4" id="text-org2af527a">
+<p>
+La <b>Inteligencia Artificial</b> es el campo de la informática y las ciencias cognitivas que estudia cómo construir sistemas capaces de realizar tareas que, si las hiciera un humano, requerirían <b>inteligencia</b>: percibir, razonar, aprender, planificar, comunicarse y actuar en entornos complejos.
+</p>
+
+<p>
+Definiciones frecuentes en cursos introductorios:
+</p>
+<ul class="org-ul">
+<li><b>Sistemas que piensan como humanos</b> (enfoque cognitivo / simulación).</li>
+<li><b>Sistemas que actúan racionalmente</b> (enfoque del <b>agente racional</b>; muy usado en IA moderna).</li>
+<li><b>Sistemas que piensan racionalmente</b> (enfoque lógico: leyes del pensamiento).</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org10c04d5" class="outline-4">
+<h4 id="org10c04d5">Problemas típicos de la IA</h4>
+<div class="outline-text-4" id="text-org10c04d5">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Área</th>
+<th scope="col" class="org-left">Ejemplos</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Percepción</td>
+<td class="org-left">Visión por computadora, reconocimiento de voz</td>
+</tr>
+
+<tr>
+<td class="org-left">Razonamiento</td>
+<td class="org-left">Demostración de teoremas, diagnóstico médico</td>
+</tr>
+
+<tr>
+<td class="org-left">Aprendizaje</td>
+<td class="org-left">Clasificación, predicción, <b>deep learning</b></td>
+</tr>
+
+<tr>
+<td class="org-left">Lenguaje natural</td>
+<td class="org-left">Traducción, chatbots, resumen de textos</td>
+</tr>
+
+<tr>
+<td class="org-left">Planificación</td>
+<td class="org-left">Robótica, logística, juegos (ajedrez, Go)</td>
+</tr>
+
+<tr>
+<td class="org-left">Representación</td>
+<td class="org-left">Ontologías, grafos de conocimiento, bases de reglas</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-org3ef231f" class="outline-4">
+<h4 id="org3ef231f">IA débil vs IA fuerte (distinción conceptual)</h4>
+<div class="outline-text-4" id="text-org3ef231f">
+<ul class="org-ul">
+<li><b>IA débil (narrow AI):</b> sistemas especializados en una tarea (recomendador, detector de spam, asistente de voz). Es lo que existe hoy en producción.</li>
+<li><b>IA fuerte (AGI):</b> hipotética inteligencia general al nivel humano o superior en <b>cualquier</b> dominio. Sigue siendo objeto de debate y especulación.</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org36da5ce" class="outline-4">
+<h4 id="org36da5ce">Relación con otras disciplinas</h4>
+<div class="outline-text-4" id="text-org36da5ce">
+<ul class="org-ul">
+<li><b>Psicología cognitiva:</b> modelos de memoria, atención, aprendizaje.</li>
+<li><b>Lógica y matemáticas:</b> formalización del razonamiento.</li>
+<li><b>Filosofía:</b> naturaleza del conocimiento, mente y consciencia.</li>
+<li><b>Neurociencia:</b> inspiración biológica (redes neuronales).</li>
+<li><b>Ingeniería:</b> sistemas que funcionan en el mundo real (robots, sensores, redes).</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org452c47b" class="outline-4">
+<h4 id="org452c47b">Idea clave del curso</h4>
+<div class="outline-text-4" id="text-org452c47b">
+<p>
+La IA no es un solo método: es un <b>conjunto de técnicas</b> (búsqueda, lógica, probabilidad, aprendizaje automático, etc.) unidas por la pregunta: <b>¿cómo representar el conocimiento y elegir acciones útiles en un entorno?</b>
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-org7f3f319" class="outline-3">
+<h3 id="org7f3f319">1.2 Historia de la Inteligencia Artificial</h3>
+<div class="outline-text-3" id="text-org7f3f319">
+</div>
+<div id="outline-container-org61d84a3" class="outline-4">
+<h4 id="org61d84a3">Orígenes (décadas de 1940–1950)</h4>
+<div class="outline-text-4" id="text-org61d84a3">
+<ul class="org-ul">
+<li><b>Alan Turing</b> (1950): artículo “Computing Machinery and Intelligence”; propone el <b>Test de Turing</b> como criterio operativo de comportamiento inteligente.</li>
+<li><b>McCulloch y Pitts</b> (1943): modelo neuronal binario (antecedente de redes neuronales).</li>
+<li>Conferencia de <b>Dartmouth</b> (1956): McCarthy, Minsky, Shannon, Rochester y otros acuñan el término <b>“Artificial Intelligence”</b>. Se inicia el optimismo de que la inteligencia general sería alcanzable en pocos años.</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org5995c6a" class="outline-4">
+<h4 id="org5995c6a">Era del optimismo (1956–1974)</h4>
+<div class="outline-text-4" id="text-org5995c6a">
+<ul class="org-ul">
+<li>Programas pioneros: <b>Logic Theorist</b>, <b>General Problem Solver</b> (GPS), primeros juegos (damas, ajedrez simplificado).</li>
+<li>Lenguaje <b>LISP</b> (McCarthy, 1958) como herramienta simbólica.</li>
+<li>Expectativas altas; financiamiento abundante.</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orga9ade83" class="outline-4">
+<h4 id="orga9ade83">Primer “invierno” de la IA (1974–1980)</h4>
+<div class="outline-text-4" id="text-orga9ade83">
+<ul class="org-ul">
+<li>Limitaciones computacionales y teóricas (combinatoria explosiva, conocimiento difícil de codificar).</li>
+<li>Informe <b>Lighthill</b> (Reino Unido, 1973): crítica severa → recortes de fondos.</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orgfc8b1ad" class="outline-4">
+<h4 id="orgfc8b1ad">Sistemas expertos y boom comercial (1980–1987)</h4>
+<div class="outline-text-4" id="text-orgfc8b1ad">
+<ul class="org-ul">
+<li><b>Sistemas basados en reglas</b> (IF–THEN): MYCIN (diagnóstico), DENDRAL (química).</li>
+<li>Japón: <b>Fifth Generation</b>; EE.UU.: proyectos DARPA.</li>
+<li>Éxito en dominios acotados con expertos humanos disponibles.</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orge840a43" class="outline-4">
+<h4 id="orge840a43">Segundo invierno (1987–1993)</h4>
+<div class="outline-text-4" id="text-orge840a43">
+<ul class="org-ul">
+<li>Caída del hardware LISP; sistemas expertos caros de mantener y frágiles fuera de su nicho.</li>
+<li>Necesidad de <b>aprendizaje</b> y <b>datos</b> frente a solo reglas manuales.</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orgab587df" class="outline-4">
+<h4 id="orgab587df">Resurgimiento: aprendizaje automático y datos (1990–2010)</h4>
+<div class="outline-text-4" id="text-orgab587df">
+<ul class="org-ul">
+<li><b>Aprendizaje estadístico</b>: SVM, árboles, <b>boosting</b>.</li>
+<li>Éxitos prácticos: filtrado de spam, reconocimiento de escritura, recomendación.</li>
+<li><b>Deep Blue</b> vence a Kasparov (1997) con búsqueda + heurísticas + hardware.</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org8072da7" class="outline-4">
+<h4 id="org8072da7">Era del <b>deep learning</b> (2010–presente)</h4>
+<div class="outline-text-4" id="text-org8072da7">
+<ul class="org-ul">
+<li>GPUs, grandes conjuntos de datos (ImageNet), arquitecturas profundas (CNN, RNN, Transformers).</li>
+<li>Hitos: AlexNet (2012), AlphaGo (2016), GPT y modelos de lenguaje a gran escala (2020+).</li>
+<li>IA generativa, visión, voz, asistentes conversacionales.</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org7d8682c" class="outline-4">
+<h4 id="org7d8682c">Línea de tiempo resumida</h4>
+<div class="outline-text-4" id="text-org7d8682c">
+<pre class="example" id="org3705311">
+1943  Modelo McCulloch-Pitts
+1950  Test de Turing
+1956  Dartmouth → nace el término "IA"
+1960s GPS, ELIZA, optimismo
+1974  Primer invierno (Lighthill)
+1980s Sistemas expertos
+1987  Segundo invierno
+1997  Deep Blue vs Kasparov
+2012  AlexNet / revolución deep learning
+2016  AlphaGo
+2020+ LLMs, IA generativa
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orge24a91c" class="outline-3">
+<h3 id="orge24a91c">1.3 Habilidades cognoscitivas y teorías de la inteligencia</h3>
+<div class="outline-text-3" id="text-orge24a91c">
+</div>
+<div id="outline-container-org773b50c" class="outline-4">
+<h4 id="org773b50c">Habilidades cognoscitivas (psicología)</h4>
+<div class="outline-text-4" id="text-org773b50c">
+<p>
+Desde la psicología cognitiva, la “inteligencia” en humanos se manifiesta en procesos interrelacionados:
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Proceso</th>
+<th scope="col" class="org-left">Descripción breve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Percepción</td>
+<td class="org-left">Interpretar estímulos sensoriales</td>
+</tr>
+
+<tr>
+<td class="org-left">Atención</td>
+<td class="org-left">Seleccionar información relevante</td>
+</tr>
+
+<tr>
+<td class="org-left">Memoria</td>
+<td class="org-left">Almacenar y recuperar (corto/largo plazo)</td>
+</tr>
+
+<tr>
+<td class="org-left">Lenguaje</td>
+<td class="org-left">Comprender y producir símbolos lingüísticos</td>
+</tr>
+
+<tr>
+<td class="org-left">Razonamiento</td>
+<td class="org-left">Inferir conclusiones, resolver problemas</td>
+</tr>
+
+<tr>
+<td class="org-left">Aprendizaje</td>
+<td class="org-left">Modificar conducta o conocimiento con la experiencia</td>
+</tr>
+
+<tr>
+<td class="org-left">Metacognición</td>
+<td class="org-left">“Pensar sobre el propio pensamiento”</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+La IA clásica intentó <b>modelar</b> o <b>replicar</b> estos procesos; la IA moderna a menudo los <b>aproxima</b> con datos y optimización sin pretender fidelidad biológica.
+</p>
+</div>
+</div>
+<div id="outline-container-orgf97f5d8" class="outline-4">
+<h4 id="orgf97f5d8">Teoría conductista (conductismo)</h4>
+<div class="outline-text-4" id="text-orgf97f5d8">
+<ul class="org-ul">
+<li><b>Enfoque:</b> la mente no se observa directamente; se estudia el <b>comportamiento</b> ante estímulos y reforzadores.</li>
+<li><b>Skinner, Watson:</b> aprendizaje por condicionamiento y refuerzo.</li>
+<li><b>Relevancia en IA:</b> <b>aprendizaje por refuerzo</b> (RL): agente, estados, acciones, recompensas (Q-learning, policy gradient). El “conductismo” inspira el marco matemático, no la negación de representaciones internas (los agentes RL sí mantienen valores o políticas).</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org0346eac" class="outline-4">
+<h4 id="org0346eac">Teoría de la inteligencia general (factor <b>g</b>)</h4>
+<div class="outline-text-4" id="text-org0346eac">
+<ul class="org-ul">
+<li><b>Spearman:</b> un factor común subyace a varias pruebas cognitivas.</li>
+<li>En IA: analogía limitada; los sistemas suelen ser <b>especialistas</b> (alto rendimiento en una tarea, bajo en otras).</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org04706c3" class="outline-4">
+<h4 id="org04706c3">Inteligencias múltiples (Howard Gardner)</h4>
+<div class="outline-text-4" id="text-org04706c3">
+<p>
+Gardner propone varias inteligencias relativamente independientes:
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Inteligencia</th>
+<th scope="col" class="org-left">Ejemplo humano</th>
+<th scope="col" class="org-left">Paralelo en IA (aproximado)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Lingüística</td>
+<td class="org-left">Leer, escribir, debatir</td>
+<td class="org-left">NLP, LLMs</td>
+</tr>
+
+<tr>
+<td class="org-left">Lógico-matemática</td>
+<td class="org-left">Demostrar, programar</td>
+<td class="org-left">Lógica, planificación, ML simbólico</td>
+</tr>
+
+<tr>
+<td class="org-left">Espacial</td>
+<td class="org-left">Orientarse, dibujar</td>
+<td class="org-left">Visión, SLAM, gráficos</td>
+</tr>
+
+<tr>
+<td class="org-left">Musical</td>
+<td class="org-left">Componer, reconocer tonos</td>
+<td class="org-left">Generación/análisis musical</td>
+</tr>
+
+<tr>
+<td class="org-left">Corporal-kinestésica</td>
+<td class="org-left">Deportes, manualidades</td>
+<td class="org-left">Robótica, control motor</td>
+</tr>
+
+<tr>
+<td class="org-left">Interpersonal</td>
+<td class="org-left">Empatía, liderazgo</td>
+<td class="org-left">Análisis de sentimientos (parcial)</td>
+</tr>
+
+<tr>
+<td class="org-left">Intrapersonal</td>
+<td class="org-left">Autoconocimiento</td>
+<td class="org-left">Poco modelado explícitamente</td>
+</tr>
+
+<tr>
+<td class="org-left">Naturalista</td>
+<td class="org-left">Clasificar especies</td>
+<td class="org-left">Clasificación de imágenes</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+<b>Idea pedagógica:</b> no existe un solo “botón de inteligencia”; los sistemas actuales combinan módulos especializados.
+</p>
+</div>
+</div>
+<div id="outline-container-orgc09ea87" class="outline-4">
+<h4 id="orgc09ea87">Otras teorías (mención)</h4>
+<div class="outline-text-4" id="text-orgc09ea87">
+<ul class="org-ul">
+<li><b>Piaget:</b> desarrollo por etapas (sensoriomotor → formal). Útil como metáfora de complejidad creciente en agentes que aprenden.</li>
+<li><b>Vygotsky:</b> aprendizaje social y <b>zona de desarrollo próximo</b>. Paralelo: <b>aprendizaje con humano en el bucle</b> (RLHF, anotación humana).</li>
+<li><b>Sternberg (triárquica):</b> analítica, creativa, práctica → diseño de sistemas que equilibren precisión, novedad y utilidad en contexto.</li>
+</ul>
+</div>
+</div>
+</div>
+<div id="outline-container-org13c7c23" class="outline-3">
+<h3 id="org13c7c23">1.4 Razonamiento según la lógica</h3>
+<div class="outline-text-3" id="text-org13c7c23">
+</div>
+<div id="outline-container-orgce97c13" class="outline-4">
+<h4 id="orgce97c13">Lógica como fundamento del razonamiento automático</h4>
+<div class="outline-text-4" id="text-orgce97c13">
+<p>
+La lógica formal permite:
+</p>
+<ul class="org-ul">
+<li>Representar <b>proposiciones</b> y <b>relaciones</b>.</li>
+<li>Derivar <b>conclusiones válidas</b> a partir de <b>premisas</b>.</li>
+<li>Verificar si un argumento es <b>correcto</b> (independientemente de si las premisas son verdaderas en el mundo real).</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orgcd752c2" class="outline-4">
+<h4 id="orgcd752c2">Componentes básicos</h4>
+<div class="outline-text-4" id="text-orgcd752c2">
+<ul class="org-ul">
+<li><b>Lenguaje formal:</b> símbolos, conectivos (∧, ∨, ¬, →), cuantificadores (∀, ∃).</li>
+<li><b>Axiomas:</b> proposiciones <b>asumidas</b> sin demostración dentro del sistema (punto de partida).</li>
+<li><b>Teoremas:</b> proposiciones <b>demostrables</b> a partir de axiomas y reglas de inferencia.</li>
+<li><b>Demostración:</b> secuencia finita de pasos donde cada paso es un axioma, una hipótesis o se obtiene por una <b>regla de inferencia</b> (p. ej. <b>modus ponens</b>: de P y P→Q inferir Q).</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org464863f" class="outline-4">
+<h4 id="org464863f">Ejemplo mínimo (lógica proposicional)</h4>
+<div class="outline-text-4" id="text-org464863f">
+<p>
+Premisas:
+</p>
+<ol class="org-ol">
+<li>Si llueve, la calle está mojada.  (Lluvia → Mojada)</li>
+<li>Está lloviendo.                    (Lluvia)</li>
+</ol>
+
+<p>
+Conclusión (por modus ponens): La calle está mojada. (Mojada)
+</p>
+
+<p>
+En notación: {(Lluvia → Mojada), Lluvia} ⊢ Mojada
+</p>
+</div>
+</div>
+<div id="outline-container-orge49df91" class="outline-4">
+<h4 id="orge49df91">Sistemas formales relevantes en IA</h4>
+<div class="outline-text-4" id="text-orge49df91">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Sistema</th>
+<th scope="col" class="org-left">Uso en IA</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Lógica proposicional</td>
+<td class="org-left">Reglas simples, verificación finita</td>
+</tr>
+
+<tr>
+<td class="org-left">Lógica de predicados</td>
+<td class="org-left">Relaciones, bases de conocimiento</td>
+</tr>
+
+<tr>
+<td class="org-left">Lógica modal</td>
+<td class="org-left">Conocimiento, creencia, obligación (agentes)</td>
+</tr>
+
+<tr>
+<td class="org-left">Lógica difusa</td>
+<td class="org-left">Razonamiento con grados de verdad</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-org8c3e3f0" class="outline-4">
+<h4 id="org8c3e3f0">Límites importantes</h4>
+<div class="outline-text-4" id="text-org8c3e3f0">
+<ul class="org-ul">
+<li><b>Decidibilidad:</b> algunos problemas no tienen algoritmo que siempre termine con respuesta correcta.</li>
+<li><b>Complejidad:</b> el espacio de búsqueda de demostraciones crece muy rápido → hace falta <b>heurística</b> (sección 1.8).</li>
+<li><b>Mundo real:</b> la lógica clásica asume certeza; en la práctica hay incertidumbre (probabilidad, redes bayesianas).</li>
+</ul>
+</div>
+</div>
+</div>
+<div id="outline-container-org26facac" class="outline-3">
+<h3 id="org26facac">1.5 Adquisición del conocimiento según la filosofía</h3>
+<div class="outline-text-3" id="text-org26facac">
+</div>
+<div id="outline-container-orgb5e4582" class="outline-4">
+<h4 id="orgb5e4582">¿Qué es el conocimiento? (epistemología)</h4>
+<div class="outline-text-4" id="text-orgb5e4582">
+<p>
+La <b>filosofía del conocimiento</b> pregunta:
+</p>
+<ul class="org-ul">
+<li>¿Qué distingue <b>conocimiento</b> de mera <b>creencia</b>?</li>
+<li>¿De dónde proviene? (experiencia vs razón)</li>
+<li>¿Cómo sabemos que algo es <b>justificado</b>?</li>
+</ul>
+
+<p>
+Tradición clásica: <b>conocimiento = creencia verdadera justificada</b> (definición discutida, pero pedagógicamente útil).
+</p>
+</div>
+</div>
+<div id="outline-container-org870eb95" class="outline-4">
+<h4 id="org870eb95">Empirismo vs racionalismo</h4>
+<div class="outline-text-4" id="text-org870eb95">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Corriente</th>
+<th scope="col" class="org-left">Idea principal</th>
+<th scope="col" class="org-left">Paralelo en IA</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Empirismo</td>
+<td class="org-left">Conocimiento desde la experiencia</td>
+<td class="org-left">Aprendizaje automático, datos, inducción</td>
+</tr>
+
+<tr>
+<td class="org-left">Racionalismo</td>
+<td class="org-left">Conocimiento desde la razón innata</td>
+<td class="org-left">Axiomas, ontologías, reglas a priori</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+Los sistemas reales suelen combinar <b>conocimiento codificado</b> (reglas, ontologías) con <b>conocimiento aprendido</b> (modelos entrenados).
+</p>
+</div>
+</div>
+<div id="outline-container-org2378c8a" class="outline-4">
+<h4 id="org2378c8a">Fuentes de conocimiento en sistemas inteligentes</h4>
+<div class="outline-text-4" id="text-org2378c8a">
+<ol class="org-ol">
+<li><b>Codificación manual:</b> expertos escriben reglas (sistemas expertos).</li>
+<li><b>Aprendizaje inductivo:</b> generalizar patrones desde ejemplos.</li>
+<li><b>Adquisición semi-automática:</b> extracción de texto, minería de datos.</li>
+<li><b>Interacción:</b> el usuario corrige o etiqueta (aprendizaje activo).</li>
+</ol>
+</div>
+</div>
+<div id="outline-container-org89ec163" class="outline-4">
+<h4 id="org89ec163">Problema de la adquisición de conocimiento (<b>knowledge acquisition bottleneck</b>)</h4>
+<div class="outline-text-4" id="text-org89ec163">
+<ul class="org-ul">
+<li>Los expertos no siempre saben articular lo que hacen.</li>
+<li>El mantenimiento de reglas es costoso.</li>
+<li>Motivación histórica del <b>machine learning</b>: aprender reglas o parámetros desde datos.</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orged5177b" class="outline-4">
+<h4 id="orged5177b">Representación del conocimiento (puente filosofía → IA)</h4>
+<div class="outline-text-4" id="text-orged5177b">
+<ul class="org-ul">
+<li><b>Hechos:</b> “París es capital de Francia.”</li>
+<li><b>Reglas:</b> “Si X es padre de Y, Y es hijo de X.”</li>
+<li><b>Ontologías:</b> vocabulario formal de conceptos y relaciones.</li>
+<li><b>Frames / redes semánticas:</b> estructuras con herencia y slots.</li>
+</ul>
+</div>
+</div>
+</div>
+<div id="outline-container-orgb9f5fc5" class="outline-3">
+<h3 id="orgb9f5fc5">1.6 El modelo cognoscitivo</h3>
+<div class="outline-text-3" id="text-orgb9f5fc5">
+</div>
+<div id="outline-container-org3183b7d" class="outline-4">
+<h4 id="org3183b7d">Definición</h4>
+<div class="outline-text-4" id="text-org3183b7d">
+<p>
+Un <b>modelo cognoscitivo</b> es una representación computacional de procesos mentales: cómo se percibe, se recuerda, se razona y se decide. Busca coherencia con evidencia psicológica o neurocientífica (a veces de forma simplificada).
+</p>
+</div>
+</div>
+<div id="outline-container-org11b7c5f" class="outline-4">
+<h4 id="org11b7c5f">Arquitecturas cognitivas clásicas</h4>
+<div class="outline-text-4" id="text-org11b7c5f">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Arquitectura</th>
+<th scope="col" class="org-left">Idea central</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">SOAR</td>
+<td class="org-left">Memoria, aprendizaje por <b>chunking</b>, resolución de impasse</td>
+</tr>
+
+<tr>
+<td class="org-left">ACT-R</td>
+<td class="org-left">Módulos (declarativo/procedimental), activación</td>
+</tr>
+
+<tr>
+<td class="org-left">CLARION</td>
+<td class="org-left">Conocimiento implícito vs explícito</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-orge5873b4" class="outline-4">
+<h4 id="orge5873b4">Componentes típicos de un modelo cognoscitivo</h4>
+<div class="outline-text-4" id="text-orge5873b4">
+<ul class="org-ul">
+<li><b>Memoria de trabajo:</b> buffer limitado para información actual.</li>
+<li><b>Memoria a largo plazo:</b> hechos y procedimientos.</li>
+<li><b>Percepción y motor:</b> interfaces con el entorno.</li>
+<li><b>Aprendizaje:</b> consolidación de experiencias en conocimiento reutilizable.</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org92d5f77" class="outline-4">
+<h4 id="org92d5f77">Modelo cognoscitivo vs modelo de agente</h4>
+<div class="outline-text-4" id="text-org92d5f77">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Aspecto</th>
+<th scope="col" class="org-left">Modelo cognoscitivo</th>
+<th scope="col" class="org-left">Agente inteligente (IA clásica)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Objetivo</td>
+<td class="org-left">Simular mente humana</td>
+<td class="org-left">Actuar bien en un entorno</td>
+</tr>
+
+<tr>
+<td class="org-left">Evaluación</td>
+<td class="org-left">Ajuste a datos psicológicos</td>
+<td class="org-left">Rendimiento (tarea, utilidad)</td>
+</tr>
+
+<tr>
+<td class="org-left">Complejidad</td>
+<td class="org-left">Alta fidelidad cognitiva</td>
+<td class="org-left">Pragmática, a veces mínima</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-org5992eba" class="outline-4">
+<h4 id="org5992eba">Conexión con IA moderna</h4>
+<div class="outline-text-4" id="text-org5992eba">
+<p>
+Las redes neuronales profundas no suelen pretender ser modelos cognitivos fieles, pero incorporan ideas inspiradas en cerebro (capas, atención). Los <b>LLMs</b> debaten si emergen capacidades “cognitivas” sin modelo explícito de mente.
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-org4e68f45" class="outline-3">
+<h3 id="org4e68f45">1.7 Modelo del agente inteligente</h3>
+<div class="outline-text-3" id="text-org4e68f45">
+</div>
+<div id="outline-container-orgb46ccf0" class="outline-4">
+<h4 id="orgb46ccf0">Definición de agente</h4>
+<div class="outline-text-4" id="text-orgb46ccf0">
+<p>
+Un <b>agente</b> es cualquier cosa que percibe su <b>entorno</b> mediante <b>sensores</b> y actúa sobre él mediante <b>actuadores</b>.
+</p>
+
+<p>
+Un <b>agente inteligente</b> elige acciones que maximizan una medida de <b>rendimiento</b> según su <b>secuencia perceptiva</b> y su <b>conocimiento</b> incorporado.
+</p>
+</div>
+</div>
+<div id="outline-container-org68f04f0" class="outline-4">
+<h4 id="org68f04f0">Función agente</h4>
+<div class="outline-text-4" id="text-org68f04f0">
+<p>
+\[ f: P^* \rightarrow A \]
+donde P es el conjunto de percepciones y A el de acciones.
+</p>
+
+<p>
+En la práctica se implementa con <b>programa + arquitectura</b> (cuerpo físico o software).
+</p>
+</div>
+</div>
+<div id="outline-container-org0c7b4d5" class="outline-4">
+<h4 id="org0c7b4d5">Componentes de un agente racional</h4>
+<div class="outline-text-4" id="text-org0c7b4d5">
+<ol class="org-ol">
+<li><b>Medida de rendimiento:</b> qué se considera éxito (seguridad, puntos, tiempo, costo).</li>
+<li><b>Conocimiento del entorno:</b> reglas, mapas, modelos probabilísticos.</li>
+<li><b>Secuencia perceptiva:</b> historial de lo observado.</li>
+<li><b>Acción:</b> la mejor según expectativa de rendimiento futuro.</li>
+</ol>
+</div>
+</div>
+<div id="outline-container-orgb947364" class="outline-4">
+<h4 id="orgb947364">Tipos de agentes (Jersey / Russell &amp; Norvig)</h4>
+<div class="outline-text-4" id="text-orgb947364">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Tipo</th>
+<th scope="col" class="org-left">Comportamiento</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Reflejo simple</td>
+<td class="org-left">Acción = función de percepción actual</td>
+</tr>
+
+<tr>
+<td class="org-left">Reflejo basado en modelo</td>
+<td class="org-left">Mantiene estado interno (modelo del mundo)</td>
+</tr>
+
+<tr>
+<td class="org-left">Basado en objetivos</td>
+<td class="org-left">Planifica para alcanzar metas</td>
+</tr>
+
+<tr>
+<td class="org-left">Basado en utilidad</td>
+<td class="org-left">Elige entre metas con grados de preferencia</td>
+</tr>
+
+<tr>
+<td class="org-left">De aprendizaje</td>
+<td class="org-left">Mejora su comportamiento con la experiencia</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-org55a58c1" class="outline-4">
+<h4 id="org55a58c1">PEAS (ejemplo: taxi autónomo)</h4>
+<div class="outline-text-4" id="text-org55a58c1">
+<ul class="org-ul">
+<li><b>Performance:</b> seguridad, rapidez, comodidad, legalidad.</li>
+<li><b>Environment:</b> calles, tráfico, peatones, clima.</li>
+<li><b>Actuators:</b> volante, acelerador, freno, señales.</li>
+<li><b>Sensors:</b> cámaras, LIDAR, GPS, odometría.</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orgc4de8f4" class="outline-4">
+<h4 id="orgc4de8f4">Propiedades del entorno (para elegir técnica)</h4>
+<div class="outline-text-4" id="text-orgc4de8f4">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Propiedad</th>
+<th scope="col" class="org-left">Ejemplos</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Observable / no</td>
+<td class="org-left">Ajedrez completo vs taxi con puntos ciegos</td>
+</tr>
+
+<tr>
+<td class="org-left">Determinista / no</td>
+<td class="org-left">Laberinto fijo vs poker</td>
+</tr>
+
+<tr>
+<td class="org-left">Episódico / secuencial</td>
+<td class="org-left">Clasificar imagen vs ajedrez</td>
+</tr>
+
+<tr>
+<td class="org-left">Estático / dinámico</td>
+<td class="org-left">Rompecabezas vs fútbol robótico</td>
+</tr>
+
+<tr>
+<td class="org-left">Discreto / continuo</td>
+<td class="org-left">Tablero vs conducción continua</td>
+</tr>
+
+<tr>
+<td class="org-left">Un agente / multi</td>
+<td class="org-left">Solitario vs subastas, tráfico</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-org030ed3c" class="outline-4">
+<h4 id="org030ed3c">Sistemas multiagente (SMA)</h4>
+<div class="outline-text-4" id="text-org030ed3c">
+<ul class="org-ul">
+<li>Varios agentes en un <b>mismo entorno</b>; pueden cooperar, competir o ser neutros.</li>
+<li><b>Cooperación:</b> robots en almacén, enjambres.</li>
+<li><b>Competencia:</b> subastas, juegos, mercados.</li>
+<li>Desafíos: comunicación, coordinación, equilibrio (teoría de juegos), emergencia de comportamiento global.</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orgab12818" class="outline-4">
+<h4 id="orgab12818">Sistemas ubicuos (<b>ubicomp</b>)</h4>
+<div class="outline-text-4" id="text-orgab12818">
+<ul class="org-ul">
+<li>Computación <b>integrada</b> en el entorno cotidiano (sensores, wearables, hogar inteligente, ciudades).</li>
+<li>Características: invisibilidad, contexto, movilidad, muchos dispositivos heterogéneos.</li>
+<li>Relación con IA: agentes distribuidos, percepción contextual, decisiones en tiempo real con recursos limitados.</li>
+</ul>
+
+<pre class="example" id="org6b043dd">
+        ┌─────────────┐
+Sensores│   AGENTE    │Actuadores
+   ────►│  (programa) │────► Entorno
+        └─────────────┘
+              ▲
+              │ percepción → decisión → acción
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgfb35339" class="outline-3">
+<h3 id="orgfb35339">1.8 El papel de la heurística</h3>
+<div class="outline-text-3" id="text-orgfb35339">
+</div>
+<div id="outline-container-orgcb935b5" class="outline-4">
+<h4 id="orgcb935b5">¿Qué es una heurística?</h4>
+<div class="outline-text-4" id="text-orgcb935b5">
+<p>
+Una <b>heurística</b> es una regla práctica, atajo o función estimadora que <b>guía la búsqueda</b> hacia soluciones prometedoras sin garantizar optimalidad ni completitud en todos los casos.
+</p>
+
+<p>
+<b>Motivación:</b> el espacio de estados crece exponencialmente (<b>explosión combinatoria</b>). Explorar todo es inviable.
+</p>
+</div>
+</div>
+<div id="outline-container-org6be8afe" class="outline-4">
+<h4 id="org6be8afe">Propiedades deseables</h4>
+<div class="outline-text-4" id="text-org6be8afe">
+<ul class="org-ul">
+<li><b>Admisibilidad (A</b>):* h(n) nunca sobreestima el costo real → solución óptima si existe.</li>
+<li><b>Consistencia (monotonicidad):</b> h(n) ≤ costo(n,n') + h(n') → facilita optimalidad.</li>
+<li><b>Información:</b> cuanto más cerca de la realidad, menos nodos se expanden (pero más costosa de calcular).</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org4bbe762" class="outline-4">
+<h4 id="org4bbe762">Búsqueda ciega vs informada vs local</h4>
+<div class="outline-text-4" id="text-org4bbe762">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Tipo</th>
+<th scope="col" class="org-left">Usa costo/heurística</th>
+<th scope="col" class="org-left">Ejemplos</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Ciega</td>
+<td class="org-left">No (solo estructura)</td>
+<td class="org-left">BFS, DFS, costo uniforme</td>
+</tr>
+
+<tr>
+<td class="org-left">Informada</td>
+<td class="org-left">Sí (h)</td>
+<td class="org-left">A*, greedy best-first</td>
+</tr>
+
+<tr>
+<td class="org-left">Local</td>
+<td class="org-left">Mejora iterativa</td>
+<td class="org-left">Hill climbing, simulated annealing</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="outline-container-orge508c33" class="outline-3">
+<h3 id="orge508c33">1.8.1 Algoritmos de exploración de alternativas</h3>
+<div class="outline-text-3" id="text-orge508c33">
+</div>
+<div id="outline-container-org5ed3021" class="outline-4">
+<h4 id="org5ed3021">Modelo de problema de búsqueda</h4>
+<div class="outline-text-4" id="text-org5ed3021">
+<ul class="org-ul">
+<li><b>Estado:</b> configuración del mundo.</li>
+<li><b>Estado inicial</b> y <b>estados meta</b>.</li>
+<li><b>Acciones</b> aplicables y <b>función de transición</b>.</li>
+<li><b>Función de costo de camino</b> g(n) (suma de costos desde el inicio).</li>
+<li><b>Árbol / grafo de búsqueda:</b> nodos = estados; aristas = acciones.</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orgbaca8f8" class="outline-4">
+<h4 id="orgbaca8f8">Búsqueda en anchura (BFS)</h4>
+<div class="outline-text-4" id="text-orgbaca8f8">
+<ul class="org-ul">
+<li>Expande por <b>niveles</b> (frontera FIFO).</li>
+<li><b>Completa</b> si el factor de ramificación es finito.</li>
+<li><b>Óptima</b> si todos los pasos tienen el mismo costo.</li>
+<li><b>Memoria:</b> alta (guarda toda la frontera).</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org5e8964d" class="outline-4">
+<h4 id="org5e8964d">Búsqueda en profundidad (DFS)</h4>
+<div class="outline-text-4" id="text-org5e8964d">
+<ul class="org-ul">
+<li>Expande el nodo más profundo primero (pila).</li>
+<li><b>Memoria:</b> baja (solo camino actual + frontera).</li>
+<li>Riesgo de ciclos → usar conjunto <b>visited</b> o límite de profundidad (IDS).</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org343c4a3" class="outline-4">
+<h4 id="org343c4a3">Costo uniforme (UCS / Dijkstra en grafo de estados)</h4>
+<div class="outline-text-4" id="text-org343c4a3">
+<ul class="org-ul">
+<li>Expande el nodo de <b>menor g(n)</b> (cola de prioridad).</li>
+<li>Óptima con costos no negativos.</li>
+<li>Sin heurística: búsqueda “ciega” informada solo por costos acumulados.</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orgb83b349" class="outline-4">
+<h4 id="orgb83b349">Greedy best-first</h4>
+<div class="outline-text-4" id="text-orgb83b349">
+<ul class="org-ul">
+<li>Expande el nodo con menor h(n) (solo heurística).</li>
+<li>Rápida pero <b>no garantiza</b> optimalidad ni completitud en todos los grafos.</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org6102259" class="outline-4">
+<h4 id="org6102259">Ejemplo: laberinto en Python (BFS)</h4>
+<div class="outline-text-4" id="text-org6102259">
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #fb4934;">from</span> collections <span style="color: #fb4934;">import</span> deque
+
+<span style="color: #fb4934;">def</span> <span style="color: #b8bb26;">bfs</span><span style="color: #fe8019;">(</span>start, goal, neighbors<span style="color: #fe8019;">)</span>:
+<span style="background-color: #3c3836;"> </span>   <span style="color: #dfd2b8;">"""neighbors(state) -&gt; iterable de estados alcanzables."""</span>
+<span style="background-color: #3c3836;"> </span>   <span style="color: #83a598;">queue</span> = deque<span style="color: #fe8019;">(</span><span style="color: #b16286;">[</span><span style="color: #b8bb26;">(</span>start, <span style="color: #83a598;">[</span>start<span style="color: #83a598;">]</span><span style="color: #b8bb26;">)</span><span style="color: #b16286;">]</span><span style="color: #fe8019;">)</span>
+<span style="background-color: #3c3836;"> </span>   <span style="color: #83a598;">visited</span> = <span style="color: #fe8019;">{</span>start<span style="color: #fe8019;">}</span>
+<span style="background-color: #3c3836;"> </span>   <span style="color: #fb4934;">while</span> queue:
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="color: #83a598;">state</span>, <span style="color: #83a598;">path</span> = queue.popleft<span style="color: #fe8019;">()</span>
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="color: #fb4934;">if</span> state == goal:
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="color: #fb4934;">return</span> path
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="color: #fb4934;">for</span> nxt <span style="color: #fb4934;">in</span> neighbors<span style="color: #fe8019;">(</span>state<span style="color: #fe8019;">)</span>:
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="color: #fb4934;">if</span> nxt <span style="color: #fb4934;">not</span> <span style="color: #fb4934;">in</span> visited:
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   visited.add<span style="color: #fe8019;">(</span>nxt<span style="color: #fe8019;">)</span>
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   queue.append<span style="color: #fe8019;">(</span><span style="color: #b16286;">(</span>nxt, path + <span style="color: #b8bb26;">[</span>nxt<span style="color: #b8bb26;">]</span><span style="color: #b16286;">)</span><span style="color: #fe8019;">)</span>
+<span style="background-color: #3c3836;"> </span>   <span style="color: #fb4934;">return</span> <span style="color: #d3869b;">None</span>
+
+<span style="color: #928374;"># </span><span style="color: #928374;">Grafo de ejemplo: 0 -- 1 -- 2
+</span><span style="color: #928374;">#                      </span><span style="color: #928374;">\     /
+</span><span style="color: #928374;">#                        </span><span style="color: #928374;">3
+</span><span style="color: #83a598;">graph</span> = <span style="color: #fe8019;">{</span>
+<span style="background-color: #3c3836;"> </span>   0: <span style="color: #b16286;">[</span>1, 3<span style="color: #b16286;">]</span>,
+<span style="background-color: #3c3836;"> </span>   1: <span style="color: #b16286;">[</span>0, 2<span style="color: #b16286;">]</span>,
+<span style="background-color: #3c3836;"> </span>   2: <span style="color: #b16286;">[</span>1, 3<span style="color: #b16286;">]</span>,
+<span style="background-color: #3c3836;"> </span>   3: <span style="color: #b16286;">[</span>0, 2<span style="color: #b16286;">]</span>,
+<span style="color: #fe8019;">}</span>
+<span style="color: #fe8019;">print</span><span style="color: #fe8019;">(</span><span style="color: #b8bb26;">"BFS 0&#8594;2:"</span>, bfs<span style="color: #b16286;">(</span>0, 2, <span style="color: #fb4934;">lambda</span> s: graph<span style="color: #b8bb26;">[</span>s<span style="color: #b8bb26;">]</span><span style="color: #b16286;">)</span><span style="color: #fe8019;">)</span>
+</pre>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-orgfcbb713" class="outline-3">
+<h3 id="orgfcbb713">1.8.2 Algoritmo A*</h3>
+<div class="outline-text-3" id="text-orgfcbb713">
+</div>
+<div id="outline-container-org09aad25" class="outline-4">
+<h4 id="org09aad25">Idea</h4>
+<div class="outline-text-4" id="text-org09aad25">
+<p>
+A* combina:
+</p>
+<ul class="org-ul">
+<li>g(n) = costo acumulado desde el inicio.</li>
+<li>h(n) = estimación del costo restante hasta la meta.</li>
+</ul>
+
+<p>
+<b>f(n) = g(n) + h(n)</b>
+</p>
+
+<p>
+Expande siempre el nodo con <b>menor f(n)</b> en una cola de prioridad.
+</p>
+</div>
+</div>
+<div id="outline-container-org6c54156" class="outline-4">
+<h4 id="org6c54156">Pseudocódigo (conceptual)</h4>
+<div class="outline-text-4" id="text-org6c54156">
+<pre class="example" id="org08f53e6">
+OPEN ← {nodo_inicial}
+g(inicio) ← 0
+mientras OPEN no vacío:
+    n ← nodo en OPEN con menor f(n) = g(n) + h(n)
+    si n es meta: reconstruir camino y terminar
+    para cada sucesor n' de n:
+        g' ← g(n) + costo(n, n')
+        si g' &lt; g(n') o n' no visitado:
+            g(n') ← g'
+            f(n') ← g' + h(n')
+            padre(n') ← n
+            añadir n' a OPEN
+</pre>
+</div>
+</div>
+<div id="outline-container-orge2005be" class="outline-4">
+<h4 id="orge2005be">Condiciones para optimalidad</h4>
+<div class="outline-text-4" id="text-orge2005be">
+<ul class="org-ul">
+<li>El grafo es finito o hay criterio de corte.</li>
+<li>h es <b>admisible</b> (no sobreestima).</li>
+<li>Con h <b>consistente</b>, A* no re-expande innecesariamente.</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org7959809" class="outline-4">
+<h4 id="org7959809">Ejemplo: A* en cuadrícula (Manhattan)</h4>
+<div class="outline-text-4" id="text-org7959809">
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #fb4934;">import</span> heapq
+
+<span style="color: #fb4934;">def</span> <span style="color: #b8bb26;">manhattan</span><span style="color: #fe8019;">(</span>a, b<span style="color: #fe8019;">)</span>:
+<span style="background-color: #3c3836;"> </span>   <span style="color: #fb4934;">return</span> <span style="color: #fe8019;">abs</span><span style="color: #fe8019;">(</span>a<span style="color: #b16286;">[</span>0<span style="color: #b16286;">]</span> - b<span style="color: #b16286;">[</span>0<span style="color: #b16286;">]</span><span style="color: #fe8019;">)</span> + <span style="color: #fe8019;">abs</span><span style="color: #fe8019;">(</span>a<span style="color: #b16286;">[</span>1<span style="color: #b16286;">]</span> - b<span style="color: #b16286;">[</span>1<span style="color: #b16286;">]</span><span style="color: #fe8019;">)</span>
+
+<span style="color: #fb4934;">def</span> <span style="color: #b8bb26;">astar</span><span style="color: #fe8019;">(</span>start, goal, neighbors, cost=1<span style="color: #fe8019;">)</span>:
+<span style="background-color: #3c3836;"> </span>   <span style="color: #dfd2b8;">"""
+</span><span style="color: #dfd2b8; background-color: #3c3836;"> </span><span style="color: #dfd2b8;">   start, goal: tuplas (fila, col)
+</span><span style="color: #dfd2b8; background-color: #3c3836;"> </span><span style="color: #dfd2b8;">   neighbors(pos) -&gt; lista de posiciones v&#225;lidas
+</span><span style="color: #dfd2b8; background-color: #3c3836;"> </span><span style="color: #dfd2b8;">   """</span>
+<span style="background-color: #3c3836;"> </span>   <span style="color: #83a598;">open_heap</span> = <span style="color: #fe8019;">[]</span>
+<span style="background-color: #3c3836;"> </span>   heapq.heappush<span style="color: #fe8019;">(</span>open_heap, <span style="color: #b16286;">(</span>manhattan<span style="color: #b8bb26;">(</span>start, goal<span style="color: #b8bb26;">)</span>, 0, start<span style="color: #b16286;">)</span><span style="color: #fe8019;">)</span>
+<span style="background-color: #3c3836;"> </span>   <span style="color: #83a598;">g_score</span> = <span style="color: #fe8019;">{</span>start: 0<span style="color: #fe8019;">}</span>
+<span style="background-color: #3c3836;"> </span>   <span style="color: #83a598;">came_from</span> = <span style="color: #fe8019;">{}</span>
+
+<span style="background-color: #3c3836;"> </span>   <span style="color: #fb4934;">while</span> open_heap:
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="color: #83a598;">f</span>, <span style="color: #83a598;">g</span>, <span style="color: #83a598;">current</span> = heapq.heappop<span style="color: #fe8019;">(</span>open_heap<span style="color: #fe8019;">)</span>
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="color: #fb4934;">if</span> current == goal:
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="color: #83a598;">path</span> = <span style="color: #fe8019;">[</span>current<span style="color: #fe8019;">]</span>
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="color: #fb4934;">while</span> current <span style="color: #fb4934;">in</span> came_from:
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="color: #83a598;">current</span> = came_from<span style="color: #fe8019;">[</span>current<span style="color: #fe8019;">]</span>
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   path.append<span style="color: #fe8019;">(</span>current<span style="color: #fe8019;">)</span>
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="color: #fb4934;">return</span> <span style="color: #fe8019;">list</span><span style="color: #fe8019;">(</span><span style="color: #fe8019;">reversed</span><span style="color: #b16286;">(</span>path<span style="color: #b16286;">)</span><span style="color: #fe8019;">)</span>
+
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="color: #fb4934;">for</span> nxt <span style="color: #fb4934;">in</span> neighbors<span style="color: #fe8019;">(</span>current<span style="color: #fe8019;">)</span>:
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="color: #83a598;">new_g</span> = g_score<span style="color: #fe8019;">[</span>current<span style="color: #fe8019;">]</span> + cost
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="color: #fb4934;">if</span> nxt <span style="color: #fb4934;">not</span> <span style="color: #fb4934;">in</span> g_score <span style="color: #fb4934;">or</span> new_g &lt; g_score<span style="color: #fe8019;">[</span>nxt<span style="color: #fe8019;">]</span>:
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="color: #83a598;">g_score</span><span style="color: #fe8019;">[</span>nxt<span style="color: #fe8019;">]</span> = new_g
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="color: #83a598;">came_from</span><span style="color: #fe8019;">[</span>nxt<span style="color: #fe8019;">]</span> = current
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="color: #83a598;">h</span> = manhattan<span style="color: #fe8019;">(</span>nxt, goal<span style="color: #fe8019;">)</span>
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   heapq.heappush<span style="color: #fe8019;">(</span>open_heap, <span style="color: #b16286;">(</span>new_g + h, new_g, nxt<span style="color: #b16286;">)</span><span style="color: #fe8019;">)</span>
+<span style="background-color: #3c3836;"> </span>   <span style="color: #fb4934;">return</span> <span style="color: #d3869b;">None</span>
+
+<span style="color: #928374;"># </span><span style="color: #928374;">Cuadr&#237;cula 3x3 sin obst&#225;culos
+</span><span style="color: #fb4934;">def</span> <span style="color: #b8bb26;">grid_neighbors</span><span style="color: #fe8019;">(</span>pos<span style="color: #fe8019;">)</span>:
+<span style="background-color: #3c3836;"> </span>   <span style="color: #83a598;">r</span>, <span style="color: #83a598;">c</span> = pos
+<span style="background-color: #3c3836;"> </span>   <span style="color: #83a598;">moves</span> = <span style="color: #fe8019;">[]</span>
+<span style="background-color: #3c3836;"> </span>   <span style="color: #fb4934;">for</span> dr, dc <span style="color: #fb4934;">in</span> <span style="color: #fe8019;">[</span><span style="color: #b16286;">(</span>-1,0<span style="color: #b16286;">)</span>,<span style="color: #b16286;">(</span>1,0<span style="color: #b16286;">)</span>,<span style="color: #b16286;">(</span>0,-1<span style="color: #b16286;">)</span>,<span style="color: #b16286;">(</span>0,1<span style="color: #b16286;">)</span><span style="color: #fe8019;">]</span>:
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="color: #83a598;">nr</span>, <span style="color: #83a598;">nc</span> = r + dr, c + dc
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="color: #fb4934;">if</span> 0 &lt;= nr &lt; 3 <span style="color: #fb4934;">and</span> 0 &lt;= nc &lt; 3:
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   moves.append<span style="color: #fe8019;">(</span><span style="color: #b16286;">(</span>nr, nc<span style="color: #b16286;">)</span><span style="color: #fe8019;">)</span>
+<span style="background-color: #3c3836;"> </span>   <span style="color: #fb4934;">return</span> moves
+
+<span style="color: #fe8019;">print</span><span style="color: #fe8019;">(</span><span style="color: #b8bb26;">"A* (0,0)&#8594;(2,2):"</span>, astar<span style="color: #b16286;">(</span><span style="color: #b8bb26;">(</span>0,0<span style="color: #b8bb26;">)</span>, <span style="color: #b8bb26;">(</span>2,2<span style="color: #b8bb26;">)</span>, grid_neighbors<span style="color: #b16286;">)</span><span style="color: #fe8019;">)</span>
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org80084c4" class="outline-4">
+<h4 id="org80084c4">Cuándo usar A*</h4>
+<div class="outline-text-4" id="text-org80084c4">
+<ul class="org-ul">
+<li>Mapas, planificación de rutas, puzzles con costo en aristas.</li>
+<li>Cuando existe una h admisible razonable (distancia euclidiana, Manhattan, patrón desajustado en 8-puzzle).</li>
+</ul>
+</div>
+</div>
+</div>
+<div id="outline-container-org8fd7760" class="outline-3">
+<h3 id="org8fd7760">1.8.3 Algoritmos de búsqueda local</h3>
+<div class="outline-text-3" id="text-org8fd7760">
+</div>
+<div id="outline-container-org281e0a7" class="outline-4">
+<h4 id="org281e0a7">Idea</h4>
+<div class="outline-text-4" id="text-org281e0a7">
+<p>
+En lugar de explorar sistemáticamente todo un árbol, la <b>búsqueda local</b> parte de una <b>solución candidato</b> y la va <b>mejorando</b> iterativamente según una <b>función objetivo</b> (o energía).
+</p>
+
+<p>
+Útil cuando:
+</p>
+<ul class="org-ul">
+<li>El camino importa menos que el <b>estado final</b> (optimización, CSP relajados).</li>
+<li>El espacio es enorme pero hay estructura local.</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orga38d775" class="outline-4">
+<h4 id="orga38d775">Hill climbing (escalada de colina)</h4>
+<div class="outline-text-4" id="text-orga38d775">
+<ol class="org-ol">
+<li>Estado actual s.</li>
+<li>Evaluar vecinos; moverse al vecino con <b>mejor</b> valor.</li>
+<li>Parar si no hay mejora (máximo local).</li>
+</ol>
+
+<p>
+<b>Problema:</b> máximos locales, mesetas, crestas.
+</p>
+</div>
+</div>
+<div id="outline-container-org433234c" class="outline-4">
+<h4 id="org433234c">Variantes</h4>
+<div class="outline-text-4" id="text-org433234c">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Algoritmo</th>
+<th scope="col" class="org-left">Idea</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Steepest ascent</td>
+<td class="org-left">Mejor vecino en cada paso</td>
+</tr>
+
+<tr>
+<td class="org-left">Stochastic hill climb</td>
+<td class="org-left">Elige aleatoriamente entre mejoras</td>
+</tr>
+
+<tr>
+<td class="org-left">Random restart</td>
+<td class="org-left">Reinicia desde puntos aleatorios</td>
+</tr>
+
+<tr>
+<td class="org-left">Simulated annealing</td>
+<td class="org-left">Acepta empeoras con probabilidad decreciente</td>
+</tr>
+
+<tr>
+<td class="org-left">Genetic algorithms</td>
+<td class="org-left">Población, cruce, mutación, selección</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-orga64609d" class="outline-4">
+<h4 id="orga64609d">Ejemplo: hill climbing (maximizar función 1D discreta)</h4>
+<div class="outline-text-4" id="text-orga64609d">
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #fb4934;">import</span> random
+
+<span style="color: #fb4934;">def</span> <span style="color: #b8bb26;">hill_climbing</span><span style="color: #fe8019;">(</span>f, start, neighbors, max_steps=100<span style="color: #fe8019;">)</span>:
+<span style="background-color: #3c3836;"> </span>   <span style="color: #83a598;">current</span> = start
+<span style="background-color: #3c3836;"> </span>   <span style="color: #83a598;">value</span> = f<span style="color: #fe8019;">(</span>current<span style="color: #fe8019;">)</span>
+<span style="background-color: #3c3836;"> </span>   <span style="color: #fb4934;">for</span> _ <span style="color: #fb4934;">in</span> <span style="color: #fe8019;">range</span><span style="color: #fe8019;">(</span>max_steps<span style="color: #fe8019;">)</span>:
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="color: #83a598;">nbrs</span> = <span style="color: #fe8019;">list</span><span style="color: #fe8019;">(</span>neighbors<span style="color: #b16286;">(</span>current<span style="color: #b16286;">)</span><span style="color: #fe8019;">)</span>
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="color: #fb4934;">if</span> <span style="color: #fb4934;">not</span> nbrs:
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="color: #fb4934;">break</span>
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="color: #83a598;">best</span> = <span style="color: #fe8019;">max</span><span style="color: #fe8019;">(</span>nbrs, key=f<span style="color: #fe8019;">)</span>
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="color: #83a598;">best_val</span> = f<span style="color: #fe8019;">(</span>best<span style="color: #fe8019;">)</span>
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="color: #fb4934;">if</span> best_val &lt;= value:
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="color: #fb4934;">break</span>  <span style="color: #928374;"># </span><span style="color: #928374;">m&#225;ximo local
+</span><span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="color: #83a598;">current</span>, <span style="color: #83a598;">value</span> = best, best_val
+<span style="background-color: #3c3836;"> </span>   <span style="color: #fb4934;">return</span> current, value
+
+<span style="color: #928374;"># </span><span style="color: #928374;">Funci&#243;n con m&#225;ximo local en x=2 y global en x=8 (dominio 0..10)
+</span><span style="color: #fb4934;">def</span> <span style="color: #b8bb26;">f</span><span style="color: #fe8019;">(</span>x<span style="color: #fe8019;">)</span>:
+<span style="background-color: #3c3836;"> </span>   <span style="color: #fb4934;">return</span> -<span style="color: #fe8019;">(</span>x - 8<span style="color: #fe8019;">)</span> ** 2 + 64 <span style="color: #fb4934;">if</span> x &gt;= 5 <span style="color: #fb4934;">else</span> -<span style="color: #fe8019;">(</span>x - 2<span style="color: #fe8019;">)</span> ** 2 + 10
+
+<span style="color: #fb4934;">def</span> <span style="color: #b8bb26;">nbrs</span><span style="color: #fe8019;">(</span>x<span style="color: #fe8019;">)</span>:
+<span style="background-color: #3c3836;"> </span> <span style="color: #fb4934;">for</span> d <span style="color: #fb4934;">in</span> <span style="color: #fe8019;">(</span>-1, 1<span style="color: #fe8019;">)</span>:
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span> <span style="color: #fb4934;">if</span> 0 &lt;= x + d &lt;= 10:
+<span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span>   <span style="background-color: #3c3836;"> </span> <span style="color: #fb4934;">yield</span> x + d
+
+<span style="color: #fb4934;">for</span> trial <span style="color: #fb4934;">in</span> <span style="color: #fe8019;">range</span><span style="color: #fe8019;">(</span>3<span style="color: #fe8019;">)</span>:
+<span style="background-color: #3c3836;"> </span>   <span style="color: #83a598;">s0</span> = random.randint<span style="color: #fe8019;">(</span>0, 10<span style="color: #fe8019;">)</span>
+<span style="background-color: #3c3836;"> </span>   <span style="color: #83a598;">s</span>, <span style="color: #83a598;">v</span> = hill_climbing<span style="color: #fe8019;">(</span>f, s0, nbrs<span style="color: #fe8019;">)</span>
+<span style="background-color: #3c3836;"> </span>   <span style="color: #fe8019;">print</span><span style="color: #fe8019;">(</span>f<span style="color: #b8bb26;">"inicio=</span>{s0}<span style="color: #b8bb26;"> &#8594; m&#225;ximo local en x=</span>{s}<span style="color: #b8bb26;">, f=</span>{v}<span style="color: #b8bb26;">"</span><span style="color: #fe8019;">)</span>
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgd186ce3" class="outline-4">
+<h4 id="orgd186ce3">Búsqueda local vs A*</h4>
+<div class="outline-text-4" id="text-orgd186ce3">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Criterio</th>
+<th scope="col" class="org-left">A* (sistemática)</th>
+<th scope="col" class="org-left">Búsqueda local</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Garantía óptima</td>
+<td class="org-left">Sí (con h admisible)</td>
+<td class="org-left">No en general</td>
+</tr>
+
+<tr>
+<td class="org-left">Memoria</td>
+<td class="org-left">Puede ser alta</td>
+<td class="org-left">Baja (un estado)</td>
+</tr>
+
+<tr>
+<td class="org-left">Uso típico</td>
+<td class="org-left">Camino mínimo</td>
+<td class="org-left">Optimización, scheduling</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="outline-container-org3a00fa1" class="outline-3">
+<h3 id="org3a00fa1">Síntesis del temario</h3>
+<div class="outline-text-3" id="text-org3a00fa1">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-right" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-right">Subtema</th>
+<th scope="col" class="org-left">Idea central</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-right">1.1</td>
+<td class="org-left">IA = sistemas que perciben, razonan, aprenden y actúan</td>
+</tr>
+
+<tr>
+<td class="org-right">1.2</td>
+<td class="org-left">Ciclos de optimismo e invierno; datos y deep learning</td>
+</tr>
+
+<tr>
+<td class="org-right">1.3</td>
+<td class="org-left">Cognición humana; Gardner, conductismo → RL</td>
+</tr>
+
+<tr>
+<td class="org-right">1.4</td>
+<td class="org-left">Axiomas, teoremas, demostración; lógica en IA simbólica</td>
+</tr>
+
+<tr>
+<td class="org-right">1.5</td>
+<td class="org-left">Origen y representación del conocimiento</td>
+</tr>
+
+<tr>
+<td class="org-right">1.6</td>
+<td class="org-left">Arquitecturas que modelan procesos mentales</td>
+</tr>
+
+<tr>
+<td class="org-right">1.7</td>
+<td class="org-left">Agente racional; SMA; computación ubicua</td>
+</tr>
+
+<tr>
+<td class="org-right">1.8</td>
+<td class="org-left">Heurísticas; BFS/DFS/UCS; A*; búsqueda local</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-org94921cd" class="outline-3">
+<h3 id="org94921cd">Referencias sugeridas</h3>
+<div class="outline-text-3" id="text-org94921cd">
+<ul class="org-ul">
+<li>Russell, S. &amp; Norvig, P. <b>Artificial Intelligence: A Modern Approach</b> (capítulos 1–4).</li>
+<li>Turing, A. (1950). Computing Machinery and Intelligence.</li>
+<li>Gardner, H. <b>Frames of Mind</b> (inteligencias múltiples).</li>
+<li>Newell, A. <b>Unified Theories of Cognition</b> (SOAR / ACT-R en contexto).</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orgb7ec1bd" class="outline-3">
+<h3 id="orgb7ec1bd">Preguntas de repaso</h3>
+<div class="outline-text-3" id="text-orgb7ec1bd">
+<ol class="org-ol">
+<li>¿En qué se diferencia un agente <b>reflejo</b> de uno <b>basado en objetivos</b>?</li>
+<li>¿Por qué A* necesita que h sea admisible para garantizar optimalidad?</li>
+<li>¿Qué paralelo existe entre el conductismo y el aprendizaje por refuerzo?</li>
+<li>¿Cuál es la diferencia entre <b>conocimiento</b> codificado manualmente y <b>aprendido</b>?</li>
+<li>¿Por qué hill climbing puede fallar en optimización global?</li>
+</ol>
+
+<pre class="example">
+None
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgb9e4cd1" class="outline-2">
+<h2 id="orgb9e4cd1">Acertijos de IA: espacio de estados, lógica y poda</h2>
+<div class="outline-text-2" id="text-orgb9e4cd1">
+<p>
+Estos acertijos se resuelven como <b>problemas de búsqueda</b> en un <b>espacio
+de estados</b>, pero <b><b>no hace falta expandir el espacio completo</b></b>: las
+restricciones lógicas <b>podan</b> ramas inválidas o subóptimas desde el
+inicio.
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Acertijo</th>
+<th scope="col" class="org-left">Idea de estado</th>
+<th scope="col" class="org-left">Por qué no explotar todo ciegamente</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Maridos celosos</td>
+<td class="org-left">quién está en cada orilla + bote</td>
+<td class="org-left">Regla de “celos” invalida muchos sucesores</td>
+</tr>
+
+<tr>
+<td class="org-left">Puente y linterna</td>
+<td class="org-left">quién cruzó + lado de linterna + tiempo</td>
+<td class="org-left">Poda por tiempo &gt; 17 o dominancia</td>
+</tr>
+
+<tr>
+<td class="org-left">Flavio Josefo</td>
+<td class="org-left">círculo + contador de eliminación</td>
+<td class="org-left">Simulación O(n²) o fórmula O(log n)</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+<b>Herramientas:</b> representación lógica, invariantes, búsqueda con poda (BFS acotado), razonamiento guiado.
+</p>
+</div>
+<div id="outline-container-org929188a" class="outline-3">
+<h3 id="org929188a">1. El problema de los maridos celosos</h3>
+<div class="outline-text-3" id="text-org929188a">
+</div>
+<div id="outline-container-orgb2d8004" class="outline-4">
+<h4 id="orgb2d8004">Enunciado</h4>
+<div class="outline-text-4" id="text-orgb2d8004">
+<p>
+Tres parejas (tres maridos y sus tres esposas) deben cruzar un río usando un bote con capacidad máxima para <b>dos personas</b>.
+</p>
+
+<p>
+<b>Restricción:</b> ninguna mujer puede quedarse en presencia de <b>otro</b> hombre a menos que su <b>propio marido</b> también esté presente (en orillas y en el bote).
+</p>
+
+<p>
+<b>Objetivo:</b> secuencia de viajes <b>mínima</b> para que las seis personas crucen sin violar la restricción.
+</p>
+</div>
+</div>
+<div id="outline-container-orgff101d9" class="outline-4">
+<h4 id="orgff101d9">Modelado del espacio de estados (sin enumerar todo a ciegas)</h4>
+<div class="outline-text-4" id="text-orgff101d9">
+</div>
+<ul class="org-ul">
+<li><a id="orgec03526"></a>Variables<br />
+<div class="outline-text-5" id="text-orgec03526">
+<ul class="org-ul">
+<li>Conjunto <code>L</code> (orilla izquierda) y <code>R</code> (orilla derecha), con <code>L ⊔ R = {H1,W1,H2,W2,H3,W3}</code>.</li>
+<li>Posición del bote: <code>bote ∈ {izquierda, derecha}</code>.</li>
+<li><b>Estado:</b> <code>(personas_en_R, bote_izquierda)</code> (equivalente a saber quién está en cada lado).</li>
+</ul>
+</div>
+</li>
+<li><a id="org70d8320"></a>Acciones<br />
+<div class="outline-text-5" id="text-org70d8320">
+<p>
+Desde la orilla donde está el bote, elegir 1 o 2 personas que cruzan.
+</p>
+</div>
+</li>
+<li><a id="orgb464b5f"></a>Predicado lógico de seguridad (poda)<br />
+<div class="outline-text-5" id="text-orgb464b5f">
+<p>
+Para cada orilla <code>X</code>:
+</p>
+
+<pre class="example" id="orge9f6318">
+segura(X) ≡ ∀ mujer Wi ∈ X, ∀ hombre Hj ∈ X con j≠i:
+              (Hj ∈ X) → (Hi ∈ X)
+
+Si Wi está con un hombre que NO es su marido, su marido Hi también debe estar en X.
+</pre>
+
+<p>
+<b>Poda:</b> solo se expanden sucesores con <code>segura(L) ∧ segura(R)</code>.
+</p>
+</div>
+</li>
+<li><a id="orgb630492"></a>Tamaño del espacio<br />
+<div class="outline-text-5" id="text-orgb630492">
+<ul class="org-ul">
+<li>Bruto: <code>2^6 × 2 = 128</code> estados.</li>
+<li>Con poda lógica: el BFS explora ~*40* estados (orden de magnitud), no un árbol exponencial de secuencias de movimientos.</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<div id="outline-container-org57b8e4b" class="outline-4">
+<h4 id="org57b8e4b">Razonamiento guiado (lógica antes que fuerza bruta)</h4>
+<div class="outline-text-4" id="text-org57b8e4b">
+<ol class="org-ol">
+<li><b>Mover dos esposas primero</b> es seguro (no hay hombres en la orilla de llegada).</li>
+<li><b>Regresar una esposa</b> devuelve el bote sin dejar a una mujer con hombres ajenos sin su marido.</li>
+<li><b>Dos maridos</b> pueden cruzar cuando en la otra orilla sus esposas ya están o la composición es segura.</li>
+<li>La tercera pareja (<code>H3,W3</code>) cruza cuando el tablero lo permite.</li>
+<li>Los últimos viajes reacomodan a quien debe regresar con el bote.</li>
+</ol>
+</div>
+</div>
+<div id="outline-container-org342170d" class="outline-4">
+<h4 id="org342170d">Solución óptima: <b>9 viajes</b></h4>
+<div class="outline-text-4" id="text-org342170d">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-right" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-right">Paso</th>
+<th scope="col" class="org-left">Viaje</th>
+<th scope="col" class="org-left">Izquierda (L)</th>
+<th scope="col" class="org-left">Derecha (R)</th>
+<th scope="col" class="org-left">Bote</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-right">0</td>
+<td class="org-left">—</td>
+<td class="org-left">H1 W1 H2 W2 H3 W3</td>
+<td class="org-left">—</td>
+<td class="org-left">L</td>
+</tr>
+
+<tr>
+<td class="org-right">1</td>
+<td class="org-left">W1, W2 →</td>
+<td class="org-left">H1 H2 H3 W3</td>
+<td class="org-left">W1 W2</td>
+<td class="org-left">R</td>
+</tr>
+
+<tr>
+<td class="org-right">2</td>
+<td class="org-left">W1 ←</td>
+<td class="org-left">H1 W1 H2 H3 W3</td>
+<td class="org-left">W2</td>
+<td class="org-left">L</td>
+</tr>
+
+<tr>
+<td class="org-right">3</td>
+<td class="org-left">H1, H2 →</td>
+<td class="org-left">H3 W3</td>
+<td class="org-left">H1 H2 W1 W2</td>
+<td class="org-left">R</td>
+</tr>
+
+<tr>
+<td class="org-right">4</td>
+<td class="org-left">H1, W1 ←</td>
+<td class="org-left">H1 W1 H3 W3</td>
+<td class="org-left">H2 W2</td>
+<td class="org-left">L</td>
+</tr>
+
+<tr>
+<td class="org-right">5</td>
+<td class="org-left">H3, W3 →</td>
+<td class="org-left">H1 W1</td>
+<td class="org-left">H2 W2 H3 W3</td>
+<td class="org-left">R</td>
+</tr>
+
+<tr>
+<td class="org-right">6</td>
+<td class="org-left">H2, W2 ←</td>
+<td class="org-left">H1 W1 H2 W2</td>
+<td class="org-left">H3 W3</td>
+<td class="org-left">L</td>
+</tr>
+
+<tr>
+<td class="org-right">7</td>
+<td class="org-left">H1, H2 →</td>
+<td class="org-left">W1 W2</td>
+<td class="org-left">H1 H2 H3 W3</td>
+<td class="org-left">R</td>
+</tr>
+
+<tr>
+<td class="org-right">8</td>
+<td class="org-left">H1, W1 ←</td>
+<td class="org-left">H1 W1</td>
+<td class="org-left">H2 W2 H3 W3</td>
+<td class="org-left">L</td>
+</tr>
+
+<tr>
+<td class="org-right">9</td>
+<td class="org-left">H1, W1 →</td>
+<td class="org-left">—</td>
+<td class="org-left">H1 W1 H2 W2 H3 W3</td>
+<td class="org-left">R ✓</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+<b>Paso crítico 7:</b> en R están <code>H1,H2,H3,W3</code>. <code>W3</code> convive con <code>H1</code> y <code>H2</code> porque su marido <code>H3</code> también está → <b>válido</b>.
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-org0d3dd51" class="outline-3">
+<h3 id="org0d3dd51">2. El puente y la linterna (optimización en 17 minutos)</h3>
+<div class="outline-text-3" id="text-org0d3dd51">
+</div>
+<div id="outline-container-orgdc18428" class="outline-4">
+<h4 id="orgdc18428">Enunciado</h4>
+<div class="outline-text-4" id="text-orgdc18428">
+<p>
+Cuatro personas deben cruzar un puente de noche. El puente soporta <b>dos</b> personas. Hay <b>una</b> linterna.
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Persona</th>
+<th scope="col" class="org-left">Tiempo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">A</td>
+<td class="org-left">1 min</td>
+</tr>
+
+<tr>
+<td class="org-left">B</td>
+<td class="org-left">2 min</td>
+</tr>
+
+<tr>
+<td class="org-left">C</td>
+<td class="org-left">5 min</td>
+</tr>
+
+<tr>
+<td class="org-left">D</td>
+<td class="org-left">10 min</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+Dos personas cruzan a la velocidad de la <b>más lenta</b>. La linterna debe volver para el siguiente cruce.
+</p>
+
+<p>
+<b>Objetivo:</b> todos al otro lado en exactamente <b>17 minutos</b>.
+</p>
+</div>
+</div>
+<div id="outline-container-org3425d2d" class="outline-4">
+<h4 id="org3425d2d">Modelado (estado acotado)</h4>
+<div class="outline-text-4" id="text-org3425d2d">
+</div>
+<ul class="org-ul">
+<li><a id="orgabed7e0"></a>Estado <code>(C, ℓ, t)</code><br />
+<div class="outline-text-5" id="text-orgabed7e0">
+<ul class="org-ul">
+<li><code>C ⊆ {A,B,C,D}</code>: quienes ya cruzaron.</li>
+<li><code>ℓ</code>: linterna en lado <b>cerca</b> o <b>lejos</b>.</li>
+<li><code>t</code>: tiempo acumulado (minutos).</li>
+</ul>
+</div>
+</li>
+<li><a id="org0835a57"></a>Poda (evita explosión)<br />
+<div class="outline-text-5" id="text-org0835a57">
+<ol class="org-ol">
+<li>Si <code>t &gt; 17</code> → <b>cortar rama</b>.</li>
+<li><b>Dominancia:</b> para igual <code>(C, ℓ)</code>, quedarse solo con el camino de menor <code>t</code>.</li>
+<li>Espacio total acotado: ≈ 16 × 2 × 18 estados (minúsculo frente a enumerar todas las secuencias de pares).</li>
+</ol>
+</div>
+</li>
+</ul>
+</div>
+<div id="outline-container-org9a42574" class="outline-4">
+<h4 id="org9a42574">Razonamiento lógico (sin BFS)</h4>
+<div class="outline-text-4" id="text-org9a42574">
+<p>
+<b>Lema informal:</b> los lentos <code>C</code> y <code>D</code> deben cruzar juntos <b>como máximo una vez</b> en la solución óptima (cuesta 10 min). Si cada uno cruzara por separado con escolta, se pagan más de 10 min solo en esos cruces.
+</p>
+
+<p>
+<b>Estrategia ganadora:</b>
+</p>
+<ol class="org-ol">
+<li>Mandar primero los dos rápidos (<code>A+B</code>, 2 min).</li>
+<li>Devolver el <b>más rápido</b> (<code>A</code>, 1 min).</li>
+<li>Cruzar los dos lentos juntos (<code>C+D</code>, 10 min) — el gasto inevitable.</li>
+<li>Devolver alguien moderado (<code>B</code>, 2 min) — mejor que dos vueltas de <code>A</code> si eso habilita el cierre.</li>
+<li>Cerrar con <code>A+B</code> (2 min).</li>
+</ol>
+
+<p>
+Total: 2+1+10+2+2 = <b>17</b>.
+</p>
+</div>
+</div>
+<div id="outline-container-org5ee65e6" class="outline-4">
+<h4 id="org5ee65e6">Solución paso a paso</h4>
+<div class="outline-text-4" id="text-org5ee65e6">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-right" />
+
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-right">Paso</th>
+<th scope="col" class="org-left">Acción</th>
+<th scope="col" class="org-right">Δt</th>
+<th scope="col" class="org-right">Acumulado</th>
+<th scope="col" class="org-left">En lado lejano</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-right">1</td>
+<td class="org-left">A + B →</td>
+<td class="org-right">2</td>
+<td class="org-right">2</td>
+<td class="org-left">A, B</td>
+</tr>
+
+<tr>
+<td class="org-right">2</td>
+<td class="org-left">A ←</td>
+<td class="org-right">1</td>
+<td class="org-right">3</td>
+<td class="org-left">B</td>
+</tr>
+
+<tr>
+<td class="org-right">3</td>
+<td class="org-left">C + D →</td>
+<td class="org-right">10</td>
+<td class="org-right">13</td>
+<td class="org-left">B, C, D</td>
+</tr>
+
+<tr>
+<td class="org-right">4</td>
+<td class="org-left">B ←</td>
+<td class="org-right">2</td>
+<td class="org-right">15</td>
+<td class="org-left">C, D</td>
+</tr>
+
+<tr>
+<td class="org-right">5</td>
+<td class="org-left">A + B →</td>
+<td class="org-right">2</td>
+<td class="org-right"><b>17</b></td>
+<td class="org-left">A, B, C, D ✓</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="outline-container-org10399d1" class="outline-3">
+<h3 id="org10399d1">3. Flavio Josefo y el círculo de la muerte</h3>
+<div class="outline-text-3" id="text-org10399d1">
+</div>
+<div id="outline-container-org18888ed" class="outline-4">
+<h4 id="org18888ed">Historia</h4>
+<div class="outline-text-4" id="text-org18888ed">
+<p>
+<b>Flavio Josefo</b> relata que, sitiado en Yodfat con 40 compañeros (41 hombres en total), convinieron en morir por sorteo circular antes que rendirse. Josefo calculó la posición segura y sobrevivió — de ahí el <b>problema de Josefo</b>.
+</p>
+</div>
+</div>
+<div id="outline-container-orga36e459" class="outline-4">
+<h4 id="orga36e459">Enunciado matemático</h4>
+<div class="outline-text-4" id="text-orga36e459">
+<ul class="org-ul">
+<li><code>n</code> personas en círculo, numeradas <code>1 … n</code>.</li>
+<li>Se cuenta en círculo y se elimina cada <code>k</code>-ésima persona <b>viva</b>.</li>
+<li>Se repite hasta quedar <b>una</b>.</li>
+<li><b>¿Qué posición inicial garantiza sobrevivir?</b> <code>J(n, k)</code>.</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org48318e2" class="outline-4">
+<h4 id="org48318e2">¿Por qué no expandir el árbol completo?</h4>
+<div class="outline-text-4" id="text-org48318e2">
+<p>
+Un árbol de “quién se elimina en cada ronda” tiene ramificación variable y profundidad <code>n-1</code>; para <code>n</code> grande es innecesario.
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Enfoque</th>
+<th scope="col" class="org-left">Complejidad</th>
+<th scope="col" class="org-left">Cuándo usarlo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Simulación en lista</td>
+<td class="org-left">O(n²)</td>
+<td class="org-left">Cualquier <code>k</code>, <code>n</code> moderado</td>
+</tr>
+
+<tr>
+<td class="org-left">Recurrencia</td>
+<td class="org-left">O(n)</td>
+<td class="org-left">Programación dinámica</td>
+</tr>
+
+<tr>
+<td class="org-left">Fórmula cerrada k=2</td>
+<td class="org-left">O(log n)</td>
+<td class="org-left">“Cada segundo” (clásico)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-org802398d" class="outline-4">
+<h4 id="org802398d">Caso k = 2 (eliminar cada segundo)</h4>
+<div class="outline-text-4" id="text-org802398d">
+</div>
+<ul class="org-ul">
+<li><a id="orgd13d593"></a>Fórmula cerrada<br />
+<div class="outline-text-5" id="text-orgd13d593">
+<p>
+Sea <code>m = ⌊log₂ n⌋</code> y <code>2^m ≤ n &lt; 2^(m+1)</code>:
+</p>
+
+<p>
+\[ J(n, 2) = 2 \cdot (n - 2^m) + 1 \]
+</p>
+</div>
+</li>
+<li><a id="orgc7f42c9"></a>Intuición<br />
+<div class="outline-text-5" id="text-orgc7f42c9">
+<p>
+Cada ronda con <code>k=2</code> elimina la mitad (aprox.) de los vivos; la posición sobreviviente se obtiene “reflejando” el índice respecto a la mayor potencia de 2 ≤ <code>n</code>.
+</p>
+</div>
+</li>
+<li><a id="orged4d590"></a>Historia: n = 41 soldados<br />
+<div class="outline-text-5" id="text-orged4d590">
+<ul class="org-ul">
+<li><code>2^5 = 32 ≤ 41 &lt; 64</code> → <code>m = 5</code>.</li>
+<li><code>J(41, 2) = 2·(41 - 32) + 1 = 19</code>.</li>
+</ul>
+
+<p>
+<b>Josefo debía situarse en la posición 19</b> (contando desde 1) si el sorteo eliminaba cada segundo.
+</p>
+</div>
+</li>
+</ul>
+</div>
+<div id="outline-container-orgfb5526c" class="outline-4">
+<h4 id="orgfb5526c">Ejemplo manual: n = 7, k = 2</h4>
+<div class="outline-text-4" id="text-orgfb5526c">
+<p>
+Con la convención estándar (<code>J(1,2)=1</code>, <code>J(2n)=2J(n)-1</code>, <code>J(2n+1)=2J(n)+1</code>):
+</p>
+
+<pre class="example" id="orga9eb43e">
+J(1)=1, J(2)=1, J(3)=3, J(4)=1, J(5)=3, J(6)=5, J(7)=7
+</pre>
+
+<p>
+Fórmula potencias de 2: <code>2·(7-4)+1 = 7</code>. La posición segura es la <b>7</b> (contando desde 1).
+</p>
+</div>
+</div>
+<div id="outline-container-org6ee3084" class="outline-4">
+<h4 id="org6ee3084">Caso general k (algoritmo iterativo O(n))</h4>
+<div class="outline-text-4" id="text-org6ee3084">
+<pre class="example" id="org52325d4">
+J ← 0
+para i = 1 … n:
+    J ← (J + k) mod i
+respuesta (1-indexada) = J + 1
+</pre>
+
+<p>
+Este algoritmo evita simular el círculo completo (<code>O(n²)</code>) y coincide con la fórmula cerrada cuando <code>k=2</code>.
+</p>
+</div>
+</div>
+<div id="outline-container-orgd54e201" class="outline-4">
+<h4 id="orgd54e201">Síntesis: lógica vs explosión combinatoria</h4>
+<div class="outline-text-4" id="text-orgd54e201">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Problema</th>
+<th scope="col" class="org-left">Truco principal</th>
+<th scope="col" class="org-left">Viajes / respuesta</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Maridos celosos</td>
+<td class="org-left">Predicado <code>segura(orilla)</code> poda BFS</td>
+<td class="org-left"><b>9</b> viajes mínimos</td>
+</tr>
+
+<tr>
+<td class="org-left">Puente</td>
+<td class="org-left">C+D juntos una vez; poda <code>t&gt;17</code></td>
+<td class="org-left"><b>17</b> minutos</td>
+</tr>
+
+<tr>
+<td class="org-left">Josefo (k=2)</td>
+<td class="org-left">Fórmula con potencias de 2; O(n) rec.</td>
+<td class="org-left">=J(41,2)=*19*</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-orgfe93d69" class="outline-4">
+<h4 id="orgfe93d69">Preguntas de repaso</h4>
+<div class="outline-text-4" id="text-orgfe93d69">
+<ol class="org-ol">
+<li>¿Qué estado del problema de maridos celosos es inválido aunque el bote tenga capacidad 2?</li>
+<li>¿Por qué mandar <code>A</code> dos veces de vuelta no mejora necesariamente el puente frente a devolver <code>B</code> una vez?</li>
+<li>¿Cuál es <code>J(12, 2)</code>? (<code>2·(12-8)+1 = 9</code>)</li>
+<li>¿En qué caso conviene simular Josefo en lugar de usar recurrencia?</li>
+</ol>
+
+<p>
+<b>Referencias</b>
+</p>
+<ul class="org-ul">
+<li>Russell &amp; Norvig, cap. 3 (búsqueda en espacios de estados).</li>
+<li>Klein, T. (puzzle del puente y linterna) — optimización clásica.</li>
+<li>Josephus Flavius, <b>La guerra de los judíos</b> (fuente histórica).</li>
+</ul>
+
+<pre class="example">
+None
+</pre>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-org912f67d" class="outline-2">
+<h2 id="org912f67d">A*  — Arriero, coyote, cabra y maíz</h2>
+<div class="outline-text-2" id="text-org912f67d">
+</div>
+<div id="outline-container-org5e1acf3" class="outline-3">
+<h3 id="org5e1acf3">Símbolos</h3>
+<div class="outline-text-3" id="text-org5e1acf3">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Símbolo</th>
+<th scope="col" class="org-left">Personaje</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">A</td>
+<td class="org-left">Arriero</td>
+</tr>
+
+<tr>
+<td class="org-left">L</td>
+<td class="org-left">Coyote (lobo)</td>
+</tr>
+
+<tr>
+<td class="org-left">C</td>
+<td class="org-left">Cabra (chivo, pollo)</td>
+</tr>
+
+<tr>
+<td class="org-left">M</td>
+<td class="org-left">Maíz</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-org1f8d699" class="outline-3">
+<h3 id="org1f8d699">Reglas del bote</h3>
+<div class="outline-text-3" id="text-org1f8d699">
+<ul class="org-ul">
+<li>Viajan el arriero y <b>como máximo uno</b> más.</li>
+<li>Sin arriero, <b>nunca</b> pueden quedar solos en una orilla:
+<ul class="org-ul">
+<li>Coyote + cabra</li>
+<li>Cabra + maíz</li>
+</ul></li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orga88ee10" class="outline-3">
+<h3 id="orga88ee10">Objetivo</h3>
+<div class="outline-text-3" id="text-orga88ee10">
+<p>
+Que los cuatro terminen en la <b>orilla derecha</b>.
+</p>
+</div>
+</div>
+<div id="outline-container-org3faa3cf" class="outline-3">
+<h3 id="org3faa3cf">Parte 1 — ¿Qué es un estado? (la “fotografía” del río)</h3>
+<div class="outline-text-3" id="text-org3faa3cf">
+<p>
+En cada momento anotas <b>tres cosas</b>:
+</p>
+
+<pre class="example" id="org18d984d">
+[ Quién está a la IZQUIERDA | Quién está a la DERECHA ]   BOTE
+
+Ejemplo inicio:
+  [ A L C M | — ]   Bote en izquierda ◄
+
+Ejemplo meta:
+  [ — | A L C M ]   Bote en derecha ►
+</pre>
+
+<p>
+Cada vez que el bote cruza, cambias de fotografía → eso es moverte en el <b>espacio de estados</b>.
+</p>
+</div>
+</div>
+<div id="outline-container-org52457f0" class="outline-3">
+<h3 id="org52457f0">Parte 2 — El espacio de estados (el mapa completo del camino bueno)</h3>
+<div class="outline-text-3" id="text-org52457f0">
+</div>
+<div id="outline-container-org9772e5e" class="outline-4">
+<h4 id="org9772e5e">Los 8 estados del camino más corto (7 cruces)</h4>
+<div class="outline-text-4" id="text-org9772e5e">
+<p>
+Usamos códigos E0, E1, … E* para no repetir dibujos.
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Código</th>
+<th scope="col" class="org-left">Izquierda</th>
+<th scope="col" class="org-left">Derecha</th>
+<th scope="col" class="org-left">Bote</th>
+<th scope="col" class="org-left">Qué acaba de pasar</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">E0</td>
+<td class="org-left">A L C M</td>
+<td class="org-left">—</td>
+<td class="org-left">◄</td>
+<td class="org-left">(inicio)</td>
+</tr>
+
+<tr>
+<td class="org-left">E1</td>
+<td class="org-left">L M</td>
+<td class="org-left">A C</td>
+<td class="org-left">►</td>
+<td class="org-left">A+C cruzan →</td>
+</tr>
+
+<tr>
+<td class="org-left">E2</td>
+<td class="org-left">A L M</td>
+<td class="org-left">C</td>
+<td class="org-left">◄</td>
+<td class="org-left">A regresa ←</td>
+</tr>
+
+<tr>
+<td class="org-left">E3</td>
+<td class="org-left">M</td>
+<td class="org-left">A L C</td>
+<td class="org-left">►</td>
+<td class="org-left">A+L cruzan →</td>
+</tr>
+
+<tr>
+<td class="org-left">E4</td>
+<td class="org-left">A C M</td>
+<td class="org-left">L</td>
+<td class="org-left">◄</td>
+<td class="org-left">A+C regresan ←</td>
+</tr>
+
+<tr>
+<td class="org-left">E5</td>
+<td class="org-left">C</td>
+<td class="org-left">A L M</td>
+<td class="org-left">►</td>
+<td class="org-left">A+M cruzan →</td>
+</tr>
+
+<tr>
+<td class="org-left">E6</td>
+<td class="org-left">A C</td>
+<td class="org-left">L M</td>
+<td class="org-left">◄</td>
+<td class="org-left">A regresa ←</td>
+</tr>
+
+<tr>
+<td class="org-left">E*</td>
+<td class="org-left">—</td>
+<td class="org-left">A L C M</td>
+<td class="org-left">►</td>
+<td class="org-left">A+C cruzan → ¡meta!</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-org9a65d7c" class="outline-4">
+<h4 id="org9a65d7c">Dibujo del camino (solo flechas hacia adelante)</h4>
+<div class="outline-text-4" id="text-org9a65d7c">
+<pre class="example" id="org979b35d">
+E0 ──A+C──► E1 ──A──► E2 ──A+L──► E3 ──A+C──► E4 ──A+M──► E5 ──A──► E6 ──A+C──► E*
+ ◄          ►         ◄          ►          ◄          ►         ◄          ►
+</pre>
+</div>
+</div>
+<div id="outline-container-org95f9da0" class="outline-4">
+<h4 id="org95f9da0">¿Por qué no hay más estados en el camino bueno?</h4>
+<div class="outline-text-4" id="text-org95f9da0">
+<p>
+Porque en cada paso solo hay <b>pocas</b> opciones legales; muchas combinaciones se descartan al instante (coyote con cabra, etc.). El espacio <b>total</b> válido es pequeño (unas 16 fotografías); no hace falta dibujarlas todas si A* te guía.
+</p>
+</div>
+</div>
+<div id="outline-container-orgcb6ea25" class="outline-4">
+<h4 id="orgcb6ea25">Ramas que se cortan desde E0 (ejemplo de poda)</h4>
+<div class="outline-text-4" id="text-orgcb6ea25">
+<p>
+Desde E0 el arriero está a la izquierda. Prueba mental:
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Cruce intentado</th>
+<th scope="col" class="org-left">¿Se puede?</th>
+<th scope="col" class="org-left">Motivo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">A solo</td>
+<td class="org-left">NO</td>
+<td class="org-left">Quedan L y C solos a la izquierda</td>
+</tr>
+
+<tr>
+<td class="org-left">A + L</td>
+<td class="org-left">NO</td>
+<td class="org-left">Quedan C y M solos (cabra + maíz)</td>
+</tr>
+
+<tr>
+<td class="org-left">A + C</td>
+<td class="org-left">SÍ → E1</td>
+<td class="org-left">Ambas orillas seguras</td>
+</tr>
+
+<tr>
+<td class="org-left">A + M</td>
+<td class="org-left">NO</td>
+<td class="org-left">Quedan L y C solos (coyote + cabra)</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+<b>Sin A</b>, ya eliminaste 3 de 4 movimientos. Eso es <b>poda</b>: no pierdes tiempo en fotografías imposibles.
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-org6cdfd3f" class="outline-3">
+<h3 id="org6cdfd3f">Parte 3 — g, h y f</h3>
+<div class="outline-text-3" id="text-org6cdfd3f">
+</div>
+<div id="outline-container-org0391ee5" class="outline-4">
+<h4 id="org0391ee5">g = “¿Cuántos cruces ya hice?”</h4>
+<div class="outline-text-4" id="text-org0391ee5">
+<ul class="org-ul">
+<li>Empiezas en E0 con <b>g = 0</b>.</li>
+<li>Cada cruce del bote: <b>g sube 1</b>.</li>
+<li>En E3 llevas <b>g = 3</b> (tres viajes hechos).</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org95cb3d4" class="outline-4">
+<h4 id="org95cb3d4">h = “¿Cuántos cruces <b>creo</b> que faltan?” (estimación)</h4>
+<div class="outline-text-4" id="text-org95cb3d4">
+<p>
+Regla que usamos (fácil de contar a mano):
+</p>
+
+<pre class="example" id="org0edb890">
+Mira la orilla DERECHA.
+Cuenta cuántas de estas piezas AÚN NO están ahí:
+  □ Coyote (L)
+  □ Cabra  (C)
+  □ Maíz   (M)
+
+Ese número es h.
+</pre>
+
+<p>
+Ejemplos:
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-right" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Estado</th>
+<th scope="col" class="org-left">¿L a la derecha?</th>
+<th scope="col" class="org-left">¿C?</th>
+<th scope="col" class="org-left">¿M?</th>
+<th scope="col" class="org-left">Piezas que faltan</th>
+<th scope="col" class="org-right">h</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">E0</td>
+<td class="org-left">No</td>
+<td class="org-left">No</td>
+<td class="org-left">No</td>
+<td class="org-left">L, C, M</td>
+<td class="org-right">3</td>
+</tr>
+
+<tr>
+<td class="org-left">E1</td>
+<td class="org-left">No</td>
+<td class="org-left">Sí</td>
+<td class="org-left">No</td>
+<td class="org-left">L, M</td>
+<td class="org-right">2</td>
+</tr>
+
+<tr>
+<td class="org-left">E3</td>
+<td class="org-left">Sí</td>
+<td class="org-left">Sí</td>
+<td class="org-left">No</td>
+<td class="org-left">M</td>
+<td class="org-right">1</td>
+</tr>
+
+<tr>
+<td class="org-left">E*</td>
+<td class="org-left">Sí</td>
+<td class="org-left">Sí</td>
+<td class="org-left">Sí</td>
+<td class="org-left">ninguna</td>
+<td class="org-right">0</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+<b>Truco:</b> nunca decimos “falta 0 cruces” cuando aún falta una pieza → la estimación no miente en exceso (<b>admisible</b>).
+</p>
+</div>
+</div>
+<div id="outline-container-orgf97df17" class="outline-4">
+<h4 id="orgf97df17">f = “¿Qué tan prioritario es este estado?”</h4>
+<div class="outline-text-4" id="text-orgf97df17">
+<pre class="example" id="orgb542104">
+f = g + h
+</pre>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Estado</th>
+<th scope="col" class="org-right">g</th>
+<th scope="col" class="org-right">h</th>
+<th scope="col" class="org-right">f = g+h</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">E0</td>
+<td class="org-right">0</td>
+<td class="org-right">3</td>
+<td class="org-right">3</td>
+</tr>
+
+<tr>
+<td class="org-left">E1</td>
+<td class="org-right">1</td>
+<td class="org-right">2</td>
+<td class="org-right">3</td>
+</tr>
+
+<tr>
+<td class="org-left">E2</td>
+<td class="org-right">2</td>
+<td class="org-right">2</td>
+<td class="org-right">4</td>
+</tr>
+
+<tr>
+<td class="org-left">E3</td>
+<td class="org-right">3</td>
+<td class="org-right">1</td>
+<td class="org-right">4</td>
+</tr>
+
+<tr>
+<td class="org-left">E4</td>
+<td class="org-right">4</td>
+<td class="org-right">2</td>
+<td class="org-right">6</td>
+</tr>
+
+<tr>
+<td class="org-left">E5</td>
+<td class="org-right">5</td>
+<td class="org-right">1</td>
+<td class="org-right">6</td>
+</tr>
+
+<tr>
+<td class="org-left">E6</td>
+<td class="org-right">6</td>
+<td class="org-right">1</td>
+<td class="org-right">7</td>
+</tr>
+
+<tr>
+<td class="org-left">E*</td>
+<td class="org-right">7</td>
+<td class="org-right">0</td>
+<td class="org-right">7</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+A* siempre mira primero el estado <b>pendiente</b> con <b>f más bajo</b>.
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-org6782abe" class="outline-3">
+<h3 id="org6782abe">Parte 4 — A* paso a paso (tabla de “lista de pendientes”)</h3>
+<div class="outline-text-3" id="text-org6782abe">
+<p>
+Imagina una <b>lista de tareas</b> llamada OPEN. Sacas la tarea con menor <b>f</b>, la miras, generas hijos, y repites.
+</p>
+</div>
+<div id="outline-container-org09d2ec7" class="outline-4">
+<h4 id="org09d2ec7">Iteración 1</h4>
+<div class="outline-text-4" id="text-org09d2ec7">
+<p>
+<b>Sacas:</b> E0 (f=3)
+</p>
+
+<p>
+<b>Generas hijos desde E0:</b> solo E1 es legal.
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Estado nuevo</th>
+<th scope="col" class="org-right">g</th>
+<th scope="col" class="org-right">h</th>
+<th scope="col" class="org-right">f</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">E1</td>
+<td class="org-right">1</td>
+<td class="org-right">2</td>
+<td class="org-right">3</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+OPEN ahora: { E1 (f=3) }
+¿Meta? No.
+</p>
+</div>
+</div>
+<div id="outline-container-org668ab86" class="outline-4">
+<h4 id="org668ab86">Iteración 2</h4>
+<div class="outline-text-4" id="text-org668ab86">
+<p>
+<b>Sacas:</b> E1 (f=3)
+</p>
+
+<p>
+<b>Posibles regresos desde la derecha:</b>
+</p>
+<ul class="org-ul">
+<li>A solo → E2 (legal)</li>
+<li>A+C → vuelves casi al inicio (legal pero <b>g=2, h=3, f=5</b> → peor; A* lo guarda solo si no había otra forma más barata de llegar ahí)</li>
+</ul>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Estado nuevo</th>
+<th scope="col" class="org-right">g</th>
+<th scope="col" class="org-right">h</th>
+<th scope="col" class="org-right">f</th>
+<th scope="col" class="org-left">¿Lo priorizo?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">E2</td>
+<td class="org-right">2</td>
+<td class="org-right">2</td>
+<td class="org-right">4</td>
+<td class="org-left">Sí, es el mejor ahora</td>
+</tr>
+
+<tr>
+<td class="org-left">(casi E0)</td>
+<td class="org-right">2</td>
+<td class="org-right">3</td>
+<td class="org-right">5</td>
+<td class="org-left">Peor f, se queda atrás</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+OPEN: { E2 (f=4) }
+</p>
+</div>
+</div>
+<div id="outline-container-org1c06f82" class="outline-4">
+<h4 id="org1c06f82">Iteración 3</h4>
+<div class="outline-text-4" id="text-org1c06f82">
+<p>
+<b>Sacas:</b> E2 (f=4)
+</p>
+
+<p>
+Desde izquierda (A, L, M presentes):
+</p>
+<ul class="org-ul">
+<li>A solo → izq L M, der C → g=3, h=2, f=5</li>
+<li>A+L → E3 → g=3, h=1, <b>f=4</b> ← empata y es más prometedor</li>
+<li>A+M → ilegal (cabra sola con maíz al otro lado…)</li>
+</ul>
+
+<p>
+OPEN: { E3 (f=4), otros con f=5 si existen }
+</p>
+</div>
+</div>
+<div id="outline-container-org997f397" class="outline-4">
+<h4 id="org997f397">Iteración 4</h4>
+<div class="outline-text-4" id="text-org997f397">
+<p>
+<b>Sacas:</b> E3 (f=4) — en la derecha están A, L, C; falta solo M (h=1)
+</p>
+
+<p>
+Regreso legal que avanza: A+C → E4 (g=4, h=2, f=6)
+</p>
+</div>
+</div>
+<div id="outline-container-org2afb8ff" class="outline-4">
+<h4 id="org2afb8ff">Iteraciones 5–7 (resumen en una tabla)</h4>
+<div class="outline-text-4" id="text-org2afb8ff">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-right" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-right">Iter</th>
+<th scope="col" class="org-left">Saco</th>
+<th scope="col" class="org-left">Mejor hijo</th>
+<th scope="col" class="org-left">Cruce</th>
+<th scope="col" class="org-right">g</th>
+<th scope="col" class="org-right">h</th>
+<th scope="col" class="org-right">f</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-right">5</td>
+<td class="org-left">E4</td>
+<td class="org-left">E5</td>
+<td class="org-left">A+M →</td>
+<td class="org-right">5</td>
+<td class="org-right">1</td>
+<td class="org-right">6</td>
+</tr>
+
+<tr>
+<td class="org-right">6</td>
+<td class="org-left">E5</td>
+<td class="org-left">E6</td>
+<td class="org-left">A ←</td>
+<td class="org-right">6</td>
+<td class="org-right">1</td>
+<td class="org-right">7</td>
+</tr>
+
+<tr>
+<td class="org-right">7</td>
+<td class="org-left">E6</td>
+<td class="org-left">E*</td>
+<td class="org-left">A+C →</td>
+<td class="org-right">7</td>
+<td class="org-right">0</td>
+<td class="org-right">7</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+<b>E</b> tiene h=0 → <b>¡meta!</b> Costo total <b>g = 7</b> cruces.
+</p>
+</div>
+</div>
+<div id="outline-container-orgff0a4be" class="outline-4">
+<h4 id="orgff0a4be">¿Qué aprendiste del proceso?</h4>
+<div class="outline-text-4" id="text-orgff0a4be">
+<ol class="org-ol">
+<li>No probaste “todas las historias posibles” a lo loco.</li>
+<li>En cada paso calculaste <b>g</b>, <b>h</b> y <b>f</b> con sumas sencillas.</li>
+<li>Las reglas del coyote/cabra <b>borraron</b> ramas sin explorarlas.</li>
+<li>Llegaste al mínimo (7) porque <b>h</b> nunca prometió de menos de lo necesario.</li>
+</ol>
+</div>
+</div>
+</div>
+<div id="outline-container-org5d5f703" class="outline-3">
+<h3 id="org5d5f703">Parte 5 — La solución contada como cuento (7 cruces)</h3>
+<div class="outline-text-3" id="text-org5d5f703">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-right" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-right">#</th>
+<th scope="col" class="org-left">Qué hace el arriero</th>
+<th scope="col" class="org-left">Estado después</th>
+<th scope="col" class="org-right">g</th>
+<th scope="col" class="org-right">h</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-right">1</td>
+<td class="org-left">Lleva la <b>cabra</b> →</td>
+<td class="org-left">E1</td>
+<td class="org-right">1</td>
+<td class="org-right">2</td>
+</tr>
+
+<tr>
+<td class="org-right">2</td>
+<td class="org-left">Regresa solo ←</td>
+<td class="org-left">E2</td>
+<td class="org-right">2</td>
+<td class="org-right">2</td>
+</tr>
+
+<tr>
+<td class="org-right">3</td>
+<td class="org-left">Lleva el <b>coyote</b> →</td>
+<td class="org-left">E3</td>
+<td class="org-right">3</td>
+<td class="org-right">1</td>
+</tr>
+
+<tr>
+<td class="org-right">4</td>
+<td class="org-left">Vuelve con la cabra ←</td>
+<td class="org-left">E4</td>
+<td class="org-right">4</td>
+<td class="org-right">2</td>
+</tr>
+
+<tr>
+<td class="org-right">5</td>
+<td class="org-left">Lleva el <b>maíz</b> →</td>
+<td class="org-left">E5</td>
+<td class="org-right">5</td>
+<td class="org-right">1</td>
+</tr>
+
+<tr>
+<td class="org-right">6</td>
+<td class="org-left">Regresa solo ←</td>
+<td class="org-left">E6</td>
+<td class="org-right">6</td>
+<td class="org-right">1</td>
+</tr>
+
+<tr>
+<td class="org-right">7</td>
+<td class="org-left">Lleva la <b>cabra</b> →</td>
+<td class="org-left">E*</td>
+<td class="org-right">7</td>
+<td class="org-right">0</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+<b>¿Por qué la cabra va y viene tanto?</b> Es la única pieza que “se pelea” con las otras dos. Actúa como <b>puente</b> seguro.
+</p>
+</div>
+</div>
+<div id="outline-container-orgfb1b78e" class="outline-3">
+<h3 id="orgfb1b78e">Parte 6 — Comparación rápida</h3>
+<div class="outline-text-3" id="text-orgfb1b78e">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Método</th>
+<th scope="col" class="org-left">¿Usa h?</th>
+<th scope="col" class="org-left">¿Qué hace en este problema?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Probar a mano</td>
+<td class="org-left">Sí, en la cabeza</td>
+<td class="org-left">“Llevo la cabra primero”</td>
+</tr>
+
+<tr>
+<td class="org-left">BFS / anchura</td>
+<td class="org-left">No</td>
+<td class="org-left">Explora por capas de g hasta hallar E*</td>
+</tr>
+
+<tr>
+<td class="org-left">A*</td>
+<td class="org-left">Sí</td>
+<td class="org-left">Ordena por f=g+h; suele llegar antes a E*</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-org24af4d8" class="outline-3">
+<h3 id="org24af4d8">Parte 7 — Ejercicios con lápiz y papel</h3>
+<div class="outline-text-3" id="text-org24af4d8">
+<ol class="org-ol">
+<li>En <b>E2</b> (<code>[ A L M | C ]</code>), calcula g, h y f sin mirar la tabla.</li>
+<li>Desde <b>E3</b>, ¿por qué <b>A solo</b> hacia la izquierda es ilegal? (mira la orilla derecha.)</li>
+<li>Dibuja en una hoja los 8 estados E0…E* y conecta con flechas.</li>
+<li>En <b>E5</b>, ¿cuántas piezas faltan a la derecha? ¿Cuál es h?</li>
+</ol>
+
+<p>
+<b>Respuestas breves:</b>
+</p>
+<ul class="org-ul">
+<li>E2: g=2, faltan L y M en derecha → h=2, f=4.</li>
+<li>A solo desde E3 dejaría L y C en la derecha sin arriero → coyote + cabra.</li>
+<li>E5: solo falta C en la derecha → h=1.</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="author">Autor: Eduardo Alcaraz</p>
+<p class="date">Created: 2026-07-07 mar 13:44</p>
+<p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>

@@ -1,0 +1,787 @@
+#+TITLE: Apuntes IA Verano
+#+AUTHOR: Eduardo Alcaraz
+#+LANGUAGE: es
+#+LaTeX_HEADER: \usepackage[spanish]{inputenc}
+#+SETUPFILE: /home/likcos/Materias/IA/theme-readtheorg-local.setup
+#+EXPORT_FILE_NAME: index.html
+#+OPTIONS: num:nil
+#+HTML_HEAD: <style> #content{max-width:1800px;}</style>
+#+BIND: org-confirm-babel-evaluate nil
+#+bibliography: bibliografia.bib
+#+cite_export: csl
+
+
+
+* Introducción a la Inteligencia Artificial
+
+Este documento desarrolla el temario de la unidad introductoria a la *Inteligencia Artificial (IA)*: definición, historia, bases cognitivas, lógica, filosofía del conocimiento, modelos cognitivos y de agente, y el papel de la *heurística* con algoritmos de búsqueda.
+
+*Objetivos generales:*
+- Comprender qué se entiende por IA y cómo ha evolucionado históricamente.
+- Relacionar la IA con psicología, lógica y filosofía del conocimiento.
+- Describir el *modelo del agente inteligente* y sus extensiones (multiagente, ubicuo).
+- Aplicar algoritmos de búsqueda informada y local como base de la resolución de problemas.
+
+** 1.1 Introducción a la Inteligencia Artificial
+
+*** ¿Qué es la Inteligencia Artificial?
+La *Inteligencia Artificial* es el campo de la informática y las ciencias cognitivas que estudia cómo construir sistemas capaces de realizar tareas que, si las hiciera un humano, requerirían *inteligencia*: percibir, razonar, aprender, planificar, comunicarse y actuar en entornos complejos.
+
+Definiciones frecuentes en cursos introductorios:
+- *Sistemas que piensan como humanos* (enfoque cognitivo / simulación).
+- *Sistemas que actúan racionalmente* (enfoque del *agente racional*; muy usado en IA moderna).
+- *Sistemas que piensan racionalmente* (enfoque lógico: leyes del pensamiento).
+
+*** Problemas típicos de la IA
+| Área              | Ejemplos                                              |
+|-------------------+-------------------------------------------------------|
+| Percepción        | Visión por computadora, reconocimiento de voz         |
+| Razonamiento      | Demostración de teoremas, diagnóstico médico            |
+| Aprendizaje       | Clasificación, predicción, *deep learning*              |
+| Lenguaje natural  | Traducción, chatbots, resumen de textos               |
+| Planificación     | Robótica, logística, juegos (ajedrez, Go)             |
+| Representación    | Ontologías, grafos de conocimiento, bases de reglas     |
+
+*** IA débil vs IA fuerte (distinción conceptual)
+- *IA débil (narrow AI):* sistemas especializados en una tarea (recomendador, detector de spam, asistente de voz). Es lo que existe hoy en producción.
+- *IA fuerte (AGI):* hipotética inteligencia general al nivel humano o superior en *cualquier* dominio. Sigue siendo objeto de debate y especulación.
+
+*** Relación con otras disciplinas
+- *Psicología cognitiva:* modelos de memoria, atención, aprendizaje.
+- *Lógica y matemáticas:* formalización del razonamiento.
+- *Filosofía:* naturaleza del conocimiento, mente y consciencia.
+- *Neurociencia:* inspiración biológica (redes neuronales).
+- *Ingeniería:* sistemas que funcionan en el mundo real (robots, sensores, redes).
+
+*** Idea clave del curso
+La IA no es un solo método: es un *conjunto de técnicas* (búsqueda, lógica, probabilidad, aprendizaje automático, etc.) unidas por la pregunta: *¿cómo representar el conocimiento y elegir acciones útiles en un entorno?*
+
+** 1.2 Historia de la Inteligencia Artificial
+
+*** Orígenes (décadas de 1940–1950)
+- *Alan Turing* (1950): artículo “Computing Machinery and Intelligence”; propone el *Test de Turing* como criterio operativo de comportamiento inteligente.
+- *McCulloch y Pitts* (1943): modelo neuronal binario (antecedente de redes neuronales).
+- Conferencia de *Dartmouth* (1956): McCarthy, Minsky, Shannon, Rochester y otros acuñan el término *“Artificial Intelligence”*. Se inicia el optimismo de que la inteligencia general sería alcanzable en pocos años.
+
+*** Era del optimismo (1956–1974)
+- Programas pioneros: *Logic Theorist*, *General Problem Solver* (GPS), primeros juegos (damas, ajedrez simplificado).
+- Lenguaje *LISP* (McCarthy, 1958) como herramienta simbólica.
+- Expectativas altas; financiamiento abundante.
+
+*** Primer “invierno” de la IA (1974–1980)
+- Limitaciones computacionales y teóricas (combinatoria explosiva, conocimiento difícil de codificar).
+- Informe *Lighthill* (Reino Unido, 1973): crítica severa → recortes de fondos.
+
+*** Sistemas expertos y boom comercial (1980–1987)
+- *Sistemas basados en reglas* (IF–THEN): MYCIN (diagnóstico), DENDRAL (química).
+- Japón: *Fifth Generation*; EE.UU.: proyectos DARPA.
+- Éxito en dominios acotados con expertos humanos disponibles.
+
+*** Segundo invierno (1987–1993)
+- Caída del hardware LISP; sistemas expertos caros de mantener y frágiles fuera de su nicho.
+- Necesidad de *aprendizaje* y *datos* frente a solo reglas manuales.
+
+*** Resurgimiento: aprendizaje automático y datos (1990–2010)
+- *Aprendizaje estadístico*: SVM, árboles, *boosting*.
+- Éxitos prácticos: filtrado de spam, reconocimiento de escritura, recomendación.
+- *Deep Blue* vence a Kasparov (1997) con búsqueda + heurísticas + hardware.
+
+*** Era del *deep learning* (2010–presente)
+- GPUs, grandes conjuntos de datos (ImageNet), arquitecturas profundas (CNN, RNN, Transformers).
+- Hitos: AlexNet (2012), AlphaGo (2016), GPT y modelos de lenguaje a gran escala (2020+).
+- IA generativa, visión, voz, asistentes conversacionales.
+
+*** Línea de tiempo resumida
+
+#+begin_example
+1943  Modelo McCulloch-Pitts
+1950  Test de Turing
+1956  Dartmouth → nace el término "IA"
+1960s GPS, ELIZA, optimismo
+1974  Primer invierno (Lighthill)
+1980s Sistemas expertos
+1987  Segundo invierno
+1997  Deep Blue vs Kasparov
+2012  AlexNet / revolución deep learning
+2016  AlphaGo
+2020+ LLMs, IA generativa
+#+end_example
+
+** 1.3 Habilidades cognoscitivas y teorías de la inteligencia
+
+*** Habilidades cognoscitivas (psicología)
+Desde la psicología cognitiva, la “inteligencia” en humanos se manifiesta en procesos interrelacionados:
+
+| Proceso        | Descripción breve                                      |
+|----------------+--------------------------------------------------------|
+| Percepción     | Interpretar estímulos sensoriales                      |
+| Atención       | Seleccionar información relevante                      |
+| Memoria        | Almacenar y recuperar (corto/largo plazo)              |
+| Lenguaje       | Comprender y producir símbolos lingüísticos            |
+| Razonamiento   | Inferir conclusiones, resolver problemas                 |
+| Aprendizaje    | Modificar conducta o conocimiento con la experiencia     |
+| Metacognición  | “Pensar sobre el propio pensamiento”                   |
+
+La IA clásica intentó *modelar* o *replicar* estos procesos; la IA moderna a menudo los *aproxima* con datos y optimización sin pretender fidelidad biológica.
+
+*** Teoría conductista (conductismo)
+- *Enfoque:* la mente no se observa directamente; se estudia el *comportamiento* ante estímulos y reforzadores.
+- *Skinner, Watson:* aprendizaje por condicionamiento y refuerzo.
+- *Relevancia en IA:* *aprendizaje por refuerzo* (RL): agente, estados, acciones, recompensas (Q-learning, policy gradient). El “conductismo” inspira el marco matemático, no la negación de representaciones internas (los agentes RL sí mantienen valores o políticas).
+
+*** Teoría de la inteligencia general (factor *g*)
+- *Spearman:* un factor común subyace a varias pruebas cognitivas.
+- En IA: analogía limitada; los sistemas suelen ser *especialistas* (alto rendimiento en una tarea, bajo en otras).
+
+*** Inteligencias múltiples (Howard Gardner)
+Gardner propone varias inteligencias relativamente independientes:
+
+| Inteligencia        | Ejemplo humano              | Paralelo en IA (aproximado)        |
+|---------------------+-----------------------------+------------------------------------|
+| Lingüística         | Leer, escribir, debatir     | NLP, LLMs                          |
+| Lógico-matemática   | Demostrar, programar        | Lógica, planificación, ML simbólico|
+| Espacial            | Orientarse, dibujar         | Visión, SLAM, gráficos             |
+| Musical             | Componer, reconocer tonos   | Generación/análisis musical        |
+| Corporal-kinestésica| Deportes, manualidades      | Robótica, control motor            |
+| Interpersonal       | Empatía, liderazgo          | Análisis de sentimientos (parcial) |
+| Intrapersonal       | Autoconocimiento            | Poco modelado explícitamente       |
+| Naturalista         | Clasificar especies         | Clasificación de imágenes          |
+
+*Idea pedagógica:* no existe un solo “botón de inteligencia”; los sistemas actuales combinan módulos especializados.
+
+*** Otras teorías (mención)
+- *Piaget:* desarrollo por etapas (sensoriomotor → formal). Útil como metáfora de complejidad creciente en agentes que aprenden.
+- *Vygotsky:* aprendizaje social y *zona de desarrollo próximo*. Paralelo: *aprendizaje con humano en el bucle* (RLHF, anotación humana).
+- *Sternberg (triárquica):* analítica, creativa, práctica → diseño de sistemas que equilibren precisión, novedad y utilidad en contexto.
+
+** 1.4 Razonamiento según la lógica
+
+*** Lógica como fundamento del razonamiento automático
+La lógica formal permite:
+- Representar *proposiciones* y *relaciones*.
+- Derivar *conclusiones válidas* a partir de *premisas*.
+- Verificar si un argumento es *correcto* (independientemente de si las premisas son verdaderas en el mundo real).
+
+*** Componentes básicos
+- *Lenguaje formal:* símbolos, conectivos (∧, ∨, ¬, →), cuantificadores (∀, ∃).
+- *Axiomas:* proposiciones *asumidas* sin demostración dentro del sistema (punto de partida).
+- *Teoremas:* proposiciones *demostrables* a partir de axiomas y reglas de inferencia.
+- *Demostración:* secuencia finita de pasos donde cada paso es un axioma, una hipótesis o se obtiene por una *regla de inferencia* (p. ej. *modus ponens*: de P y P→Q inferir Q).
+
+*** Ejemplo mínimo (lógica proposicional)
+Premisas:
+1. Si llueve, la calle está mojada.  (Lluvia → Mojada)
+2. Está lloviendo.                    (Lluvia)
+
+Conclusión (por modus ponens): La calle está mojada. (Mojada)
+
+En notación: {(Lluvia → Mojada), Lluvia} ⊢ Mojada
+
+*** Sistemas formales relevantes en IA
+| Sistema              | Uso en IA                                      |
+|----------------------+------------------------------------------------|
+| Lógica proposicional | Reglas simples, verificación finita            |
+| Lógica de predicados | Relaciones, bases de conocimiento              |
+| Lógica modal         | Conocimiento, creencia, obligación (agentes)   |
+| Lógica difusa        | Razonamiento con grados de verdad              |
+
+*** Límites importantes
+- *Decidibilidad:* algunos problemas no tienen algoritmo que siempre termine con respuesta correcta.
+- *Complejidad:* el espacio de búsqueda de demostraciones crece muy rápido → hace falta *heurística* (sección 1.8).
+- *Mundo real:* la lógica clásica asume certeza; en la práctica hay incertidumbre (probabilidad, redes bayesianas).
+
+** 1.5 Adquisición del conocimiento según la filosofía
+
+*** ¿Qué es el conocimiento? (epistemología)
+La *filosofía del conocimiento* pregunta:
+- ¿Qué distingue *conocimiento* de mera *creencia*?
+- ¿De dónde proviene? (experiencia vs razón)
+- ¿Cómo sabemos que algo es *justificado*?
+
+Tradición clásica: *conocimiento = creencia verdadera justificada* (definición discutida, pero pedagógicamente útil).
+
+*** Empirismo vs racionalismo
+| Corriente      | Idea principal                         | Paralelo en IA                          |
+|----------------+----------------------------------------+-----------------------------------------|
+| Empirismo      | Conocimiento desde la experiencia      | Aprendizaje automático, datos, inducción|
+| Racionalismo   | Conocimiento desde la razón innata     | Axiomas, ontologías, reglas a priori    |
+
+Los sistemas reales suelen combinar *conocimiento codificado* (reglas, ontologías) con *conocimiento aprendido* (modelos entrenados).
+
+*** Fuentes de conocimiento en sistemas inteligentes
+1. *Codificación manual:* expertos escriben reglas (sistemas expertos).
+2. *Aprendizaje inductivo:* generalizar patrones desde ejemplos.
+3. *Adquisición semi-automática:* extracción de texto, minería de datos.
+4. *Interacción:* el usuario corrige o etiqueta (aprendizaje activo).
+
+*** Problema de la adquisición de conocimiento (*knowledge acquisition bottleneck*)
+- Los expertos no siempre saben articular lo que hacen.
+- El mantenimiento de reglas es costoso.
+- Motivación histórica del *machine learning*: aprender reglas o parámetros desde datos.
+
+*** Representación del conocimiento (puente filosofía → IA)
+- *Hechos:* “París es capital de Francia.”
+- *Reglas:* “Si X es padre de Y, Y es hijo de X.”
+- *Ontologías:* vocabulario formal de conceptos y relaciones.
+- *Frames / redes semánticas:* estructuras con herencia y slots.
+
+** 1.6 El modelo cognoscitivo
+
+*** Definición
+Un *modelo cognoscitivo* es una representación computacional de procesos mentales: cómo se percibe, se recuerda, se razona y se decide. Busca coherencia con evidencia psicológica o neurocientífica (a veces de forma simplificada).
+
+*** Arquitecturas cognitivas clásicas
+| Arquitectura | Idea central                                      |
+|--------------+---------------------------------------------------|
+| SOAR         | Memoria, aprendizaje por *chunking*, resolución de impasse |
+| ACT-R        | Módulos (declarativo/procedimental), activación   |
+| CLARION      | Conocimiento implícito vs explícito               |
+
+*** Componentes típicos de un modelo cognoscitivo
+- *Memoria de trabajo:* buffer limitado para información actual.
+- *Memoria a largo plazo:* hechos y procedimientos.
+- *Percepción y motor:* interfaces con el entorno.
+- *Aprendizaje:* consolidación de experiencias en conocimiento reutilizable.
+
+*** Modelo cognoscitivo vs modelo de agente
+| Aspecto           | Modelo cognoscitivo           | Agente inteligente (IA clásica)   |
+|-------------------+-------------------------------+-----------------------------------|
+| Objetivo          | Simular mente humana          | Actuar bien en un entorno         |
+| Evaluación        | Ajuste a datos psicológicos   | Rendimiento (tarea, utilidad)     |
+| Complejidad       | Alta fidelidad cognitiva      | Pragmática, a veces mínima        |
+
+*** Conexión con IA moderna
+Las redes neuronales profundas no suelen pretender ser modelos cognitivos fieles, pero incorporan ideas inspiradas en cerebro (capas, atención). Los *LLMs* debaten si emergen capacidades “cognitivas” sin modelo explícito de mente.
+
+** 1.7 Modelo del agente inteligente
+
+*** Definición de agente
+Un *agente* es cualquier cosa que percibe su *entorno* mediante *sensores* y actúa sobre él mediante *actuadores*.
+
+Un *agente inteligente* elige acciones que maximizan una medida de *rendimiento* según su *secuencia perceptiva* y su *conocimiento* incorporado.
+
+*** Función agente
+\[ f: P^* \rightarrow A \]
+donde P es el conjunto de percepciones y A el de acciones.
+
+En la práctica se implementa con *programa + arquitectura* (cuerpo físico o software).
+
+*** Componentes de un agente racional
+1. *Medida de rendimiento:* qué se considera éxito (seguridad, puntos, tiempo, costo).
+2. *Conocimiento del entorno:* reglas, mapas, modelos probabilísticos.
+3. *Secuencia perceptiva:* historial de lo observado.
+4. *Acción:* la mejor según expectativa de rendimiento futuro.
+
+*** Tipos de agentes (Jersey / Russell & Norvig)
+| Tipo                    | Comportamiento                                      |
+|-------------------------+-----------------------------------------------------|
+| Reflejo simple          | Acción = función de percepción actual               |
+| Reflejo basado en modelo| Mantiene estado interno (modelo del mundo)          |
+| Basado en objetivos     | Planifica para alcanzar metas                       |
+| Basado en utilidad      | Elige entre metas con grados de preferencia         |
+| De aprendizaje          | Mejora su comportamiento con la experiencia         |
+
+*** PEAS (ejemplo: taxi autónomo)
+- *Performance:* seguridad, rapidez, comodidad, legalidad.
+- *Environment:* calles, tráfico, peatones, clima.
+- *Actuators:* volante, acelerador, freno, señales.
+- *Sensors:* cámaras, LIDAR, GPS, odometría.
+
+*** Propiedades del entorno (para elegir técnica)
+| Propiedad           | Ejemplos                                              |
+|---------------------+-------------------------------------------------------|
+| Observable / no     | Ajedrez completo vs taxi con puntos ciegos            |
+| Determinista / no   | Laberinto fijo vs poker                               |
+| Episódico / secuencial | Clasificar imagen vs ajedrez                       |
+| Estático / dinámico | Rompecabezas vs fútbol robótico                       |
+| Discreto / continuo | Tablero vs conducción continua                        |
+| Un agente / multi  | Solitario vs subastas, tráfico                        |
+
+*** Sistemas multiagente (SMA)
+- Varios agentes en un *mismo entorno*; pueden cooperar, competir o ser neutros.
+- *Cooperación:* robots en almacén, enjambres.
+- *Competencia:* subastas, juegos, mercados.
+- Desafíos: comunicación, coordinación, equilibrio (teoría de juegos), emergencia de comportamiento global.
+
+*** Sistemas ubicuos (*ubicomp*)
+- Computación *integrada* en el entorno cotidiano (sensores, wearables, hogar inteligente, ciudades).
+- Características: invisibilidad, contexto, movilidad, muchos dispositivos heterogéneos.
+- Relación con IA: agentes distribuidos, percepción contextual, decisiones en tiempo real con recursos limitados.
+
+#+begin_example
+        ┌─────────────┐
+Sensores│   AGENTE    │Actuadores
+   ────►│  (programa) │────► Entorno
+        └─────────────┘
+              ▲
+              │ percepción → decisión → acción
+#+end_example
+
+** 1.8 El papel de la heurística
+
+*** ¿Qué es una heurística?
+Una *heurística* es una regla práctica, atajo o función estimadora que *guía la búsqueda* hacia soluciones prometedoras sin garantizar optimalidad ni completitud en todos los casos.
+
+*Motivación:* el espacio de estados crece exponencialmente (*explosión combinatoria*). Explorar todo es inviable.
+
+*** Propiedades deseables
+- *Admisibilidad (A*):* h(n) nunca sobreestima el costo real → solución óptima si existe.
+- *Consistencia (monotonicidad):* h(n) ≤ costo(n,n') + h(n') → facilita optimalidad.
+- *Información:* cuanto más cerca de la realidad, menos nodos se expanden (pero más costosa de calcular).
+
+*** Búsqueda ciega vs informada vs local
+| Tipo        | Usa costo/heurística | Ejemplos                    |
+|-------------+----------------------+-----------------------------|
+| Ciega       | No (solo estructura) | BFS, DFS, costo uniforme    |
+| Informada   | Sí (h)               | A*, greedy best-first        |
+| Local       | Mejora iterativa     | Hill climbing, simulated annealing |
+
+** 1.8.1 Algoritmos de exploración de alternativas
+
+*** Modelo de problema de búsqueda
+- *Estado:* configuración del mundo.
+- *Estado inicial* y *estados meta*.
+- *Acciones* aplicables y *función de transición*.
+- *Función de costo de camino* g(n) (suma de costos desde el inicio).
+- *Árbol / grafo de búsqueda:* nodos = estados; aristas = acciones.
+
+*** Búsqueda en anchura (BFS)
+- Expande por *niveles* (frontera FIFO).
+- *Completa* si el factor de ramificación es finito.
+- *Óptima* si todos los pasos tienen el mismo costo.
+- *Memoria:* alta (guarda toda la frontera).
+
+*** Búsqueda en profundidad (DFS)
+- Expande el nodo más profundo primero (pila).
+- *Memoria:* baja (solo camino actual + frontera).
+- Riesgo de ciclos → usar conjunto *visited* o límite de profundidad (IDS).
+
+*** Costo uniforme (UCS / Dijkstra en grafo de estados)
+- Expande el nodo de *menor g(n)* (cola de prioridad).
+- Óptima con costos no negativos.
+- Sin heurística: búsqueda “ciega” informada solo por costos acumulados.
+
+*** Greedy best-first
+- Expande el nodo con menor h(n) (solo heurística).
+- Rápida pero *no garantiza* optimalidad ni completitud en todos los grafos.
+
+*** Ejemplo: laberinto en Python (BFS)
+
+#+begin_src python
+from collections import deque
+
+def bfs(start, goal, neighbors):
+    """neighbors(state) -> iterable de estados alcanzables."""
+    queue = deque([(start, [start])])
+    visited = {start}
+    while queue:
+        state, path = queue.popleft()
+        if state == goal:
+            return path
+        for nxt in neighbors(state):
+            if nxt not in visited:
+                visited.add(nxt)
+                queue.append((nxt, path + [nxt]))
+    return None
+
+# Grafo de ejemplo: 0 -- 1 -- 2
+#                      \     /
+#                        3
+graph = {
+    0: [1, 3],
+    1: [0, 2],
+    2: [1, 3],
+    3: [0, 2],
+}
+print("BFS 0→2:", bfs(0, 2, lambda s: graph[s]))
+#+end_src
+
+** 1.8.2 Algoritmo A*
+
+*** Idea
+A* combina:
+- g(n) = costo acumulado desde el inicio.
+- h(n) = estimación del costo restante hasta la meta.
+
+*f(n) = g(n) + h(n)*
+
+Expande siempre el nodo con *menor f(n)* en una cola de prioridad.
+
+*** Pseudocódigo (conceptual)
+#+begin_example
+OPEN ← {nodo_inicial}
+g(inicio) ← 0
+mientras OPEN no vacío:
+    n ← nodo en OPEN con menor f(n) = g(n) + h(n)
+    si n es meta: reconstruir camino y terminar
+    para cada sucesor n' de n:
+        g' ← g(n) + costo(n, n')
+        si g' < g(n') o n' no visitado:
+            g(n') ← g'
+            f(n') ← g' + h(n')
+            padre(n') ← n
+            añadir n' a OPEN
+#+end_example
+
+*** Condiciones para optimalidad
+- El grafo es finito o hay criterio de corte.
+- h es *admisible* (no sobreestima).
+- Con h *consistente*, A* no re-expande innecesariamente.
+
+*** Ejemplo: A* en cuadrícula (Manhattan)
+
+#+begin_src python
+import heapq
+
+def manhattan(a, b):
+    return abs(a[0] - b[0]) + abs(a[1] - b[1])
+
+def astar(start, goal, neighbors, cost=1):
+    """
+    start, goal: tuplas (fila, col)
+    neighbors(pos) -> lista de posiciones válidas
+    """
+    open_heap = []
+    heapq.heappush(open_heap, (manhattan(start, goal), 0, start))
+    g_score = {start: 0}
+    came_from = {}
+
+    while open_heap:
+        f, g, current = heapq.heappop(open_heap)
+        if current == goal:
+            path = [current]
+            while current in came_from:
+                current = came_from[current]
+                path.append(current)
+            return list(reversed(path))
+
+        for nxt in neighbors(current):
+            new_g = g_score[current] + cost
+            if nxt not in g_score or new_g < g_score[nxt]:
+                g_score[nxt] = new_g
+                came_from[nxt] = current
+                h = manhattan(nxt, goal)
+                heapq.heappush(open_heap, (new_g + h, new_g, nxt))
+    return None
+
+# Cuadrícula 3x3 sin obstáculos
+def grid_neighbors(pos):
+    r, c = pos
+    moves = []
+    for dr, dc in [(-1,0),(1,0),(0,-1),(0,1)]:
+        nr, nc = r + dr, c + dc
+        if 0 <= nr < 3 and 0 <= nc < 3:
+            moves.append((nr, nc))
+    return moves
+
+print("A* (0,0)→(2,2):", astar((0,0), (2,2), grid_neighbors))
+#+end_src
+
+*** Cuándo usar A*
+- Mapas, planificación de rutas, puzzles con costo en aristas.
+- Cuando existe una h admisible razonable (distancia euclidiana, Manhattan, patrón desajustado en 8-puzzle).
+
+** 1.8.3 Algoritmos de búsqueda local
+
+*** Idea
+En lugar de explorar sistemáticamente todo un árbol, la *búsqueda local* parte de una *solución candidato* y la va *mejorando* iterativamente según una *función objetivo* (o energía).
+
+Útil cuando:
+- El camino importa menos que el *estado final* (optimización, CSP relajados).
+- El espacio es enorme pero hay estructura local.
+
+*** Hill climbing (escalada de colina)
+1. Estado actual s.
+2. Evaluar vecinos; moverse al vecino con *mejor* valor.
+3. Parar si no hay mejora (máximo local).
+
+*Problema:* máximos locales, mesetas, crestas.
+
+*** Variantes
+| Algoritmo              | Idea                                           |
+|------------------------+------------------------------------------------|
+| Steepest ascent        | Mejor vecino en cada paso                      |
+| Stochastic hill climb  | Elige aleatoriamente entre mejoras             |
+| Random restart         | Reinicia desde puntos aleatorios               |
+| Simulated annealing    | Acepta empeoras con probabilidad decreciente   |
+| Genetic algorithms     | Población, cruce, mutación, selección          |
+
+*** Ejemplo: hill climbing (maximizar función 1D discreta)
+
+#+begin_src python
+import random
+
+def hill_climbing(f, start, neighbors, max_steps=100):
+    current = start
+    value = f(current)
+    for _ in range(max_steps):
+        nbrs = list(neighbors(current))
+        if not nbrs:
+            break
+        best = max(nbrs, key=f)
+        best_val = f(best)
+        if best_val <= value:
+            break  # máximo local
+        current, value = best, best_val
+    return current, value
+
+# Función con máximo local en x=2 y global en x=8 (dominio 0..10)
+def f(x):
+    return -(x - 8) ** 2 + 64 if x >= 5 else -(x - 2) ** 2 + 10
+
+def nbrs(x):
+  for d in (-1, 1):
+      if 0 <= x + d <= 10:
+          yield x + d
+
+for trial in range(3):
+    s0 = random.randint(0, 10)
+    s, v = hill_climbing(f, s0, nbrs)
+    print(f"inicio={s0} → máximo local en x={s}, f={v}")
+#+end_src
+
+*** Búsqueda local vs A*
+| Criterio        | A* (sistemática)     | Búsqueda local        |
+|-----------------+----------------------+-----------------------|
+| Garantía óptima | Sí (con h admisible) | No en general         |
+| Memoria         | Puede ser alta       | Baja (un estado)      |
+| Uso típico      | Camino mínimo        | Optimización, scheduling |
+
+** Síntesis del temario
+
+| Subtema | Idea central                                              |
+|---------+-----------------------------------------------------------|
+| 1.1     | IA = sistemas que perciben, razonan, aprenden y actúan  |
+| 1.2     | Ciclos de optimismo e invierno; datos y deep learning     |
+| 1.3     | Cognición humana; Gardner, conductismo → RL               |
+| 1.4     | Axiomas, teoremas, demostración; lógica en IA simbólica   |
+| 1.5     | Origen y representación del conocimiento                  |
+| 1.6     | Arquitecturas que modelan procesos mentales               |
+| 1.7     | Agente racional; SMA; computación ubicua                  |
+| 1.8     | Heurísticas; BFS/DFS/UCS; A*; búsqueda local              |
+
+** Referencias sugeridas
+- Russell, S. & Norvig, P. *Artificial Intelligence: A Modern Approach* (capítulos 1–4).
+- Turing, A. (1950). Computing Machinery and Intelligence.
+- Gardner, H. *Frames of Mind* (inteligencias múltiples).
+- Newell, A. *Unified Theories of Cognition* (SOAR / ACT-R en contexto).
+
+** Preguntas de repaso
+1. ¿En qué se diferencia un agente *reflejo* de uno *basado en objetivos*?
+2. ¿Por qué A* necesita que h sea admisible para garantizar optimalidad?
+3. ¿Qué paralelo existe entre el conductismo y el aprendizaje por refuerzo?
+4. ¿Cuál es la diferencia entre *conocimiento* codificado manualmente y *aprendido*?
+5. ¿Por qué hill climbing puede fallar en optimización global?
+
+#+RESULTS:
+: None
+
+
+ 
+* Acertijos de IA: espacio de estados, lógica y poda
+
+Estos acertijos se resuelven como *problemas de búsqueda* en un *espacio
+de estados*, pero **no hace falta expandir el espacio completo**: las
+restricciones lógicas *podan* ramas inválidas o subóptimas desde el
+inicio.
+
+| Acertijo              | Idea de estado                          | Por qué no explotar todo ciegamente        |
+|-----------------------+-----------------------------------------+--------------------------------------------|
+| Maridos celosos       | quién está en cada orilla + bote        | Regla de “celos” invalida muchos sucesores |
+| Puente y linterna     | quién cruzó + lado de linterna + tiempo | Poda por tiempo > 17 o dominancia          |
+| Flavio Josefo         | círculo + contador de eliminación       | Simulación O(n²) o fórmula O(log n)        |
+
+*Herramientas:* representación lógica, invariantes, búsqueda con poda (BFS acotado), razonamiento guiado.
+
+** 1. El problema de los maridos celosos
+
+*** Enunciado
+Tres parejas (tres maridos y sus tres esposas) deben cruzar un río usando un bote con capacidad máxima para *dos personas*.
+
+*Restricción:* ninguna mujer puede quedarse en presencia de *otro* hombre a menos que su *propio marido* también esté presente (en orillas y en el bote).
+
+*Objetivo:* secuencia de viajes *mínima* para que las seis personas crucen sin violar la restricción.
+
+*** Modelado del espacio de estados (sin enumerar todo a ciegas)
+
+**** Variables
+- Conjunto =L= (orilla izquierda) y =R= (orilla derecha), con =L ⊔ R = {H1,W1,H2,W2,H3,W3}=.
+- Posición del bote: =bote ∈ {izquierda, derecha}=.
+- *Estado:* =(personas_en_R, bote_izquierda)= (equivalente a saber quién está en cada lado).
+
+**** Acciones
+Desde la orilla donde está el bote, elegir 1 o 2 personas que cruzan.
+
+**** Predicado lógico de seguridad (poda)
+Para cada orilla =X=:
+
+#+begin_example
+segura(X) ≡ ∀ mujer Wi ∈ X, ∀ hombre Hj ∈ X con j≠i:
+              (Hj ∈ X) → (Hi ∈ X)
+
+Si Wi está con un hombre que NO es su marido, su marido Hi también debe estar en X.
+#+end_example
+
+*Poda:* solo se expanden sucesores con =segura(L) ∧ segura(R)=.
+
+**** Tamaño del espacio
+- Bruto: =2^6 × 2 = 128= estados.
+- Con poda lógica: el BFS explora ~*40* estados (orden de magnitud), no un árbol exponencial de secuencias de movimientos.
+
+*** Razonamiento guiado (lógica antes que fuerza bruta)
+
+1. *Mover dos esposas primero* es seguro (no hay hombres en la orilla de llegada).
+2. *Regresar una esposa* devuelve el bote sin dejar a una mujer con hombres ajenos sin su marido.
+3. *Dos maridos* pueden cruzar cuando en la otra orilla sus esposas ya están o la composición es segura.
+4. La tercera pareja (=H3,W3=) cruza cuando el tablero lo permite.
+5. Los últimos viajes reacomodan a quien debe regresar con el bote.
+
+*** Solución óptima: *9 viajes*
+
+| Paso | Viaje      | Izquierda (L)   | Derecha (R)        | Bote |
+|------+------------+-----------------+--------------------+------|
+| 0    | —          | H1 W1 H2 W2 H3 W3 | —                | L    |
+| 1    | W1, W2 →   | H1 H2 H3 W3     | W1 W2              | R    |
+| 2    | W1 ←       | H1 W1 H2 H3 W3  | W2                 | L    |
+| 3    | H1, H2 →   | H3 W3           | H1 H2 W1 W2        | R    |
+| 4    | H1, W1 ←   | H1 W1 H3 W3     | H2 W2              | L    |
+| 5    | H3, W3 →   | H1 W1           | H2 W2 H3 W3        | R    |
+| 6    | H2, W2 ←   | H1 W1 H2 W2     | H3 W3              | L    |
+| 7    | H1, H2 →   | W1 W2           | H1 H2 H3 W3        | R    |
+| 8    | H1, W1 ←   | H1 W1           | H2 W2 H3 W3        | L    |
+| 9    | H1, W1 →   | —               | H1 W1 H2 W2 H3 W3  | R ✓  |
+
+*Paso crítico 7:* en R están =H1,H2,H3,W3=. =W3= convive con =H1= y =H2= porque su marido =H3= también está → *válido*.
+
+** 2. El puente y la linterna (optimización en 17 minutos)
+
+*** Enunciado
+Cuatro personas deben cruzar un puente de noche. El puente soporta *dos* personas. Hay *una* linterna.
+
+| Persona | Tiempo |
+|---------+--------|
+| A       | 1 min  |
+| B       | 2 min  |
+| C       | 5 min  |
+| D       | 10 min |
+
+Dos personas cruzan a la velocidad de la *más lenta*. La linterna debe volver para el siguiente cruce.
+
+*Objetivo:* todos al otro lado en exactamente *17 minutos*.
+
+*** Modelado (estado acotado)
+
+**** Estado =(C, ℓ, t)=
+- =C ⊆ {A,B,C,D}=: quienes ya cruzaron.
+- =ℓ=: linterna en lado *cerca* o *lejos*.
+- =t=: tiempo acumulado (minutos).
+
+**** Poda (evita explosión)
+1. Si =t > 17= → *cortar rama*.
+2. *Dominancia:* para igual =(C, ℓ)=, quedarse solo con el camino de menor =t=.
+3. Espacio total acotado: ≈ 16 × 2 × 18 estados (minúsculo frente a enumerar todas las secuencias de pares).
+
+*** Razonamiento lógico (sin BFS)
+
+*Lema informal:* los lentos =C= y =D= deben cruzar juntos *como máximo una vez* en la solución óptima (cuesta 10 min). Si cada uno cruzara por separado con escolta, se pagan más de 10 min solo en esos cruces.
+
+*Estrategia ganadora:*
+1. Mandar primero los dos rápidos (=A+B=, 2 min).
+2. Devolver el *más rápido* (=A=, 1 min).
+3. Cruzar los dos lentos juntos (=C+D=, 10 min) — el gasto inevitable.
+4. Devolver alguien moderado (=B=, 2 min) — mejor que dos vueltas de =A= si eso habilita el cierre.
+5. Cerrar con =A+B= (2 min).
+
+Total: 2+1+10+2+2 = *17*.
+
+*** Solución paso a paso
+
+| Paso | Acción       | Δt | Acumulado | En lado lejano |
+|------+--------------+----+-----------+----------------|
+| 1    | A + B →      | 2  | 2         | A, B           |
+| 2    | A ←          | 1  | 3         | B              |
+| 3    | C + D →      | 10 | 13        | B, C, D        |
+| 4    | B ←          | 2  | 15        | C, D           |
+| 5    | A + B →      | 2  | *17*      | A, B, C, D ✓   |
+
+** 3. Flavio Josefo y el círculo de la muerte
+
+*** Historia
+*Flavio Josefo* relata que, sitiado en Yodfat con 40 compañeros (41 hombres en total), convinieron en morir por sorteo circular antes que rendirse. Josefo calculó la posición segura y sobrevivió — de ahí el *problema de Josefo*.
+
+*** Enunciado matemático
+- =n= personas en círculo, numeradas =1 … n=.
+- Se cuenta en círculo y se elimina cada =k=-ésima persona *viva*.
+- Se repite hasta quedar *una*.
+- *¿Qué posición inicial garantiza sobrevivir?* =J(n, k)=.
+
+*** ¿Por qué no expandir el árbol completo?
+Un árbol de “quién se elimina en cada ronda” tiene ramificación variable y profundidad =n-1=; para =n= grande es innecesario.
+
+| Enfoque              | Complejidad | Cuándo usarlo              |
+|----------------------+-------------+----------------------------|
+| Simulación en lista  | O(n²)       | Cualquier =k=, =n= moderado |
+| Recurrencia          | O(n)        | Programación dinámica      |
+| Fórmula cerrada k=2  | O(log n)    | “Cada segundo” (clásico)   |
+
+*** Caso k = 2 (eliminar cada segundo)
+
+**** Fórmula cerrada
+Sea =m = ⌊log₂ n⌋= y =2^m ≤ n < 2^(m+1)=:
+
+\[ J(n, 2) = 2 \cdot (n - 2^m) + 1 \]
+
+**** Intuición
+Cada ronda con =k=2= elimina la mitad (aprox.) de los vivos; la posición sobreviviente se obtiene “reflejando” el índice respecto a la mayor potencia de 2 ≤ =n=.
+
+**** Historia: n = 41 soldados
+- =2^5 = 32 ≤ 41 < 64= → =m = 5=.
+- =J(41, 2) = 2·(41 - 32) + 1 = 19=.
+
+*Josefo debía situarse en la posición 19* (contando desde 1) si el sorteo eliminaba cada segundo.
+
+*** Ejemplo manual: n = 7, k = 2
+
+Con la convención estándar (=J(1,2)=1=, =J(2n)=2J(n)-1=, =J(2n+1)=2J(n)+1=):
+
+#+begin_example
+J(1)=1, J(2)=1, J(3)=3, J(4)=1, J(5)=3, J(6)=5, J(7)=7
+#+end_example
+
+Fórmula potencias de 2: =2·(7-4)+1 = 7=. La posición segura es la *7* (contando desde 1).
+
+*** Caso general k (algoritmo iterativo O(n))
+
+#+begin_example
+J ← 0
+para i = 1 … n:
+    J ← (J + k) mod i
+respuesta (1-indexada) = J + 1
+#+end_example
+
+Este algoritmo evita simular el círculo completo (=O(n²)=) y coincide con la fórmula cerrada cuando =k=2=.
+
+
+*** Síntesis: lógica vs explosión combinatoria
+
+| Problema        | Truco principal                          | Viajes / respuesta      |
+|-----------------+------------------------------------------+-------------------------|
+| Maridos celosos | Predicado =segura(orilla)= poda BFS      | *9* viajes mínimos      |
+| Puente          | C+D juntos una vez; poda =t>17=          | *17* minutos            |
+| Josefo (k=2)    | Fórmula con potencias de 2; O(n) rec.    | =J(41,2)=*19*           |
+
+*** Preguntas de repaso
+1. ¿Qué estado del problema de maridos celosos es inválido aunque el bote tenga capacidad 2?
+2. ¿Por qué mandar =A= dos veces de vuelta no mejora necesariamente el puente frente a devolver =B= una vez?
+3. ¿Cuál es =J(12, 2)=? (=2·(12-8)+1 = 9=)
+4. ¿En qué caso conviene simular Josefo en lugar de usar recurrencia?
+
+*Referencias*
+- Russell & Norvig, cap. 3 (búsqueda en espacios de estados).
+- Klein, T. (puzzle del puente y linterna) — optimización clásica.
+- Josephus Flavius, *La guerra de los judíos* (fuente histórica).
+
+#+RESULTS:
+: None
+
+

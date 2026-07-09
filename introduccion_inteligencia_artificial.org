@@ -1671,3 +1671,1190 @@ El objetivo es que el alumno entienda: *el modelo no se elige por fama; se elige
 #+RESULTS:
 : None
 
+
+
+
+
+*  Redes Neuronales y Backpropagation
+
+** ¿Qué es una neurona artificial?
+
+Una neurona es una calculadora diminuta. Recibe números de entrada, cada entrada
+tiene un *peso* (importancia), los combina y produce una salida.
+
+#+begin_src text
+   x1 ──(peso w1)──┐
+                    │
+   x2 ──(peso w2)──┼──► [ suma: z = w1·x1 + w2·x2 + b ] ──► [ activación ] ──► salida
+                    │
+   x3 ──(peso w3)──┘
+                    (b = "bias" o sesgo, un ajuste extra)
+#+end_src
+
+- Los *pesos* (w) dicen cuánta importancia tiene cada entrada.
+- El *bias* (b) es un número extra que permite mover el resultado.
+- La *función de activación* dobla el resultado para que la red aprenda cosas no
+  lineales (curvas, no solo líneas rectas). Ejemplos: sigmoide, ReLU.
+
+*Aprender = encontrar los mejores pesos y biases.* Eso es todo lo que hace una red.
+
+** La analogía de las perillas
+
+Imagina una mesa de mezclas de música con muchas perillas (los pesos). Al principio
+están en posiciones aleatorias y la música suena horrible (predicciones malas).
+
+El *backpropagation* es el procedimiento para saber, para CADA perilla, *hacia qué
+lado y cuánto* girarla para que la música (predicción) mejore un poquito. Repites
+miles de veces y al final suena bien.
+
+** Las 4 fases del entrenamiento
+
+#+begin_src text
+   ┌─────────────────────────────────────────────────────────┐
+   │  1. FORWARD  (hacia adelante)                             │
+   │     Los datos entran y la red produce una predicción ŷ    │
+   ├─────────────────────────────────────────────────────────┤
+   │  2. LOSS     (calcular el error)                          │
+   │     Comparamos ŷ con el real y usando, p.ej., el MSE      │
+   ├─────────────────────────────────────────────────────────┤
+   │  3. BACKWARD (backpropagation)                            │
+   │     Calculamos cuánta "culpa" tiene cada peso del error   │
+   ├─────────────────────────────────────────────────────────┤
+   │  4. UPDATE   (ajuste de pesos, gradiente descendente)     │
+   │     Movemos cada peso un poquito para reducir el error    │
+   └─────────────────────────────────────────────────────────┘
+                         ↑                          │
+                         └──────── repetir ─────────┘
+#+end_src
+
+** El corazón: el gradiente y la pendiente
+
+Imagina que estás en una montaña con los ojos vendados y quieres bajar al valle
+(donde el error es mínimo). ¿Qué haces? Tanteas con el pie hacia dónde baja el
+suelo y das un paso en esa dirección. Repites hasta llegar abajo.
+
+- La *montaña* es la función de error (el error depende de los pesos).
+- La *pendiente* bajo tus pies es el *gradiente* (la derivada).
+- El *tamaño del paso* es la *tasa de aprendizaje* (learning rate).
+
+La regla mágica del *gradiente descendente*:
+
+#+begin_src text
+   nuevo_peso = viejo_peso − (learning_rate × gradiente)
+#+end_src
+
+- El *gradiente* dice "hacia dónde SUBE el error". Por eso lo restamos (queremos BAJAR).
+- El *learning rate* (ej. 0.01) controla el tamaño del paso:
+  - Muy grande → das saltos enormes y te pasas del valle (no converge).
+  - Muy pequeño → tardas una eternidad en bajar.
+
+** ¿Por qué se llama "back"-propagation?
+
+Porque la culpa del error se reparte *hacia atrás*, desde la salida hasta la entrada,
+usando la *regla de la cadena* del cálculo (derivadas encadenadas).
+
+#+begin_src text
+   Entrada → Capa 1 → Capa 2 → Salida → ERROR
+                                          │
+   Entrada ← Capa 1 ← Capa 2 ← Salida ←───┘
+   (el error "viaja hacia atrás" repartiendo culpa a cada peso)
+#+end_src
+
+Intuición de la regla de la cadena: si el error depende de la salida, la salida
+depende de la capa 2, y la capa 2 depende de un peso... entonces multiplicamos esos
+"cuánto afecta a" para saber cuánto ese peso afecta al error final.
+
+** Ejemplo súper simple a mano (1 peso)
+
+Tenemos una relación =ŷ = w · x=. Queremos que con =x = 2= la salida sea =y = 10=
+(o sea, el peso ideal es w = 5). Empezamos con un peso malo =w = 1= y learning_rate = 0.1.
+
+Error usado: =E = (y − ŷ)²=. El gradiente de E respecto a w es:
+
+#+begin_src text
+   dE/dw = 2·(ŷ − y)·x           (esto sale de la regla de la cadena)
+#+end_src
+
+*Iteración 1:*
+
+#+begin_src text
+   ŷ = w·x = 1·2 = 2
+   error = (10 − 2)² = 64
+   gradiente = 2·(2 − 10)·2 = 2·(−8)·2 = −32
+   w_nuevo = 1 − 0.1·(−32) = 1 + 3.2 = 4.2
+#+end_src
+
+*Iteración 2:*
+
+#+begin_src text
+   ŷ = 4.2·2 = 8.4
+   error = (10 − 8.4)² = 2.56        ← ¡bajó muchísimo!
+   gradiente = 2·(8.4 − 10)·2 = −6.4
+   w_nuevo = 4.2 − 0.1·(−6.4) = 4.84
+#+end_src
+
+El peso va de 1 → 4.2 → 4.84 → ... acercándose a 5, y el error baja de 64 → 2.56 → ...
+*Eso es aprender.* Backpropagation solo hace esto para MILES de pesos a la vez.
+
+** Resumen de la Parte 2
+
+- Una red neuronal es un montón de neuronas con *pesos* ajustables.
+- *Forward* = calcular la predicción. *Loss* = medir el error (MSE u otro).
+- *Backpropagation* = repartir la culpa del error a cada peso (con derivadas).
+- *Gradiente descendente* = mover cada peso un pasito para bajar el error.
+- Repetir muchas *épocas* hasta que el error sea pequeño.
+
+--------------------------------------------------------------------------------
+
+
+* Error Cuadrático Medio
+
+
+Este apartado  explica,  conceptos fundamentales del Machine Learning (aprendizaje automático):
+
+1. El *Error Cuadrático Medio* (MSE): cómo medimos qué tan "mal" lo hace un modelo.
+2. El *Backpropagation*: cómo una red neuronal ajusta sus "pesos" para mejorar.
+3. La *Regresión Lineal Simple*: predecir un número con una línea recta.
+4. La *Regresión Logística*: predecir "sí o no" (clasificación).
+5. Los *Árboles de Decisión* (Decision Trees): tomar decisiones con preguntas.
+
+La idea central de TODO el machine learning es esta:
+
+#+begin_src text
+   MODELO  →  hace una predicción  →  la comparamos con la realidad
+                                            │
+                                            ▼
+                                 ¿Cuánto se equivocó?  (ERROR)
+                                            │
+                                            ▼
+                          Ajustamos el modelo para equivocarse MENOS
+                                            │
+                                            └──── (repetir muchas veces)
+#+end_src
+
+Todo lo demás son detalles de *cómo* medir el error y *cómo* ajustar el modelo.
+
+--------------------------------------------------------------------------------
+
+** Parte 1: El Error Cuadrático Medio (MSE)
+
+*** La idea con una analogía
+
+Imagina que eres un profesor de tiro con arco. Cada alumno dispara y tú quieres
+saber qué tan bueno es. No basta con mirar una flecha: quieres un *número* que
+resuma qué tan lejos del centro queda en promedio.
+
+El *Error Cuadrático Medio* (Mean Squared Error, MSE) es justo eso: un número que
+resume qué tan lejos están las predicciones de un modelo respecto a la realidad.
+
+*** ¿Por qué "cuadrático"?
+
+Supón que tu modelo predice y la realidad es distinta. La diferencia se llama *error*:
+
+#+begin_src text
+   error = valor_real − valor_predicho
+#+end_src
+
+Problema: algunos errores son positivos (+3) y otros negativos (−3). Si los sumas
+tal cual, ¡se cancelan y parece que no hay error! Solución: *elevar al cuadrado*.
+
+- Al elevar al cuadrado, todo se vuelve positivo: (−3)² = 9, (+3)² = 9.
+- Además, castiga MÁS los errores grandes: un error de 10 pesa 100, pero uno de 2
+  solo pesa 4. Es decir, "equivocarse mucho" duele mucho más.
+
+*** La fórmula (no te asustes)
+
+#+begin_src text
+          1     n
+   MSE = ───  · Σ  (yᵢ − ŷᵢ)²
+          n    i=1
+#+end_src
+
+Traducción palabra por palabra:
+
+- =n=    → cuántos datos tienes (ej. 5 alumnos).
+- =yᵢ=   → el valor REAL del dato i (la verdad).
+- =ŷᵢ=   → el valor PREDICHO por el modelo para el dato i ("y sombrero").
+- =(yᵢ − ŷᵢ)²= → el error de ese dato, elevado al cuadrado.
+- =Σ=    → "suma todos" (la letra griega sigma = sumatoria).
+- =(1/n)·= → divide entre la cantidad de datos = saca el PROMEDIO.
+
+En cristiano: *"resta real menos predicho, elévalo al cuadrado, hazlo con todos,
+súmalos y saca el promedio"*.
+
+*** Ejemplo numérico a mano
+
+Un modelo predice el precio de 3 casas (en miles):
+
+| Casa | Real (y) | Predicho (ŷ) | Error (y−ŷ) | Error² |
+|------+----------+--------------+-------------+--------|
+|    1 |      200 |          190 |          10 |    100 |
+|    2 |      150 |          160 |         −10 |    100 |
+|    3 |      300 |          280 |          20 |    400 |
+
+Paso a paso:
+
+#+begin_src text
+   Suma de errores²  = 100 + 100 + 400 = 600
+   MSE = 600 / 3 = 200
+#+end_src
+
+El MSE es *200*. ¿Es bueno o malo? Por sí solo no dice mucho; sirve para COMPARAR:
+si otro modelo da MSE = 50, ese otro es mejor (se equivoca menos).
+
+Nota: a veces se usa el *RMSE* (raíz del MSE) para volver a las unidades originales:
+√200 ≈ 14.1 miles de dólares de error típico.
+
+
+*Idea clave*: el MSE es la "nota de examen" del modelo. Cuanto MÁS BAJO, mejor.
+Entrenar un modelo = *buscar los parámetros que hacen el MSE lo más pequeño posible*.
+
+--------------------------------------------------------------------------------
+
+
+
+
+* Descenso por Gradiente: Teoría y Casos Prácticos
+
+
+Si el tutorial anterior te explicó *qué* es el MSE, el backpropagation y varios modelos,
+este se centra en el *motor* que hace que casi todos aprendan:
+
+#+begin_src text
+   DESCENSO POR GRADIENTE (Gradient Descent)
+   = "ir bajando paso a paso hasta encontrar el mejor ajuste"
+#+end_src
+
+En machine learning casi siempre pasa lo mismo:
+
+1. Tienes un modelo con parámetros (pesos, pendiente, bias...).
+2. Defines una *función de error* (loss) que dice qué tan mal predice.
+3. Usas *descenso por gradiente* para mover esos parámetros y *bajar* el error.
+
+No necesitas memorizar fórmulas complicadas. La idea es una sola:
+
+#+begin_src text
+   Estás en una montaña (error alto).
+   Miras hacia dónde baja el terreno (gradiente).
+   Das un paso en esa dirección (actualizas el parámetro).
+   Repites hasta llegar al valle (error mínimo).
+#+end_src
+
+Este tutorial explica eso *desde cero*, con ejemplos a mano y código Python que puedes
+correr. Al final sabrás *por qué* funciona, *cuándo* falla y *cómo* se usa en la vida real.
+
+*Relacionado*: si quieres ver MSE, backpropagation, regresión lineal/logística y árboles,
+lee =tutorial_mse_backprop_ml_para_dummies.org= en la misma carpeta.
+
+--------------------------------------------------------------------------------
+
+** Parte 1: La intuición
+
+*** Analogía 1: bajar una montaña con los ojos vendados
+
+Imagina que estás en lo alto de una montaña y quieres llegar al punto más bajo (el
+valle). Tienes los ojos vendados. ¿Qué haces?
+
+#+begin_src text
+   1. Tanteas con el pie: ¿hacia dónde baja más el suelo?
+   2. Das UN paso en esa dirección.
+   3. Repites desde el nuevo punto.
+#+end_src
+
+- La *altura* donde estás = el *error* del modelo.
+- La *dirección de la pendiente* = el *gradiente*.
+- El *tamaño del paso* = la *tasa de aprendizaje* (learning rate, α).
+
+No necesitas ver toda la montaña. Solo necesitas saber, *en el punto donde estás*,
+hacia dónde sube más rápido... para ir en la dirección *contraria* (bajar).
+
+*** Analogía 2: afinar una perilla de volumen
+
+Tienes una perilla y un medidor que dice "qué tan mal suena la música". Giras la
+perilla un poquito en la dirección que *baja* el medidor. Repites.
+
+- Perilla = parámetro del modelo (ej. peso w).
+- Medidor = función de error.
+- Giro pequeño = un paso de gradiente descendente.
+
+*** La regla de oro (memorízala)
+
+#+begin_src text
+   parámetro_nuevo = parámetro_viejo − α · gradiente
+#+end_src
+
+- =gradiente= → "si aumento un poquito este parámetro, ¿el error sube o baja y cuánto?"
+- Restamos porque queremos *bajar* el error (ir contra la subida).
+- =α= (alpha) → qué tan grande es cada paso. Típico: 0.001, 0.01, 0.1 (depende del problema).
+
+*** ¿Qué es el gradiente, en criollo?
+
+El *gradiente* es la *derivada* (pendiente) de la función de error respecto al parámetro.
+
+#+begin_src text
+   Si error = E(w)
+
+   gradiente = dE/dw = "cuánto cambia E si w cambia un poquito"
+#+end_src
+
+- Gradiente *positivo* → si aumentas w, el error *sube*. Entonces debes *disminuir* w.
+- Gradiente *negativo* → si aumentas w, el error *baja*. Entonces debes *aumentar* w.
+
+La fórmula =parámetro − α·gradiente= hace eso automáticamente en ambos casos.
+
+--------------------------------------------------------------------------------
+
+** Caso práctico 1 — Encontrar el mínimo de una parábola (a mano)
+
+El ejemplo más simple del mundo: minimizar
+
+#+begin_src text
+   f(w) = w²
+#+end_src
+
+Sabemos que el mínimo está en =w = 0= (porque 0² es lo más bajo). Pero *olvídalo* un
+momento: vamos a llegar ahí solo con descenso por gradiente, como si no supiéramos la respuesta.
+
+*** Paso 1: calcular el gradiente
+
+La derivada de =w²= es =2w=:
+
+#+begin_src text
+   gradiente = df/dw = 2w
+#+end_src
+
+*** Paso 2: elegir punto de partida y learning rate
+
+- Empezamos en =w = 4= (lejos del mínimo).
+- =α = 0.1=
+
+*** Paso 3: iterar (tabla a mano)
+
+| Iteración | w   | f(w)=w² | gradiente=2w | w_nuevo = w − 0.1·2w |
+|-----------+-----+---------+--------------+----------------------|
+|         0 | 4.0 |    16.0 |          8.0 | —                    |
+|         1 | 3.2 |   10.24 |          6.4 | 4 − 0.8 = 3.2        |
+|         2 | 2.56|    6.55 |         5.12 | 3.2 − 0.64 = 2.56    |
+|         3 | 2.05|    4.20 |         4.10 | ...                  |
+|       ... | ... |     ... |          ... | se acerca a 0        |
+
+Cada fila: calculas gradiente en w actual, restas =0.1 × gradiente=, y ese es el nuevo w.
+El error =w²= *baja* en cada paso. Después de muchas iteraciones, w ≈ 0.
+
+*** Código Python (mismo ejemplo)
+
+#+begin_src python
+def f(w):
+    return w ** 2
+
+def gradiente(w):
+    return 2 * w
+
+w = 4.0
+alpha = 0.1
+
+print(f"{'iter':>4}  {'w':>8}  {'f(w)':>10}  {'grad':>8}")
+for i in range(15):
+    g = gradiente(w)
+    print(f"{i:4d}  {w:8.4f}  {f(w):10.4f}  {g:8.4f}")
+    w = w - alpha * g
+
+print(f"\nResultado final: w ≈ {w:.6f}  (el mínimo teórico es 0)")
+#+end_src
+
+*Lección*: con un gradiente correcto y un α razonable, el algoritmo converge al mínimo.
+
+--------------------------------------------------------------------------------
+
+** Caso práctico 2 — El learning rate lo cambia TODO
+
+El mismo problema =f(w)=w²=, mismo inicio =w=4=, pero distintos α.
+
+*** α demasiado GRANDE (α = 1.0) — ¡explota!
+
+#+begin_src text
+   w=4  → grad=8  → w_nuevo = 4 − 1.0·8 = −4
+   w=−4 → grad=−8 → w_nuevo = −4 − 1.0·(−8) = +4
+   w=+4 → ... ¡rebota entre 4 y −4 para siempre!
+#+end_src
+
+El paso es tan grande que *te pasas* del valle y saltas al otro lado de la montaña.
+Nunca converge. Es como bajar escaleras dando saltos de 10 metros.
+
+*** α demasiado PEQUEÑO (α = 0.001) — muy lento
+
+#+begin_src text
+   w=4 → w_nuevo = 4 − 0.001·8 = 3.992
+#+end_src
+
+Funciona, pero necesitas *miles* de iteraciones para llegar cerca de 0. Es seguro pero
+lento. En redes neuronales grandes, esto puede significar días de entrenamiento.
+
+*** α "bien" (α = 0.1) — equilibrio
+
+Baja rápido sin rebotar. En la práctica se prueba α en una escala logarítmica:
+0.0001, 0.001, 0.01, 0.1... y se mira si el error baja estable.
+
+*** Visualización en Python (tres curvas de aprendizaje)
+
+#+begin_src python
+import numpy as np
+import matplotlib.pyplot as plt
+
+def descenso(w0, alpha, pasos=30):
+    w = w0
+    historial = [w]
+    for _ in range(pasos):
+        w = w - alpha * (2 * w)
+        historial.append(w)
+    return historial
+
+plt.figure(figsize=(8, 4))
+for alpha, estilo in [(1.0, "r--"), (0.1, "g-"), (0.001, "b-")]:
+  hs = descenso(4.0, alpha)
+  plt.plot(hs, label=f"α={alpha}")
+plt.axhline(0, color="gray", linestyle=":", alpha=0.5)
+plt.xlabel("Iteración")
+plt.ylabel("w")
+plt.title("Mismo problema, distinto learning rate")
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.savefig("/tmp/descenso_lr.png", dpi=120)
+print("Gráfica guardada en /tmp/descenso_lr.png")
+#+end_src
+
+*Regla práctica*: si el error *oscila* o se vuelve NaN → α muy alto. Si casi no baja → α
+muy bajo o pocos pasos.
+
+--------------------------------------------------------------------------------
+
+** Caso práctico 3 — Regresión lineal con descenso por gradiente
+
+Aquí ya es *machine learning de verdad*: ajustar una recta =ŷ = m·x + b= a datos reales.
+
+*** Los datos (precio de pizzas según tamaño)
+
+| Tamaño (pulgadas) x | Precio ($) y |
+|---------------------+--------------|
+|                   6 |           7  |
+|                   8 |           9  |
+|                  10 |          13  |
+|                  12 |          15  |
+|                  14 |          17  |
+
+Queremos encontrar =m= y =b= que minimicen el MSE.
+
+*** Función de error (MSE)
+
+Para =n= puntos:
+
+#+begin_src text
+          1     n
+   MSE = ───  · Σ  (yᵢ − (m·xᵢ + b))²
+          n    i=1
+#+end_src
+
+*** Gradientes (de dónde salen los pasos)
+
+Con un poco de cálculo (derivadas parciales):
+
+#+begin_src text
+   ∂MSE/∂m = (−2/n) · Σ  xᵢ · (yᵢ − ŷᵢ)
+   ∂MSE/∂b = (−2/n) · Σ      (yᵢ − ŷᵢ)
+
+   donde ŷᵢ = m·xᵢ + b  (predicción actual)
+#+end_src
+
+No tienes que derivarlo cada vez: en código solo implementas estas dos líneas.
+
+*** Una iteración a mano (valores inventados al inicio)
+
+Empezamos con =m = 0.5=, =b = 0=, =α = 0.01=.
+
+Para el primer punto (x=6, y=7): ŷ = 0.5·6 + 0 = 3, error = 7−3 = 4.
+Haces eso para los 5 puntos, sumas según las fórmulas de arriba, y obtienes
+gradiente_m y gradiente_b. Luego:
+
+#+begin_src text
+   m_nuevo = m − α · gradiente_m
+   b_nuevo = b − α · gradiente_b
+#+end_src
+
+Repite 500–2000 veces y m, b convergen a algo cercano a la recta óptima.
+
+*** Código completo (regresión lineal desde cero)
+
+#+begin_src python
+import numpy as np
+
+# Datos: tamaño de pizza (pulgadas) → precio ($)
+X = np.array([6, 8, 10, 12, 14])
+y = np.array([7, 9, 13, 15, 17])
+
+m, b = 0.0, 0.0          # empezar "en cero" (recta plana)
+alpha = 0.0001           # learning rate (datos pequeños → α pequeño)
+n = len(y)
+epocas = 2000
+
+for epoca in range(epocas):
+    y_pred = m * X + b
+    error = y - y_pred
+
+    grad_m = (-2 / n) * np.sum(X * error)
+    grad_b = (-2 / n) * np.sum(error)
+
+    m -= alpha * grad_m
+    b -= alpha * grad_b
+
+    if epoca % 400 == 0:
+        mse = np.mean(error ** 2)
+        print(f"época {epoca:4d}  m={m:.4f}  b={b:.4f}  MSE={mse:.4f}")
+
+print(f"\nRecta aprendida: precio ≈ {m:.3f}·tamaño + {b:.3f}")
+print(f"Predicción pizza 11\": ${m*11 + b:.2f}")
+#+end_src
+
+*** Comparar con la solución exacta (mínimos cuadrados)
+
+#+begin_src python
+from sklearn.linear_model import LinearRegression
+
+modelo = LinearRegression()
+modelo.fit(X.reshape(-1, 1), y)
+print(f"sklearn: m={modelo.coef_[0]:.4f}, b={modelo.intercept_:.4f}")
+# Debería ser muy parecido a lo que encontró el descenso por gradiente
+#+end_src
+
+*Lección*: el descenso por gradiente *aproxima* la misma solución que la fórmula
+cerrada de mínimos cuadrados, pero funciona también cuando *no* hay fórmula cerrada
+(redes neuronales, millones de parámetros).
+
+--------------------------------------------------------------------------------
+
+** Caso práctico 4 — Clasificación con regresión logística
+
+Mismo truco, otro error: en vez de MSE usamos *entropía cruzada* (log loss), y la
+salida pasa por *sigmoide* para obtener probabilidad entre 0 y 1.
+
+*** Datos: ¿aprobó el examen según horas de estudio?
+
+| Horas x | Aprobó y (1=sí, 0=no) |
+|---------+-----------------------|
+|       1 |                   0   |
+|       2 |                   0   |
+|       3 |                   0   |
+|       4 |                   1   |
+|       5 |                   1   |
+|       6 |                   1   |
+
+Modelo: =p = sigmoide(m·x + b)=, con =sigmoide(z) = 1/(1+e^(−z))=.
+
+*** Regla de actualización (simplificada)
+
+Después de calcular predicciones =pᵢ= y errores =(yᵢ − pᵢ)=, los gradientes tienen
+*la misma forma* que en regresión lineal, pero con predicciones ya pasadas por sigmoide:
+
+#+begin_src text
+   grad_m = (1/n) · Σ  xᵢ · (pᵢ − yᵢ)
+   grad_b = (1/n) · Σ       (pᵢ − yᵢ)
+
+   m ← m − α · grad_m
+   b ← b − α · grad_b
+#+end_src
+
+*** Código
+
+#+begin_src python
+import numpy as np
+
+def sigmoide(z):
+    return 1 / (1 + np.exp(-z))
+
+X = np.array([1, 2, 3, 4, 5, 6])
+y = np.array([0, 0, 0, 1, 1, 1])
+
+m, b = 0.0, 0.0
+alpha = 0.1
+n = len(y)
+
+for epoca in range(3000):
+    z = m * X + b
+    p = sigmoide(z)
+    error = p - y
+
+    grad_m = (1 / n) * np.sum(X * error)
+    grad_b = (1 / n) * np.sum(error)
+
+    m -= alpha * grad_m
+    b -= alpha * grad_b
+
+print(f"m={m:.4f}, b={b:.4f}")
+for horas in [2.5, 3.5, 4.5]:
+    prob = sigmoide(m * horas + b)
+    print(f"  {horas}h → P(aprobó)={prob:.1%}")
+#+end_src
+
+*Lección*: cambia la función de error y la salida, pero el *mecanismo* es idéntico:
+calcular gradiente → restar α·gradiente → repetir.
+
+--------------------------------------------------------------------------------
+
+** Batch, Stochastic y Mini-batch — ¿con cuántos datos calculo el gradiente?
+
+Cada vez que actualizas los parámetros, necesitas un gradiente. La pregunta es: ¿usas
+*TODOS* los datos, *UNO* solo, o un *grupo pequeño*?
+
+*** Gradiente descendente por lotes (Batch GD)
+
+#+begin_src text
+   En CADA paso usas TODOS los ejemplos del dataset.
+   Gradiente = promedio del gradiente de cada ejemplo.
+#+end_src
+
+- *Ventaja*: gradiente estable, camino suave hacia el mínimo.
+- *Desventaja*: lento con millones de datos; cada paso recorre todo el dataset.
+
+*** Gradiente descendente estocástico (SGD — Stochastic)
+
+#+begin_src text
+   En CADA paso usas UN solo ejemplo (elegido al azar).
+   Actualizas m y b, luego otro ejemplo, luego otro...
+#+end_src
+
+- *Ventaja*: muchísimos pasos baratos; puede escapar de mínimos locales malos; online.
+- *Desventaja*: trayectoria "ruidosa" (zigzag); un solo ejemplo puede engañar.
+
+*** Mini-batch (el estándar en la práctica)
+
+#+begin_src text
+   En CADA paso usas un grupo pequeño (ej. 32, 64, 128 ejemplos).
+   Compromiso entre estabilidad y velocidad.
+#+end_src
+
+PyTorch, TensorFlow y Keras usan mini-batch casi siempre. Cuando lees "batch size = 32",
+significa: calculas el gradiente con 32 ejemplos, actualizas pesos, repites con los
+siguientes 32.
+
+*** Comparación visual (conceptual)
+
+#+begin_src text
+   Batch:      ●─────────────────────────────►  (línea suave al mínimo)
+   SGD:        ●╱╲╱╲╱╲╱╲╱╲╱╲╱╲╱╲╱╲╱╲╱╲──►  (zigzag pero llega)
+   Mini-batch: ●──╲╱─╲╱──╲╱───╲╱──────►  (entre ambos)
+#+end_src
+
+*** Mini-batch en código (regresión lineal)
+
+#+begin_src python
+import numpy as np
+
+X = np.array([6, 8, 10, 12, 14])
+y = np.array([7, 9, 13, 15, 17])
+m, b = 0.0, 0.0
+alpha = 0.001
+batch_size = 2
+epocas = 100
+
+for epoca in range(epocas):
+    # Mezclar índices cada época (buena práctica)
+    indices = np.random.permutation(len(X))
+    for inicio in range(0, len(X), batch_size):
+        lote = indices[inicio : inicio + batch_size]
+        xb, yb = X[lote], y[lote]
+        n_batch = len(xb)
+
+        y_pred = m * xb + b
+        error = yb - y_pred
+        grad_m = (-2 / n_batch) * np.sum(xb * error)
+        grad_b = (-2 / n_batch) * np.sum(error)
+
+        m -= alpha * grad_m
+        b -= alpha * grad_b
+
+print(f"Mini-batch: m={m:.4f}, b={b:.4f}")
+#+end_src
+
+--------------------------------------------------------------------------------
+
+**  Caso práctico 5 — Dos parámetros (m y b): superficie de error
+
+Con un solo parámetro (w) es una *curva*. Con dos (m, b) el error es una *superficie*
+(como un bowl, cuenco). El descenso por gradiente baja por esa superficie en 2D.
+
+#+begin_src text
+        MSE (error)
+           ▲
+           │     ╱╲
+           │    ╱  ╲
+           │   ╱    ╲   ← "cuenco"
+           │  ╱  ★   ╲     ★ = mínimo (mejor m, b)
+           │ ╱        ╲
+           └──────────────► m
+          ╱
+         ╱ b
+#+end_src
+
+En cada paso actualizas *ambos* a la vez:
+
+#+begin_src text
+   m ← m − α · ∂MSE/∂m
+   b ← b − α · ∂MSE/∂b
+#+end_src
+
+El gradiente en varias dimensiones es un *vector* de derivadas parciales: una por cada
+parámetro. La regla sigue siendo la misma.
+
+*** Código: ver cómo baja el MSE época a época
+
+#+begin_src python
+import numpy as np
+
+X = np.array([6, 8, 10, 12, 14])
+y = np.array([7, 9, 13, 15, 17])
+m, b = 0.0, 0.0
+alpha = 0.0001
+
+mse_historial = []
+for _ in range(2000):
+    y_pred = m * X + b
+    error = y - y_pred
+    mse_historial.append(np.mean(error ** 2))
+
+    grad_m = (-2 / len(y)) * np.sum(X * error)
+    grad_b = (-2 / len(y)) * np.sum(error)
+    m -= alpha * grad_m
+    b -= alpha * grad_b
+
+print("MSE al inicio:", mse_historial[0])
+print("MSE al final: ", mse_historial[-1])
+print("¿Bajó?", mse_historial[-1] < mse_historial[0])
+#+end_src
+
+Si imprimes =mse_historial= cada 100 épocas, verás una lista que *decrece*. Eso es
+*aprender*: el modelo se equivoca cada vez menos.
+
+--------------------------------------------------------------------------------
+
+** Problemas comunes y cómo reconocerlos
+
+*** El error no baja nada
+
+| Síntoma              | Causa probable              | Qué probar                    |
+|----------------------+-----------------------------+-------------------------------|
+| MSE plano desde el 0 | α demasiado pequeño         | Subir α (×10)                 |
+| MSE = NaN o infinito | α demasiado grande          | Bajar α (÷10)                 |
+| MSE baja y sube ola  | α alto o datos sin escalar  | Bajar α; normalizar X         |
+| MSE baja y se estanca| Mínimo local o pocos pasos  | Más épocas; otro α            |
+
+*** Normalización de datos (muy importante en la práctica)
+
+Si una característica va de 0 a 1 y otra de 0 a 1 000 000, los gradientes se
+deshbalancean y el descenso va mal. Solución habitual:
+
+#+begin_src python
+from sklearn.preprocessing import StandardScaler
+# X_scaled = (X - media) / desviación estándar
+# Entrena con X_scaled; muchas veces converge más rápido y estable
+#+end_src
+
+*** Mínimos locales (¿me quedo atrapado?)
+
+En una parábola simple hay un solo mínimo. En redes neuronales la superficie es más
+complicada. Aun así, en la práctica el descenso por gradiente con buen α, mini-batch
+y muchas épocas suele encontrar soluciones *buenas* (no siempre la óptima global).
+
+*** Cuándo parar de entrenar
+
+- El error en *validación* deja de bajar (o sube) → posible *overfitting*; para ahí.
+- El error en entrenamiento ya es suficientemente bajo para tu aplicación.
+- Se acabó el presupuesto de tiempo/compute.
+
+--------------------------------------------------------------------------------
+
+** Optimizadores — más allá del descenso "vanilla"
+
+El descenso básico =θ ← θ − α·gradiente= funciona, pero la industria usa variantes
+que adaptan el paso automáticamente:
+
+| Optimizador | Idea en una frase                                      |
+|-------------+--------------------------------------------------------|
+| SGD         | El clásico; a veces con "momentum" (inercia al bajar)  |
+| Adam        | Ajusta α por parámetro; muy usado por defecto          |
+| RMSprop     | Similar espíritu; popular en RNNs                      |
+
+No necesitas implementarlos a mano. En Keras/PyTorch:
+
+#+begin_src python
+# Keras
+# model.compile(optimizer='adam', loss='mse')
+
+# PyTorch
+# optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+#+end_src
+
+*Para dummies*: Adam es un "descenso por gradiente inteligente" que suele funcionar bien
+sin retocar tanto el learning rate. El concepto de fondo sigue siendo: seguir el
+gradiente para bajar el error.
+
+--------------------------------------------------------------------------------
+
+**  Ejercicio guiado — tú lo haces
+
+*** Ejercicio A: parábola a mano
+
+Minimiza =f(w) = (w − 3)²= empezando en =w = 0= con =α = 0.1=.
+
+Pistas:
+- Expandir: =(w−3)² = w² − 6w + 9=
+- Derivada: =2(w − 3)=
+- Haz 3 iteraciones en papel. ¿Hacia qué w converge? (Respuesta esperada: hacia 3)
+
+*** Ejercicio B: detectar el mal α
+
+Corre el código de la parábola con =α = 1.5=. ¿Qué pasa con w después de 5 iteraciones?
+¿Por qué?
+
+*** Ejercicio C: tu propia recta
+
+Datos: x = [1, 2, 3], y = [2, 4, 6] (relación perfecta y = 2x).
+Implementa descenso por gradiente desde m=0, b=0. ¿Qué m y b obtienes al final?
+
+<details>
+<summary>Respuestas rápidas (click para ver)</summary>
+
+- Ejercicio A: w va 0 → 0.6 → 1.08 → 1.464... → 3
+- Ejercicio B: w oscila y crece en magnitud (diverge)
+- Ejercicio C: m ≈ 2, b ≈ 0
+</details>
+
+--------------------------------------------------------------------------------
+
+*** Resumen: las 7 ideas que debes llevarte
+
+1. *Objetivo*: minimizar una función de error moviendo parámetros.
+2. *Gradiente*: indica la dirección de mayor subida del error; vamos al contrario.
+3. *Fórmula*: =parámetro_nuevo = parámetro_viejo − α · gradiente=.
+4. *Learning rate α*: controla el tamaño del paso; ni muy grande ni muy pequeño.
+5. *Batch / SGD / Mini-batch*: cuántos ejemplos usas por paso (mini-batch gana en la práctica).
+6. *Mismo motor* para regresión lineal, logística y redes neuronales; cambia el error y los gradientes.
+7. *En la vida real*: normaliza datos, prueba α, usa Adam, monitorea que el error baje.
+
+**** Flujo mental cuando entrenas cualquier modelo
+
+#+begin_src text
+   Datos → Modelo con parámetros θ
+              ↓
+         Predicción ŷ
+              ↓
+         Error L(y, ŷ)
+              ↓
+         Calcular ∇L (gradiente)
+              ↓
+         θ ← θ − α·∇L
+              ↓
+         (repetir hasta que L sea aceptable)
+#+end_src
+
+Eso es descenso por gradiente. Todo lo demás son detalles, trucos y variantes sobre
+esta misma idea.
+
+**** Glosario rápido
+
+- *Gradiente (∇)*: vector de derivadas; dirección de máximo crecimiento del error.
+- *Descenso por gradiente (GD)*: algoritmo que resta α·gradiente para minimizar error.
+- *Learning rate (α, lr)*: tamaño del paso en cada actualización.
+- *Época (epoch)*: una pasada completa por todo el dataset (o por todos los mini-batches).
+- *Iteración / paso*: una actualización de parámetros (un mini-batch en entrenamiento típico).
+- *Batch size*: cuántos ejemplos por iteración en mini-batch.
+- *SGD*: stochastic gradient descent; gradiente con un (o pocos) ejemplos.
+- *Convergencia*: cuando los parámetros dejan de cambiar mucho y el error se estabiliza.
+- *Divergencia*: cuando los parámetros explotan (NaN, oscilaciones enormes) por α mal elegido.
+
+
+
+
+* Regresión Lineal Simple
+
+** La idea
+
+Es el modelo más sencillo del mundo: *dibujar la mejor línea recta* que pase entre
+tus datos, para poder predecir.
+
+Ejemplo: tienes las horas que estudiaron unos alumnos y su calificación. Quieres
+predecir la calificación de alguien que estudió 5 horas. Trazas una recta y listo.
+
+#+begin_src text
+   calificación
+      100 |                         •
+          |                    •  ╱
+       75 |               •  ╱
+          |          •  ╱   ← la "mejor recta"
+       50 |     •  ╱
+          |  •╱
+       25 |╱
+          └────────────────────────────── horas de estudio
+             1   2   3   4   5   6
+#+end_src
+
+** La fórmula (la ecuación de la recta de siempre)
+
+#+begin_src text
+   ŷ = m·x + b
+#+end_src
+
+- =ŷ= → lo que predecimos (ej. la calificación).
+- =x= → el dato de entrada (ej. horas de estudio).
+- =m= → la *pendiente*: cuánto sube ŷ por cada unidad de x.
+- =b= → la *ordenada al origen* (intercepto): el valor de ŷ cuando x = 0.
+
+("Simple" significa una sola variable de entrada x. Si hubiera varias, sería
+"regresión lineal múltiple": =ŷ = m₁·x₁ + m₂·x₂ + ... + b=.)
+
+** ¿Cómo se encuentra la "mejor" recta?
+
+"Mejor" = la que tiene el *MSE más bajo* (¿recuerdas la Parte 1?). Es decir, la
+recta cuya distancia (al cuadrado) a todos los puntos es mínima. Por eso este
+método clásico se llama *Mínimos Cuadrados* (Ordinary Least Squares).
+
+#+begin_src text
+   Buscamos m y b que minimicen:
+
+           1     n
+   MSE =  ───  · Σ  (yᵢ − (m·xᵢ + b))²
+           n    i=1
+#+end_src
+
+Se puede resolver de dos formas:
+1. Con una *fórmula exacta* (mínimos cuadrados) — hay ecuación cerrada.
+2. Con *gradiente descendente* — igual que la red neuronal (¡es el mismo truco!).
+
+** Regresión lineal en Python (con scikit-learn)
+
+#+begin_src python
+import numpy as np
+from sklearn.linear_model import LinearRegression
+
+# Horas estudiadas (X) y calificación (y)
+X = np.array([[1],[2],[3],[4],[5],[6]])   # sklearn quiere X en 2D
+y = np.array([20, 40, 55, 70, 80, 95])
+
+modelo = LinearRegression()
+modelo.fit(X, y)                  # ← aquí "aprende" m y b
+
+print("Pendiente (m):", modelo.coef_[0])
+print("Intercepto (b):", modelo.intercept_)
+
+# Predecir la calificación de quien estudió 5 horas... o 7
+print("Predicción 7h:", modelo.predict([[7]])[0])
+#+end_src
+
+** Regresión lineal "a mano" (fórmula de mínimos cuadrados)
+
+#+begin_src python
+import numpy as np
+x = np.array([1,2,3,4,5,6])
+y = np.array([20,40,55,70,80,95])
+
+x_media, y_media = x.mean(), y.mean()
+# pendiente = covarianza(x,y) / varianza(x)
+m = np.sum((x - x_media)*(y - y_media)) / np.sum((x - x_media)**2)
+b = y_media - m * x_media
+print(f"ŷ = {m:.2f}·x + {b:.2f}")
+#+end_src
+
+*Cuándo usarla*: cuando quieres predecir un *número continuo* (precio, temperatura,
+ventas) y la relación con las entradas es más o menos una línea recta.
+
+--------------------------------------------------------------------------------
+
+* Regresión Logística
+
+** ¡Ojo! No sirve para predecir números, sino para CLASIFICAR
+
+A pesar de llamarse "regresión", la regresión logística se usa para responder
+preguntas de *sí/no* (clasificación binaria):
+
+- ¿Este correo es spam? (sí / no)
+- ¿El paciente tiene la enfermedad? (sí / no)
+- ¿El alumno aprobará? (sí / no)
+
+Devuelve una *probabilidad* entre 0 y 1. Si es > 0.5 → "sí", si es < 0.5 → "no".
+
+** El problema con una recta y la solución: la sigmoide
+
+Si usáramos una recta, podríamos obtener predicciones absurdas como 1.7 o −0.3, y
+las probabilidades tienen que estar entre 0 y 1. Solución: pasar el resultado por la
+*función sigmoide*, que aplasta cualquier número al rango (0, 1).
+
+#+begin_src text
+   probabilidad = sigmoide(z),   donde   z = m·x + b
+
+               1
+   sigmoide(z) = ─────────
+               1 + e^(−z)
+
+   Forma de "S":
+
+    1 |               ________
+      |            ╱
+   0.5|          ╱   ← en z=0 vale 0.5
+      |       ╱
+    0 |______╱
+      └──────────────────────  z
+         −    0    +
+#+end_src
+
+- Si z es muy grande y positivo → sigmoide ≈ 1 (seguro que "sí").
+- Si z es muy negativo → sigmoide ≈ 0 (seguro que "no").
+- Si z = 0 → sigmoide = 0.5 (totalmente indeciso).
+
+** ¿Cómo aprende? (otro tipo de error)
+
+Aquí NO se usa el MSE, sino un error llamado *entropía cruzada* (log loss), que
+castiga fuertemente cuando el modelo está *seguro y equivocado*. Pero la idea de
+fondo es idéntica: ajustar m y b con gradiente descendente para minimizar el error.
+
+#+begin_src text
+   Log loss (una muestra):
+     si real=1 →  −log(p)        (te castiga si p es bajo)
+     si real=0 →  −log(1 − p)    (te castiga si p es alto)
+#+end_src
+
+** Regresión logística en Python
+
+#+begin_src python
+import numpy as np
+from sklearn.linear_model import LogisticRegression
+
+# X = horas de estudio ; y = 0 (reprobó) o 1 (aprobó)
+X = np.array([[1],[2],[3],[4],[5],[6],[7],[8]])
+y = np.array([0, 0, 0, 0, 1, 1, 1, 1])
+
+modelo = LogisticRegression()
+modelo.fit(X, y)
+
+# Probabilidad de aprobar si estudió 4.5 horas
+p = modelo.predict_proba([[4.5]])[0][1]
+print(f"Probabilidad de aprobar con 4.5h: {p:.2%}")
+print("Clase predicha (0/1):", modelo.predict([[4.5]])[0])
+#+end_src
+
+*Cuándo usarla*: clasificación (especialmente sí/no) cuando quieres además una
+*probabilidad* interpretable, no solo la etiqueta.
+
+--------------------------------------------------------------------------------
+
+*  Árboles de Decisión (Decision Trees)
+
+** La idea: un juego de "20 preguntas"
+
+Un árbol de decisión clasifica (o predice) haciendo una serie de *preguntas de
+sí/no* encadenadas, como cuando juegas a adivinar un animal:
+
+#+begin_src text
+                    ¿Edad > 30?
+                    /         \
+                  sí           no
+                  /             \
+        ¿Ingreso > 50k?      ¿Estudiante?
+          /       \            /      \
+        sí        no         sí        no
+        │          │          │         │
+     APRUEBA   RECHAZA     APRUEBA   RECHAZA
+     crédito   crédito     beca      beca
+#+end_src
+
+- Cada *nodo* es una pregunta sobre una característica (edad, ingreso...).
+- Cada *rama* es una respuesta (sí/no, o un rango).
+- Cada *hoja* (nodo final) es la decisión/predicción.
+
+Es el modelo más *fácil de interpretar*: puedes leer el árbol y entender por qué
+tomó cada decisión. Por eso se dice que es una "caja blanca" (no una caja negra).
+
+** ¿Cómo decide qué preguntar primero?
+
+El árbol elige la pregunta que *mejor separa* los datos, es decir, la que deja los
+grupos resultantes lo más "puros" posible (que en cada grupo casi todos sean de la
+misma clase). Para medir la "pureza" usa métricas como:
+
+- *Impureza de Gini*: probabilidad de clasificar mal si eligieras al azar. 0 = puro.
+- *Entropía / Ganancia de información*: cuánta "incertidumbre" elimina la pregunta.
+
+#+begin_src text
+   Antes de preguntar:   🔴🔴🔴🔵🔵🔵   (mezclado, impuro)
+
+   Pregunta buena → separa así:
+        rama sí:  🔴🔴🔴   (puro)      rama no: 🔵🔵🔵   (puro)
+
+   Pregunta mala → separa así:
+        rama sí:  🔴🔴🔵   (aún mezclado)  rama no: 🔴🔵🔵
+#+end_src
+
+El árbol prueba todas las preguntas posibles y elige la que más aumenta la pureza.
+Luego repite el proceso en cada rama (esto se llama partición *recursiva*).
+
+** El peligro: sobreajuste (overfitting)
+
+Si dejas crecer el árbol sin límite, acaba memorizando los datos de entrenamiento
+(una hoja por cada dato) y falla con datos nuevos. Es como un alumno que memoriza
+las respuestas del examen en vez de entender la materia.
+
+Soluciones (hiperparámetros):
+- =max_depth= → limitar la profundidad (cuántas preguntas encadenadas).
+- =min_samples_leaf= → exigir un mínimo de datos por hoja.
+- *Poda* (pruning) → recortar ramas poco útiles.
+
+** Árbol de decisión en Python
+
+#+begin_src python
+from sklearn.tree import DecisionTreeClassifier, export_text
+from sklearn.datasets import load_iris
+
+# Dataset clásico: clasificar flores iris por medidas de sus pétalos/sépalos
+iris = load_iris()
+X, y = iris.data, iris.target
+
+# max_depth=3 para que sea legible y no se sobreajuste
+modelo = DecisionTreeClassifier(max_depth=3, random_state=0)
+modelo.fit(X, y)
+
+print("Precisión:", modelo.score(X, y))
+
+# ¡Podemos LEER las reglas que aprendió!
+print(export_text(modelo, feature_names=list(iris.feature_names)))
+
+# Predecir una flor nueva
+print("Predicción:", iris.target_names[modelo.predict([[5.1, 3.5, 1.4, 0.2]])[0]])
+#+end_src
+
+*Cuándo usarlos*: cuando necesitas un modelo *interpretable* y que maneje bien
+datos mezclados (números y categorías). Si quieres más potencia, se combinan muchos
+árboles en un *Random Forest* o *Gradient Boosting* (varios árboles votan juntos).
+
+--------------------------------------------------------------------------------
+
+** Tabla comparativa: ¿cuál uso y cuándo?
+
+| Modelo               | ¿Qué predice?            | Tipo de problema     | Ventaja principal        |
+|----------------------+--------------------------+----------------------+--------------------------|
+| Regresión Lineal     | Un número continuo       | Regresión            | Simple e interpretable   |
+| Regresión Logística  | Probabilidad (sí/no)     | Clasificación binaria| Da probabilidades        |
+| Árbol de Decisión    | Clase o número           | Clasif. o regresión  | Muy fácil de interpretar |
+| Red Neuronal         | Número o clase           | Casi cualquier cosa  | Aprende patrones complejos|
+
+** Glosario rápido
+
+- *Modelo*: la "fórmula" que aprende de los datos para predecir.
+- *Peso / parámetro*: los números internos que el modelo ajusta al entrenar.
+- *Entrenar / aprender*: buscar los parámetros que minimizan el error.
+- *Error / Loss / Función de costo*: número que mide qué tan mal predice el modelo.
+- *MSE*: error cuadrático medio (para números / regresión).
+- *Log loss / entropía cruzada*: error típico para clasificación.
+- *Gradiente*: la "pendiente" del error; indica hacia dónde crece el error.
+- *Gradiente descendente*: mover los pesos en contra del gradiente para bajar el error.
+- *Learning rate*: tamaño del paso al ajustar los pesos.
+- *Época (epoch)*: una pasada completa por todos los datos de entrenamiento.
+- *Backpropagation*: método para calcular los gradientes de todos los pesos de la red.
+- *Sigmoide*: función en forma de S que convierte cualquier número en (0,1).
+- *Overfitting*: el modelo memoriza en vez de generalizar; falla con datos nuevos.
+

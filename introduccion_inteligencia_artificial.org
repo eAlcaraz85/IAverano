@@ -2886,3 +2886,91 @@ cv.destroyAllWindow()
 #+END_SRC
 
 #+RESULTS:
+
+
+
+#+BEGIN_SRC python :result output
+import cv2 as cv
+import numpy as np
+cap = cv.VideoCapture(0)
+
+
+while(True):
+    ret, img = cap.read()
+    if(ret):
+        hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
+
+        unb=(0,60,60)
+        una=(10,255 255)
+        #img2 = np.zeros((img.shape[:2]), np.uint8  )
+        #print(img.shape[:2])
+        #b,g,r=cv.split(img)
+
+        #rojo=cv.merge([r,b,g])
+        #verde= cv.merge([img2,g,img2])
+        #azul = cv.merge([img2,img2,b])
+        
+        #cv.imshow('img', img2)
+        #cv.imshow('r', r)
+        #cv.imshow('g',g)
+        #cv.imshow('b',b)
+        #cv.imshow('rojo', rojo)
+        #cv.imshow('verde',verde)
+        #cv.imshow('azul',azul)
+        cv.imshow('hsv', hsv)
+    
+        if cv.waitKey(1) & 0xFF == ord('q'):
+            break
+    else:
+        print('No se encontro camara')
+    
+cap.release()
+cv.destroyAllWindows()
+
+
+    
+#+END_SRC
+
+#+RESULTS:
+: None
+
+
+#+BEGIN_SRC python :results output
+import cv2
+import numpy as np
+
+# Leer la imagen
+img = cv2.imread('/home/likcos/Imágenes/ca1.jpg')
+
+# Convertir la imagen al espacio de color HSV
+hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+# Definir el rango inferior y superior para detectar verde
+lower_green = np.array([100, 60, 60])  # Hue, Saturación, Brillo mínimos
+upper_green = np.array([130, 255, 255])  # Hue, Saturación, Brillo máximos
+
+#lower_green1 = np.array([170, 60, 60])  # Hue, Saturación, Brillo mínimos
+#upper_green1 = np.array([180, 255, 255])  # Hue, Saturación, Brillo máximos
+
+
+# Crear una máscara que solo incluya los píxeles dentro del rango
+mask = cv2.inRange(hsv, lower_green, upper_green)
+#mask2 = cv2.inRange(hsv, lower_green1, upper_green1)
+
+#mask = mask1+mask2
+
+# Aplicar la máscara a la imagen original
+result = cv2.bitwise_and(img, img, mask=mask)
+
+# Mostrar la imagen original y la imagen con el color detectado
+cv2.imshow("Imagen Original", img)
+cv2.imshow("Color Detectado", result)
+cv2.imshow("Mask", mask)
+
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+
+#+END_SRC
+
+#+RESULTS:
+

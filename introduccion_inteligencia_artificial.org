@@ -2858,3 +2858,31 @@ datos mezclados (números y categorías). Si quieres más potencia, se combinan 
 - *Sigmoide*: función en forma de S que convierte cualquier número en (0,1).
 - *Overfitting*: el modelo memoriza en vez de generalizar; falla con datos nuevos.
 
+
+
+
+* Programas
+
+** Imágenes
+
+#+BEGIN_SRC python :results output
+import cv2 as cv
+
+img = cv.imread('/home/likcos/Imágenes/sd.jpg',0)
+x, y = img.shape
+for i in range(x):
+    for j in range(y):
+        if(img[i,j]<150):
+            img[i,j]=0
+        else:
+            img[i,j]=255
+          
+cv.imshow('img', img)
+cv.waitKey(0)
+cv.destroyAllWindow()
+
+
+
+#+END_SRC
+
+#+RESULTS:

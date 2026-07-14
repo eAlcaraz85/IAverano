@@ -2861,6 +2861,530 @@ datos mezclados (números y categorías). Si quieres más potencia, se combinan 
 
 
 
+*  Reconocimiento de rostros con OpenCV — Eigenfaces, Fisherfaces y LBPH
+
+El *reconocimiento de personas* por vision artificial responde a: *¿quién es esta cara?*  
+No basta con *detectar* un rostro (localizar rectángulo); hace falta *identificarlo* contra un conjunto de identidades conocidas.
+
+Flujo típico con OpenCV:
+
+#+begin_example
+  Dataset (carpetas/persona)
+           |
+           v
+  [carga + etiquetas] --> [entrenamiento FaceRecognizer] --> modelo.xml
+                                                              |
+  Webcam --> Haar Cascade --> ROI 100x100 --> predict() <-----+
+                                              |
+                                              v
+                                    etiqueta + confidence
+#+end_example
+
+** Requisitos prácticos
+
+- Python + OpenCV con módulo =cv2.face= (paquete =opencv-contrib-python=).
+- Clasificador Haar: =haarcascade_frontalface_alt.xml= (ruta relativa =data/= o la de tu instalación).
+- Dataset organizado así:
+
+#+begin_example
+  /home/likcos/pruebacaras/
+  ├── lalo/
+  │   ├── 001.jpg
+  │   ├── 002.jpg
+  │   └── ...
+  ├── ana/
+  │   └── ...
+  └── juan/
+      └── ...
+#+end_example
+
+Cada subcarpeta =nombre/= es una *clase* (una persona). Las imágenes de entrenamiento deben ser *recortes de rostro* en escala de grises y, idealmente, del mismo tamaño (p. ej. 100×100).
+
+** Convención del =predict=
+
+=faceRecognizer.predict(roi)= devuelve =(etiqueta, confidence)=:
+
+- *etiqueta*: índice de la persona (0, 1, 2, … según el orden de entrenamiento).
+- *confidence*: medida de distancia / disimilitud. *Cuanto más baja, mejor* el match.
+
+Por eso en los tres métodos usamos =if confidence < umbral= para aceptar identidad, y en caso contrario =Desconocido=.
+
+#+begin_quote
+Los umbrales (=2800=, =500=, =70=) son *heurísticos*: dependen del dataset, del tamaño del ROI y de la iluminación. Ajústalos empiricamente.
+#+end_quote
+
+** Eigenfaces
+
+*** Idea
+
+Un *Eigenface* (cara propia) es un vector propio de la matriz de covarianza del espacio de imágenes de rostros. Sirovich y Kirby propusieron el enfoque; Turk y Pentland lo usaron para clasificación.
+
+Informalmente: cada cara se ve como un punto en \(\mathbb{R}^{W \cdot H}\) (un píxel = una coordenada). PCA encuentra direcciones de máxima varianza; las primeras *eigenfaces* forman una base compacta. Cualquier rostro se aproxima como:
+
+\[
+\text{cara} \approx \text{cara promedio}
+  + \alpha_1 e_1 + \alpha_2 e_2 + \cdots + \alpha_k e_k
+\]
+
+donde \(e_i\) son eigenfaces y \(\alpha_i\) los coeficientes. Guardar solo esos coeficientes ocupa mucho menos que la imagen completa.
+
+*** La matriz de covarianza
+
+Antes de “vectores propios” y PCA, conviene entender *qué tabla* estamos diagonalizando.
+
+**** Analogía de un minuto
+
+Imagina que mides de mucha gente solo *dos* cosas: *altura* y *peso*.
+
+- Algunas personas altas pesan más, otras no.
+- Si cuando sube la altura *también tiende a subir* el peso, esas dos medidas *covarían* (se mueven juntas).
+- Si una sube y la otra baja, covarian *en sentido contrario*.
+- Si una no dice nada de la otra, la covarianza es ~0 (casi independientes).
+
+La *matriz de covarianza* es una tablita que resume *todas* esas relaciones a la vez:
+
+#+begin_example
+              altura          peso
+altura    var(altura)     cov(altura,peso)
+peso   cov(peso,altura)    var(peso)
+#+end_example
+
+- En la *diagonal*: varianza de cada variable (“¿cuánto se dispersa sola?”).
+- Fuera de la diagonal: covarianza entre pares (“¿cómo se mueven juntas?”).
+- Es *simétrica*: =cov(A,B) = cov(B,A)=.
+
+**** En una cara: cada píxel es una “variable”
+
+Una imagen 100×100 en escala de grises son *10 000 números* (un brillo por píxel).  
+Si tienes *N* fotos de rostros, tienes *N* puntos en un espacio de 10 000 dimensiones.
+
+La matriz de covarianza de las caras responde, a grosso modo:
+
+#+begin_quote
+Cuando el píxel de la ceja izquierda se pone más claro en muchas fotos,
+¿el píxel de la ceja derecha suele hacer lo mismo? ¿Y el de la punta de la nariz?
+#+end_quote
+
+Es decir: *qué zonas de la cara suelen variar juntas* a lo largo del dataset.
+
+Por eso:
+
+1. Restamos la *cara promedio* (centramos los datos: “solo nos importa la diferencia respecto al típico”).
+2. Calculamos la covarianza entre píxeles (o un truco equivalente, *snapshot PCA*, cuando hay *muchos* píxeles y *pocas* fotos).
+3. Los *vectores propios* de esa matriz son direcciones de máxima varianza conjunta → las *eigenfaces*.
+4. El *valor propio* asociado dice “cuánta variación captura” esa dirección.
+
+**** Mini-fórmula
+
+Para datos centrados \(X\) (filas = caras, columnas = píxeles), una forma clásica es:
+
+\[
+C = \frac{1}{N-1} X^{\top} X
+\]
+
+- \(C_{ii}\): varianza del píxel \(i\).
+- \(C_{ij}\): covarianza entre píxeles \(i\) y \(j\).
+
+No tienes que calcularla a mano: OpenCV lo hace dentro de =EigenFaceRecognizer.train()=. Lo importante es la intuición:
+
+#+begin_example
+  muchas caras  -->  “¿qué patrones de variación se repiten?”
+                         |
+                         v
+              matriz de covarianza
+                         |
+                         v
+              vectores propios = eigenfaces
+                         |
+                         v
+           “ingredientes” para recomponer caras
+#+end_example
+
+**** Ejemplo numérico 
+
+Supón solo *2 píxeles* y *3 caras* ya centradas (restada la media):
+
+| Cara | píxel A | píxel B |
+|------+---------+---------|
+| 1    | +2      | +2      |
+| 2    | +0      | +0      |
+| 3    | −2      | −2      |
+
+A y B *siempre suben o bajan juntos* → covarianza alta y positiva.  
+La primera “eigenface” apuntaría hacia algo como “(A y B juntos)”: el patrón dominante del dataset.
+
+Si en cambio A sube cuando B baja, la covarianza sería negativa y el patrón dominante sería otro.
+
+**** Por qué importa para Eigenfaces
+
+Sin la matriz de covarianza, PCA no sabría *hacia dónde* “estirar” el espacio de caras.  
+Con ella, el algoritmo encuentra esas pocas direcciones (=eigenfaces=) que explican la mayor parte de la variación entre rostros… y luego representa cada persona con pocos números \(\alpha_i\) en vez de 10 000 píxeles.
+
+*** Generación (PCA)
+
+1. Apilar imágenes de entrenamiento (mismo tamaño, grises).
+2. Calcular la cara media y la matriz de covarianza (o el truco de snapshot PCA cuando hay más píxeles que muestras).
+3. Obtener vectores propios; quedarse con los \(k\) de mayor valor propio.
+4. Proyectar cada cara al subespacio y clasificar por distancia (p. ej. Euclidean) al vecino más cercano.
+
+Las eigenfaces se ven como patrones claros/oscuros: simetría, vello facial, línea del cabello, tamaño de nariz/boca… Otras parecen “casi caras” abstractas.
+
+*** Más allá del rostro
+
+La misma idea (*eigenimages*) aparece en escritura, lectura de labios, voz, lenguaje de señas e imágenes médicas.
+
+*** Ventajas y limitaciones
+
+| Aspecto                 | Comentario                                                                                   |
+|-------------------------+----------------------------------------------------------------------------------------------|
+| Fortaleza               | Simple, base histórica, reducción de dimensión clara                                         |
+| Debilidad               | Muy sensible a *iluminación* y alineación; PCA maximiza varianza, no separación entre personas |
+| Umbral típico (ejemplo) | =confidence < 2800= (ajustar)                                                                  |
+
+*** Script: entrenar Eigenfaces
+
+#+CAPTION: Carga el dataset, entrena =EigenFaceRecognizer= y guarda el modelo
+#+begin_src python :results output
+import cv2 as cv
+import numpy as np
+import os
+
+data_set = "/home/likcos/pruebacaras"
+faces = sorted(os.listdir(data_set))
+print("Personas:", faces)
+
+labels = []
+faces_data = []
+label = 0
+
+for person in faces:
+    person_path = os.path.join(data_set, person)
+    if not os.path.isdir(person_path):
+        continue
+    for img_name in os.listdir(person_path):
+        img_path = os.path.join(person_path, img_name)
+        img = cv.imread(img_path, 0)
+        if img is None:
+            continue
+        labels.append(label)
+        faces_data.append(img)
+    print(f"  {person} (label={label}): {labels.count(label)} imágenes")
+    label += 1
+
+face_recognizer = cv.face.EigenFaceRecognizer_create()
+face_recognizer.train(faces_data, np.array(labels))
+face_recognizer.write("laloEigenface.xml")
+print("Modelo escrito: laloEigenface.xml")
+#+end_src
+
+*** Script: reconocer en vivo (Eigenfaces)
+
+#+CAPTION: Webcam + Haar + modelo Eigenfaces
+#+begin_src python
+import cv2 as cv
+import os
+
+data_set = "/home/likcos/pruebacaras"
+faces = sorted(
+    d for d in os.listdir(data_set)
+    if os.path.isdir(os.path.join(data_set, d))
+)
+
+face_recognizer = cv.face.EigenFaceRecognizer_create()
+face_recognizer.read("laloEigenface.xml")
+
+cap = cv.VideoCapture(0)
+cascade = cv.CascadeClassifier("data/haarcascade_frontalface_alt.xml")
+THRESHOLD = 2800  # bajar = más estricto
+
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+    rostros = cascade.detectMultiScale(gray, 1.3, 3)
+
+    for (x, y, w, h) in rostros:
+        roi = cv.resize(gray[y:y + h, x:x + w], (100, 100),
+                        interpolation=cv.INTER_CUBIC)
+        label_id, confidence = face_recognizer.predict(roi)
+
+        if confidence < THRESHOLD:
+            name = faces[label_id]
+            color = (0, 255, 0)
+            text = f"{name} ({confidence:.0f})"
+        else:
+            color = (0, 0, 255)
+            text = f"Desconocido ({confidence:.0f})"
+
+        cv.putText(frame, text, (x, y - 12), cv.FONT_HERSHEY_SIMPLEX,
+                   0.7, color, 1, cv.LINE_AA)
+        cv.rectangle(frame, (x, y), (x + w, y + h), color, 2)
+
+    cv.imshow("Eigenfaces", frame)
+    if cv.waitKey(1) == 27:  # ESC
+        break
+
+cap.release()
+cv.destroyAllWindows()
+#+end_src
+
+** Fisherfaces
+
+*** Idea
+
+*Fisherfaces* extiende el enfoque de PCA con *Análisis Discriminante Lineal* (LDA / Fisher). No solo comprime la varianza: busca proyecciones que *maximicen la separación entre clases* (personas) y *minimicen la dispersión dentro de cada clase*.
+
+Por eso suele resistir mejor cambios de iluminación y expresión cuando hay varias muestras por persona.
+
+*** Pipeline
+
+1. *Preproceso*: tamaño, orientación e iluminación lo más uniformes posible.
+2. *PCA*: reduce dimensionalidad (y hace viable LDA cuando hay pocos ejemplos frente a muchos píxeles).
+3. *LDA*: encuentra ejes que separan clases.
+4. *Clasificación*: proyectar y asignar por distancia / k-NN en el espacio discriminante.
+
+#+begin_quote
+PCA maximiza *varianza global*. LDA maximiza *razón entre-clases / dentro-de-clase*. Fisherfaces combina ambos.
+#+end_quote
+
+*** Ventajas y limitaciones
+
+| Aspecto | Comentario |
+|---------+------------|
+| Fortaleza | Mejor discriminación entre personas; más robusto a iluminación/expresión que Eigenfaces puro |
+| Debilidad | Necesita *varias imágenes por persona*; con una sola muestra por clase degradada a PCA-like |
+| Umbral típico (ejemplo) | =confidence < 500= |
+
+*** Script: entrenar Fisherfaces
+
+#+CAPTION: Entrenamiento con =FisherFaceRecognizer=
+#+begin_src python :results output
+import cv2 as cv
+import numpy as np
+import os
+
+data_set = "/home/likcos/pruebacaras"
+faces = sorted(
+    d for d in os.listdir(data_set)
+    if os.path.isdir(os.path.join(data_set, d))
+)
+print("Personas:", faces)
+
+labels = []
+faces_data = []
+label = 0
+
+for person in faces:
+    person_path = os.path.join(data_set, person)
+    for img_name in os.listdir(person_path):
+        img = cv.imread(os.path.join(person_path, img_name), 0)
+        if img is None:
+            continue
+        labels.append(label)
+        faces_data.append(img)
+    label += 1
+
+face_recognizer = cv.face.FisherFaceRecognizer_create()
+face_recognizer.train(faces_data, np.array(labels))
+face_recognizer.write("laloFisherFace.xml")
+print("Modelo escrito: laloFisherFace.xml")
+#+end_src
+
+*** Script: reconocer en vivo (Fisherfaces)
+
+#+CAPTION: Webcam + Haar + modelo Fisherfaces
+#+begin_src python
+import cv2 as cv
+import os
+
+data_set = "/home/likcos/pruebacaras"
+faces = sorted(
+    d for d in os.listdir(data_set)
+    if os.path.isdir(os.path.join(data_set, d))
+)
+
+face_recognizer = cv.face.FisherFaceRecognizer_create()
+face_recognizer.read("laloFisherFace.xml")
+
+cap = cv.VideoCapture(0)
+cascade = cv.CascadeClassifier("data/haarcascade_frontalface_alt.xml")
+THRESHOLD = 500
+
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+    rostros = cascade.detectMultiScale(gray, 1.3, 3)
+
+    for (x, y, w, h) in rostros:
+        roi = cv.resize(gray[y:y + h, x:x + w], (100, 100),
+                        interpolation=cv.INTER_CUBIC)
+        label_id, confidence = face_recognizer.predict(roi)
+
+        if confidence < THRESHOLD:
+            name = faces[label_id]
+            color = (0, 255, 0)
+            text = f"{name} ({confidence:.0f})"
+        else:
+            color = (0, 0, 255)
+            text = f"Desconocido ({confidence:.0f})"
+
+        cv.putText(frame, text, (x, y - 12), cv.FONT_HERSHEY_SIMPLEX,
+                   0.7, color, 1, cv.LINE_AA)
+        cv.rectangle(frame, (x, y), (x + w, y + h), color, 2)
+
+    cv.imshow("Fisherfaces", frame)
+    if cv.waitKey(1) == 27:
+        break
+
+cap.release()
+cv.destroyAllWindows()
+#+end_src
+
+** LBPH (Local Binary Patterns Histograms)
+
+*** Idea
+
+A diferencia de Eigenfaces/Fisherfaces (que miran el rostro *global* como vector), *LBPH* describe *textura local*: patrones de intensidad alrededor de cada píxel.
+
+Pasos:
+
+1. *Dividir* el rostro en celdas (rejilla).
+2. *LBP* por píxel: comparar el centro con sus 8 vecinos → código binario de 8 bits (0–255).
+3. *Histograma* de códigos LBP en cada celda.
+4. *Concatenar* histogramas → vector de características de la cara.
+5. *Reconocer* por distancia (p. ej. chi-cuadrado / Euclidiana) al histograma más cercano de la base.
+
+*** Por qué es popular
+
+- Simple y rápido.
+- Aguanta mejor variaciones de *iluminación* (LBP es relativamente invariante a cambios monotónicos de brillo).
+- Adecuado para tiempo real y sistemas embebidos.
+- No exige un preproceso tan estricto como PCA/LDA globales.
+
+*** Ventajas y limitaciones
+
+| Aspecto | Comentario |
+|---------+------------|
+| Fortaleza | Iluminación, velocidad, actualización incremental posible en OpenCV |
+| Debilidad | Menos “geométrico”; depende de alineación local y resolución de la rejilla |
+| Umbral típico (ejemplo) | =confidence < 70= |
+
+*** Script: entrenar LBPH
+
+#+CAPTION: Entrenamiento con =LBPHFaceRecognizer=
+#+begin_src python :results output
+import cv2 as cv
+import numpy as np
+import os
+
+data_set = "/home/likcos/pruebacaras"
+faces = sorted(
+    d for d in os.listdir(data_set)
+    if os.path.isdir(os.path.join(data_set, d))
+)
+print("Personas:", faces)
+
+labels = []
+faces_data = []
+label = 0
+
+for person in faces:
+    person_path = os.path.join(data_set, person)
+    for img_name in os.listdir(person_path):
+        img = cv.imread(os.path.join(person_path, img_name), 0)
+        if img is None:
+            continue
+        labels.append(label)
+        faces_data.append(img)
+    label += 1
+
+face_recognizer = cv.face.LBPHFaceRecognizer_create()
+face_recognizer.train(faces_data, np.array(labels))
+face_recognizer.write("laloLBPHFace.xml")
+print("Modelo escrito: laloLBPHFace.xml")
+#+end_src
+
+*** Script: reconocer en vivo (LBPH)
+
+#+CAPTION: Webcam + Haar + modelo LBPH
+#+begin_src python
+import cv2 as cv
+import os
+
+data_set = "/home/likcos/pruebacaras"
+faces = sorted(
+    d for d in os.listdir(data_set)
+    if os.path.isdir(os.path.join(data_set, d))
+)
+
+face_recognizer = cv.face.LBPHFaceRecognizer_create()
+face_recognizer.read("laloLBPHFace.xml")
+
+cap = cv.VideoCapture(0)
+cascade = cv.CascadeClassifier("data/haarcascade_frontalface_alt.xml")
+THRESHOLD = 70
+
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+    rostros = cascade.detectMultiScale(gray, 1.3, 3)
+
+    for (x, y, w, h) in rostros:
+        roi = cv.resize(gray[y:y + h, x:x + w], (100, 100),
+                        interpolation=cv.INTER_CUBIC)
+        label_id, confidence = face_recognizer.predict(roi)
+
+        if confidence < THRESHOLD:
+            name = faces[label_id]
+            color = (0, 255, 0)
+            text = f"{name} ({confidence:.0f})"
+        else:
+            color = (0, 0, 255)
+            text = f"Desconocido ({confidence:.0f})"
+
+        cv.putText(frame, text, (x, y - 12), cv.FONT_HERSHEY_SIMPLEX,
+                   0.7, color, 1, cv.LINE_AA)
+        cv.rectangle(frame, (x, y), (x + w, y + h), color, 2)
+
+    cv.imshow("LBPH", frame)
+    if cv.waitKey(1) == 27:
+        break
+
+cap.release()
+cv.destroyAllWindows()
+#+end_src
+
+** Comparación rápida
+
+| Criterio             | Eigenfaces          | Fisherfaces          | LBPH              |
+|----------------------+---------------------+----------------------+-------------------|
+| Base matemática      | PCA                 | PCA + LDA            | LBP + histogramas |
+| Representación       | Global (subespacio) | Global discriminante | Local (textura)   |
+| Iluminación          | Débil               | Mejor                | Buena             |
+| Expresiones          | Débil               | Mejor                | Aceptable         |
+| Muestras por persona | Varias ayudan       | *Varias necesarias*    | Flexible          |
+| Umbral ejemplo       | < 2800              | < 500                | < 70              |
+| Modelo ejemplo       | =laloEigenface.xml=   | =laloFisherFace.xml=   | =laloLBPHFace.xml=  |
+
+** Buenas prácticas de laboratorio
+
+1. *Mismo tamaño* en entrenamiento y =predict= (aquí 100×100). Si entrenaste a otro tamaño, redimensiona igual.
+2. *Misma lista =faces=* al entrenar y al reconocer (=sorted= carpeta a carpeta) para que =label_id= coincida con el nombre.
+3. *Recorta solo el rostro* en el dataset (no fondos grandes): Haar ya acota el ROI; el modelo ve ese parche.
+4. Imprime =confidence= en pantalla (como en los scripts) y calibra el umbral con caras conocidas y desconocidas.
+5. ESC (=27=) cierra la ventana; libera siempre =VideoCapture=.
+6. Si =cv.face= no existe: instala =opencv-contrib-python= (no solo =opencv-python=).
+
+ 
+
 * Programas
 
 ** Imágenes

@@ -2863,8 +2863,9 @@ datos mezclados (números y categorías). Si quieres más potencia, se combinan 
 
 *  Reconocimiento de rostros con OpenCV — Eigenfaces, Fisherfaces y LBPH
 
-El *reconocimiento de personas* por vision artificial responde a: *¿quién es esta cara?*  
-No basta con *detectar* un rostro (localizar rectángulo); hace falta *identificarlo* contra un conjunto de identidades conocidas.
+El *reconocimiento de personas* por vision artificial responde a: *¿quién
+es esta cara?* No basta con *detectar* un rostro (localizar rectángulo);
+hace falta *identificarlo* contra un conjunto de identidades conocidas.
 
 Flujo típico con OpenCV:
 
@@ -2883,7 +2884,8 @@ Flujo típico con OpenCV:
 ** Requisitos prácticos
 
 - Python + OpenCV con módulo =cv2.face= (paquete =opencv-contrib-python=).
-- Clasificador Haar: =haarcascade_frontalface_alt.xml= (ruta relativa =data/= o la de tu instalación).
+- Clasificador Haar: =haarcascade_frontalface_alt.xml= (ruta relativa
+  =data/= o la de tu instalación).
 - Dataset organizado así:
 
 #+begin_example
@@ -2898,7 +2900,9 @@ Flujo típico con OpenCV:
       └── ...
 #+end_example
 
-Cada subcarpeta =nombre/= es una *clase* (una persona). Las imágenes de entrenamiento deben ser *recortes de rostro* en escala de grises y, idealmente, del mismo tamaño (p. ej. 100×100).
+Cada subcarpeta =nombre/= es una *clase* (una persona). Las imágenes de
+entrenamiento deben ser *recortes de rostro* en escala de grises y,
+idealmente, del mismo tamaño (p. ej. 100×100).
 
 ** Convención del =predict=
 
@@ -2907,17 +2911,21 @@ Cada subcarpeta =nombre/= es una *clase* (una persona). Las imágenes de entrena
 - *etiqueta*: índice de la persona (0, 1, 2, … según el orden de entrenamiento).
 - *confidence*: medida de distancia / disimilitud. *Cuanto más baja, mejor* el match.
 
-Por eso en los tres métodos usamos =if confidence < umbral= para aceptar identidad, y en caso contrario =Desconocido=.
+Por eso en los tres métodos usamos =if confidence < umbral= para aceptar
+identidad, y en caso contrario =Desconocido=.
 
 #+begin_quote
-Los umbrales (=2800=, =500=, =70=) son *heurísticos*: dependen del dataset, del tamaño del ROI y de la iluminación. Ajústalos empiricamente.
+Los umbrales (=2800=, =500=, =70=) son *heurísticos*: dependen del dataset,
+del tamaño del ROI y de la iluminación. Ajústalos empiricamente.
 #+end_quote
 
 ** Eigenfaces
 
 *** Idea
 
-Un *Eigenface* (cara propia) es un vector propio de la matriz de covarianza del espacio de imágenes de rostros. Sirovich y Kirby propusieron el enfoque; Turk y Pentland lo usaron para clasificación.
+Un *Eigenface* (cara propia) es un vector propio de la matriz de
+covarianza del espacio de imágenes de rostros. Sirovich y Kirby
+propusieron el enfoque; Turk y Pentland lo usaron para clasificación.
 
 Informalmente: cada cara se ve como un punto en \(\mathbb{R}^{W \cdot H}\) (un píxel = una coordenada). PCA encuentra direcciones de máxima varianza; las primeras *eigenfaces* forman una base compacta. Cualquier rostro se aproxima como:
 
@@ -3513,7 +3521,8 @@ import cv2 as cv
 
 rostro = cv.CascadeClassifier('haarcascade_frontalface_alt2.xml')
 cap = cv.VideoCapture(0)
-x=y=w=h= 0 
+x=y=w=h= 0
+img=imgr=0
 count = 0
 while True:
     ret, frame = cap.read()
@@ -3522,13 +3531,14 @@ while True:
     for(x, y, w, h) in rostros:
         m1 = int(h/2)
         n1 = int(w/2)
-        frame = cv.rectangle(frame, (x,y), (x+w, y+h), (0, 255, 0), 2)
+        #frame = cv.rectangle(frame, (x,y), (x+w, y+h), (0, 255, 0), 2)
         #frame = cv.circle(frame, (x+n1,y+m1), int(w/2) , (255, 0 ,0), 2 )
-        #img = frame[y:y+h,x:x+w]
-        #count = count + 1   
+        img = frame[y:y+h,x:x+w]
+        imgr = cv.resize(img, (100,100))
+        count = count + 1   
     
-    #name = '/home/likcos/imgs/cara'+str(count)+'.jpg'
-    #cv.imwrite(name, frame)
+    name = '/home/likcos/pruebacaras/lalo/lalo'+str(count)+'.jpg'
+    cv.imwrite(name, imgr)
     cv.imshow('rostros', frame)
     #cv.imshow('cara', img)
     

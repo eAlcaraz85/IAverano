@@ -2744,7 +2744,7 @@ print("Clase predicha (0/1):", modelo.predict([[4.5]])[0])
 
 --------------------------------------------------------------------------------
 
-*  Árboles de Decisión (Decision Trees)
+* Árboles de Decisión (Decision Trees)
 
 ** La idea: un juego de "20 preguntas"
 
@@ -2857,6 +2857,540 @@ datos mezclados (números y categorías). Si quieres más potencia, se combinan 
 - *Backpropagation*: método para calcular los gradientes de todos los pesos de la red.
 - *Sigmoide*: función en forma de S que convierte cualquier número en (0,1).
 - *Overfitting*: el modelo memoriza en vez de generalizar; falla con datos nuevos.
+
+
+
+* Árboles de decisión 
+
+ Los árboles de decisión (DT) son un método de aprendizaje supervisado
+ no paramétrico que se utiliza para la clasificación y la regresión. El
+ objetivo es crear un modelo que prediga el valor de una variable de
+ destino mediante el aprendizaje de reglas de decisión simples
+ deducidas de las características de los datos. Un árbol puede verse
+ como una aproximación constante por partes.
+
+ en el siguiente ejemplo, los árboles de decisión aprenden de los datos
+ para aproximarse a una curva sinusoidal con un conjunto de reglas de
+ decisión if-then-else. Cuanto más profundo es el árbol, más complejas
+ son las reglas de decisión y más ajustado es el modelo
+
+ #+ATTR_ORG: :width 500
+ [[file:img/dtr.png]]
+
+
+** Elementos
+
+ Los árboles de decisión están formados por nodos, vectores de números,
+ flechas y etiquetas.
+
+ - Cada nodo se puede definir como el momento en el que se ha de tomar
+   una decisión de entre varias posibles, lo que va haciendo que a
+   medida que aumenta el número de nodos aumente el número de posibles
+   finales a los que puede llegar el individuo. Esto hace que un árbol
+   con muchos nodos sea complicado de dibujar a mano y de analizar
+   debido a la existencia de numerosos caminos que se pueden seguir.
+ - Los vectores de números serían la solución final a la que se llega
+   en función de las diversas posibilidades que se tienen, dan las
+   utilidades en esa solución.
+ - Las flechas son las uniones entre un nodo y otro y representan cada
+   acción distinta.
+ - Las etiquetas se encuentran en cada nodo y cada flecha y dan nombre
+   a cada acción.
+
+** Algunas ventajas de los árboles de decisión son:
+
+ - Fácil de entender y de interpretar. Los árboles se pueden
+   visualizar.
+
+ - Requiere poca preparación de datos. Otras técnicas a menudo
+   requieren la normalización de datos, es necesario crear variables
+   ficticias y eliminar valores en blanco. Sin embargo, tenga en cuenta
+   que este módulo no admite valores faltantes.
+
+ - El costo de usar el árbol (es decir, predecir datos) es logarítmico
+   en la cantidad de puntos de datos usados ​​para entrenar el árbol.
+
+- Capaz de manejar datos numéricos y categóricos. Otras técnicas
+  suelen estar especializadas en analizar conjuntos de datos que
+  tienen un solo tipo de variable.
+
+- Capaz de manejar problemas de múltiples salidas.
+
+- Utiliza un modelo de caja blanca. Si una situación dada es
+  observable en un modelo, la explicación de la condición se explica
+  fácilmente mediante lógica booleana. Por el contrario, en un modelo
+  de caja negra (por ejemplo, en una red neuronal artificial), los
+  resultados pueden ser más difíciles de interpretar.
+
+- Posibilidad de validar un modelo mediante pruebas estadísticas. Eso
+  permite dar cuenta de la fiabilidad del modelo.
+
+- Tiene un buen desempeño incluso si sus supuestos son algo violados
+  por el verdadero modelo a partir del cual se generaron los dato
+
+** Desventajas de los árboles de decisión:
+
+- El aprendizaje de los  árboles de decisión pueden crear árboles demasiado
+  complejos que no generalizan bien los datos. Esto se llama
+  sobreajuste. Para evitar este problema, son necesarios mecanismos
+  como la poda, establecer el número mínimo de muestras requeridas en
+  un nudo de la hoja o establecer la profundidad máxima del árbol.
+
+- Los árboles de decisión pueden ser inestables porque pequeñas
+  variaciones en los datos pueden generar un árbol completamente
+  diferente. Este problema se mitiga mediante el uso de árboles de
+  decisión dentro de un conjunto.
+
+- Las predicciones de los árboles de decisión no son uniformes ni
+  continuas, sino aproximaciones constantes por partes, como se ve en
+  la figura anterior. Por lo tanto, no son buenos para la
+  extrapolación.
+
+- Se sabe que el problema de aprender un árbol de decisión óptimo es
+  NP-completo bajo varios aspectos de optimización e incluso para
+  conceptos simples. En consecuencia, los algoritmos prácticos de
+  aprendizaje del árbol de decisiones se basan en algoritmos
+  heurísticos, como el algoritmo voraz, en el que se toman decisiones
+  localmente óptimas en cada nodo. Dichos algoritmos no pueden
+  garantizar la devolución del árbol de decisión globalmente
+  óptimo. Esto se puede mitigar entrenando varios árboles en un alumno
+  de conjunto, donde las características y las muestras se muestrean
+  aleatoriamente con reemplazo.
+
+- Hay conceptos que son difíciles de aprender porque los árboles de
+  decisión no los expresan fácilmente, como XOR, paridad o problemas
+  de multiplexor.
+
+- Los aprendices de árboles de decisión crean árboles sesgados si
+  dominan algunas clases. Por lo tanto, se recomienda equilibrar el
+  conjunto de datos antes de ajustarlo al árbol de decisión.
+
+** Ejemplo de Clasificación, Árbol de decisión scikit-learn 
+
+*DecisionTreeClassifier* es una clase capaz de realizar una
+clasificación de varias clases en un conjunto de datos.
+
+Al igual que con otros clasificadores, *DecisionTreeClassifier* toma
+como entrada dos matrices: una matriz *X*, dispersa o densa, de forma
+(n_muestras, n_características) que contiene las muestras de
+entrenamiento, y una matriz *Y* de valores enteros, forma (n_muestras),
+que contiene las etiquetas de clase. para las muestras de
+entrenamiento:
+
+gato perro leon 
+[0  1  2]
+[0.98,  0.02, 0.4 ]
+     x    y
+| 0 | 0 | 0 |
+|---+---+---|
+| 1 | 1 | 1 |
+
+
+
+#+BEGIN_SRC python :results output
+from sklearn import tree
+X = [[0, 0], [1, 1]]
+Y = [0, 1]
+clf = tree.DecisionTreeClassifier()
+clf = clf.fit(X, Y)
+print(clf.predict([[2.,2.]])) 
+#+END_SRC
+
+#+RESULTS:
+: [1]
+
+
+Despues de ajustarce el modelo se puede usar, para predecir la clase 
+#+BEGIN_SRC python 
+clf.predict([[2.,2.]]) 
+#array([1])
+#+END_SRC
+
+
+En caso de que haya múltiples clases con la misma y mayor
+probabilidad, el clasificador predecirá la clase con el índice más
+bajo entre esas clases.
+
+Como alternativa a generar una clase específica, se puede predecir la
+probabilidad de cada clase, que es la fracción de muestras de
+entrenamiento de la clase en una hoja:
+
+#+BEGIN_SRC python
+clf.predict_proba([[2., 2.]])
+#array([[0., 1.]])
+#+END_SRC
+
+one-hot encoding
+“One-Hot encoding"
+
+
+[perro, gato, catarina, paloma]
+[  0     1      2         3   ]
+[  0.98  0.30  0.0020    0.023]
+
+DecisionTreeClassifier es capaz tanto de clasificación binaria (donde
+las etiquetas son [-1, 1]) como de clasificación multiclase (donde las
+etiquetas son [0, …, K-1]).
+
+Usando el conjunto de datos de Iris, podemos construir un árbol de la
+siguiente manera:
+
+#+BEGIN_SRC python :results output :tangle code/arbol.py
+# Importar las bibliotecas necesarias
+from sklearn.datasets import load_iris
+from sklearn import tree
+import graphviz
+
+# Cargar el conjunto de datos Iris
+iris = load_iris()
+
+X, y = iris.data, iris.target
+#print( X, y)
+# Crear el clasificador del Árbol de Decisión
+clf = tree.DecisionTreeClassifier()
+
+# Entrenar el modelo con los datos
+clf = clf.fit(X, y)
+
+# Exportar el árbol de decisión en formato DOT para su visualización
+dot_data = tree.export_graphviz(clf, out_file=None, 
+                                feature_names=iris.feature_names,  
+                                class_names=iris.target_names,  
+                                filled=True, rounded=True,  
+                                special_characters=True)  
+
+# Crear el gráfico con graphviz
+graph = graphviz.Source(dot_data)
+
+# Guardar el gráfico como un archivo PDF (opcional)
+graph.render("iris_decision_tree")
+
+# Mostrar el gráfico directamente
+graph.view()
+
+#+END_SRC
+
+#+RESULTS:
+
+** Árbol de Decisión en el Conjunto de Datos Iris
+
+*** Estructura del Árbol de Decisión
+Un árbol de decisión tiene la siguiente estructura:
+- **Raíz del árbol**: El nodo inicial donde comienza la primera división.
+- **Nodos internos**: Nodos que dividen los datos en función de una característica.
+- **Hojas**: Nodos finales donde se realiza la clasificación. No hay más
+  divisiones posibles en estos nodos.
+
+*** Nodo raíz
+La primera decisión se toma en base a **petal width (cm) ≤ 0.8**:
+- **gini = 0.667**: El índice de Gini mide la impureza del nodo. Un
+  valor de 0 significa pureza total (todas las muestras pertenecen a
+  una clase), mientras que un valor de 0.667 indica mezcla.
+- **samples = 150**: Hay 150 muestras en este nodo.
+- **value = [50, 50, 50]**: Hay 50 flores de cada clase (**setosa**, **versicolor**, **virginica**).
+- **class = setosa**: Aunque el nodo está mezclado, la clase mayoritaria es **setosa**.
+
+*** Primera división
+- **Si petal width (cm) ≤ 0.8**:
+  - **gini = 0.0**, **samples = 50**, **value = [50, 0, 0]**. Todas las
+    flores en este nodo son de la clase **setosa**, por lo que el modelo
+    puede clasificarlas sin más divisiones.
+  
+- **Si petal width (cm) > 0.8**:
+  - El modelo sigue dividiendo los datos de las otras dos clases
+    (**versicolor** y **virginica**).
+
+*** Segunda división
+Para el resto de las flores, el modelo utiliza la característica
+**petal width (cm) ≤ 1.75**:
+- **gini = 0.5**, **samples = 100**, **value = [0, 50, 50]**. Aquí hay una
+  mezcla equilibrada de las clases **versicolor** y **virginica**.
+- Si el ancho del pétalo es menor o igual a 1.75 cm, el modelo predice
+  **versicolor**, mientras que si es mayor, predice **virginica**.
+
+*** Divisiones más profundas
+El árbol sigue dividiendo basándose en otras características, como **petal length (cm) ≤ 4.95**:
+- Si esta condición se cumple, el modelo predice **versicolor**. Si no,
+  comienza a clasificar flores como **virginica**.
+
+*** Hojas finales
+Cada nodo hoja finaliza la clasificación:
+- Si un nodo tiene **gini = 0.0**, significa que todas las muestras en
+  ese nodo pertenecen a una sola clase.
+- Por ejemplo, en un nodo final con **gini = 0.0**, **samples = 43**,
+  **value = [0, 0, 43]**, todas las flores en ese nodo son de la clase
+  **virginica**.
+
+** Índice de Gini en Árboles de Decisión
+
+*** ¿Qué es el índice de Gini?
+El **índice de Gini** es una medida de impureza o diversidad que se
+utiliza en algoritmos de aprendizaje automático, como los Árboles de
+Decisión. Se utiliza para medir qué tan puras o mezcladas están las
+clases en un nodo del árbol.
+
+*** Concepto del Índice de Gini
+El índice de Gini mide la probabilidad de que una muestra elegida al
+azar sea clasificada incorrectamente si se la asigna una clase de
+manera aleatoria basada en la distribución de clases en ese nodo.
+
+- **Un nodo puro** tendrá un índice de Gini igual a 0, lo que significa
+  que todas las muestras en ese nodo pertenecen a la misma clase.
+- **Un nodo impuro** tendrá un índice de Gini mayor, lo que indica que
+  hay una mezcla de clases en ese nodo.
+
+*** Fórmula del Índice de Gini
+El índice de Gini se calcula como:
+
+\[
+Gini = 1 - \sum_{i=1}^{n} p_i^2
+\]
+
+Donde:
+- **n** es el número de clases.
+- **p_i** es la proporción de ejemplos de la clase **i** en el nodo.
+
+*** Ejemplos del Índice de Gini
+
+**** Ejemplo 1: Nodo completamente puro
+Si todas las muestras en un nodo pertenecen a una sola clase, entonces el índice de Gini es **0**.
+
+- Ejemplo: Si hay 100 muestras y todas pertenecen a la clase "A", entonces \( p_A = 1 \) y las demás probabilidades son 0.
+- Cálculo:
+#+BEGIN_SRC python
+Gini = 1 - (1^2) = 0
+#+END_SRC
+Esto indica que el nodo es completamente puro.
+
+**** Ejemplo 2: Nodo con clases mixtas
+Si las muestras están distribuidas equitativamente entre varias clases, el índice de Gini será mayor.
+
+- Ejemplo: Si hay 100 muestras, con 50 de la clase "A" y 50 de la clase "B", entonces \( p_A = 0.5 \) y \( p_B = 0.5 \).
+- Cálculo:
+#+BEGIN_SRC python
+Gini = 1 - (0.5^2 + 0.5^2) = 1 - 0.25 - 0.25 = 0.5
+#+END_SRC
+Esto indica que el nodo contiene una mezcla de clases.
+
+**** Ejemplo 3: Nodo con clases desbalanceadas
+Si en un nodo hay 90 muestras de la clase "A" y 10 de la clase "B", el índice de Gini será más bajo que en el caso de clases equilibradas.
+
+- Ejemplo: \( p_A = 0.9 \) y \( p_B = 0.1 \).
+- Cálculo:
+#+BEGIN_SRC python
+Gini = 1 - (0.9^2 + 0.1^2) = 1 - 0.81 - 0.01 = 0.18
+#+END_SRC
+Esto indica que la mayoría de las muestras pertenecen a una clase, pero el nodo aún no es completamente puro.
+
+*** Interpretación del Índice de Gini
+- **Gini = 0**: El nodo es completamente puro (todas las muestras pertenecen a una sola clase).
+- **Gini cercano a 0**: La mayoría de las muestras pertenecen a una clase, pero hay algo de mezcla.
+- **Gini cercano a 1**: El nodo es muy impuro, con una mezcla casi uniforme de varias clases.
+
+*** Uso en Árboles de Decisión
+El árbol de decisión selecciona la característica que minimiza el índice de Gini en los nodos hijos, creando divisiones que generen nodos lo más puros posibles.
+
+*** Ejemplo del Índice de Gini en tu Árbol de Decisión
+En el nodo raíz del árbol de decisión que generaste, el **índice de Gini** es 0.667:
+- Esto indica que hay una mezcla significativa de clases en ese nodo.
+- El árbol de decisión divide los datos para reducir el índice de Gini en los nodos hijos.
+
+** Ejemplo con Dataset Phaser
+
+#+begin_src python :results output :tangle code/arbolphaser.py
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier, export_graphviz
+import graphviz
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Cargar el dataset
+file_path = 'phaser.csv'
+dataset = pd.read_csv(file_path)
+
+# Eliminar columnas innecesarias (como la vacía "Unnamed: 3")
+#dataset = dataset.drop(columns=['Unnamed: 3'])
+
+# Definir características (X) y etiquetas (y)
+X = dataset.iloc[:, :2]  # Las dos primeras columnas son las características
+y = dataset.iloc[:, 2]   # La tercera columna es la etiqueta
+
+print(X)
+# Dividir los datos en conjunto de entrenamiento y prueba
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Crear el clasificador de Árbol de Decisión
+clf = DecisionTreeClassifier()
+# Entrenar el modelo
+clf.fit(X_train, y_train)
+y_predict = clf.predict(X_test)
+
+print(X_test, y_predict)
+# Exportar el árbol de decisión en formato DOT para su visualización
+
+print("Accuracy:", accuracy_score(y_test, y_predict))
+print("\nReporte de Clasificación:\n", classification_report(y_test, y_predict))
+
+#cm = confusion_matrix(y_test, y_predict)
+#sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
+#            xticklabels=dataset.target_names,
+#            yticklabels=dataset.target_names)
+#plt.xlabel('Predicho')
+#plt.ylabel('Real')
+#plt.title('Matriz de Confusión')
+#plt.show()
+#
+
+dot_data = export_graphviz(clf, out_file=None, 
+                           feature_names=['Feature 1', 'Feature 2'],  
+                           class_names=['Clase 0', 'Clase 1'],  
+                           filled=True, rounded=True,  
+                           special_characters=True)  
+
+# Crear el gráfico con graphviz
+graph = graphviz.Source(dot_data)
+
+# Mostrar el gráfico
+graph.view()
+
+#+end_src
+
+#+RESULTS:
+#+begin_example
+     650  548
+0    632  548
+1    614  548
+2    596  548
+3    577  548
+4    559  548
+..   ...  ...
+234  570  302
+235  560  302
+236  550  302
+237  540  302
+238  530  302
+
+[239 rows x 2 columns]
+     650  548
+24   194  548
+6    523  548
+93    53  332
+109  446  472
+104  525  472
+172   49  531
+200  324  466
+86   130  332
+9    468  548
+142  580  531
+45   584  332
+205  247  466
+114  367  472
+167  137  531
+113  383  472
+229  620  302
+184  573  466
+15   358  548
+220   14  466
+125  194  472
+127  163  472
+19   285  548
+234  570  302
+30    84  548
+175    4  531
+218   45  466
+10   450  548
+186  542  466
+236  550  302
+152  403  531
+96   650  472
+213  122  466
+25   176  548
+181  619  466
+18   303  548
+69   318  332
+211  153  466
+55   473  332
+79   208  332
+196  386  466
+226  650  302
+112  399  472
+150  438  531
+16   340  548
+155  350  531
+66   352  332
+164  190  531
+38    50  548 [1 0 1 0 0 1 0 1 0 1 0 0 0 1 0 0 1 0 1 0 0 0 0 1 1 1 0 0 0 0 1 1 1 0 0 0 1
+ 0 1 0 1 0 0 0 0 0 0 1]
+Accuracy: 0.9583333333333334
+
+Reporte de Clasificación:
+               precision    recall  f1-score   support
+
+           0       0.97      0.97      0.97        30
+           1       0.94      0.94      0.94        18
+
+    accuracy                           0.96        48
+   macro avg       0.96      0.96      0.96        48
+weighted avg       0.96      0.96      0.96        48
+
+#+end_example
+
+#+BEGIN_SRC python :results output 
+from sklearn.datasets import load_iris
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# 1. Cargar el dataset
+data = load_iris()
+X, y = data.data, data.target
+
+# 2. Dividir datos en entrenamiento y prueba
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# 3. Crear y entrenar el árbol de decisión
+clf = DecisionTreeClassifier(random_state=42)
+clf.fit(X_train, y_train)
+
+# 4. Predecir sobre los datos de prueba
+y_pred = clf.predict(X_test)
+
+# 5. Evaluación
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print("\nReporte de Clasificación:\n", classification_report(y_test, y_pred))
+
+# 6. Matriz de confusión
+cm = confusion_matrix(y_test, y_pred)
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
+            xticklabels=data.target_names,
+            yticklabels=data.target_names)
+plt.xlabel('Predicho')
+plt.ylabel('Real')
+plt.title('Matriz de Confusión')
+plt.show()
+
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+Accuracy: 1.0
+
+Reporte de Clasificación:
+               precision    recall  f1-score   support
+
+           0       1.00      1.00      1.00        19
+           1       1.00      1.00      1.00        13
+           2       1.00      1.00      1.00        13
+
+    accuracy                           1.00        45
+   macro avg       1.00      1.00      1.00        45
+weighted avg       1.00      1.00      1.00        45
+
+#+end_example
 
 
 
@@ -3085,6 +3619,13 @@ face_recognizer.write("laloEigenface.xml")
 print("Modelo escrito: laloEigenface.xml")
 #+end_src
 
+#+RESULTS:
+: Personas: ['lalo', 'luna']
+:   lalo (label=0): 753 imágenes
+:   luna (label=1): 948 imágenes
+: Modelo escrito: laloEigenface.xml
+
+
 *** Script: reconocer en vivo (Eigenfaces)
 
 #+CAPTION: Webcam + Haar + modelo Eigenfaces
@@ -3102,7 +3643,7 @@ face_recognizer = cv.face.EigenFaceRecognizer_create()
 face_recognizer.read("laloEigenface.xml")
 
 cap = cv.VideoCapture(0)
-cascade = cv.CascadeClassifier("data/haarcascade_frontalface_alt.xml")
+cascade = cv.CascadeClassifier("haarcascade_frontalface_alt2.xml")
 THRESHOLD = 2800  # bajar = más estricto
 
 while True:
@@ -3137,6 +3678,9 @@ while True:
 cap.release()
 cv.destroyAllWindows()
 #+end_src
+
+#+RESULTS:
+: None
 
 ** Fisherfaces
 
@@ -3520,7 +4064,7 @@ import numpy as np
 import cv2 as cv
 
 rostro = cv.CascadeClassifier('haarcascade_frontalface_alt2.xml')
-cap = cv.VideoCapture(0)
+cap = cv.VideoCapture('/home/likcos/x1/compux1/dwhelper/caras.mp4')
 x=y=w=h= 0
 img=imgr=0
 count = 0
@@ -3537,7 +4081,7 @@ while True:
         imgr = cv.resize(img, (100,100))
         count = count + 1   
     
-    name = '/home/likcos/pruebacaras/lalo/lalo'+str(count)+'.jpg'
+    name = '/home/likcos/pruebacaras/luna/luna'+str(count)+'.jpg'
     cv.imwrite(name, imgr)
     cv.imshow('rostros', frame)
     #cv.imshow('cara', img)

@@ -3160,6 +3160,165 @@ weighted avg       1.00      1.00      1.00        45
 
 
 
+
+*  K-Vecinos Más Cercanos (k-NN) y Distancia Euclidiana
+
+Este apartado desarrolla *completo* el algoritmo de los *k vecinos más cercanos*
+(*k-Nearest Neighbors*, *k-NN*): idea, geometría, *distancia euclidiana*,
+clasificación, predicción numérica, elección de =k=, ventajas, límites y práctica
+
+Objetivos:*
+- Entender k-NN como aprender por similitud (sin entrenar pesos).
+- Calcular a mano la *distancia euclidiana* en 1D, 2D y n dimensiones.
+- Clasificar y predecir con voto / promedio de vecinos.
+- Elegir =k= con sentido y evitar trampas (escala, desbalance, costo).
+- Implementar un ejemplo pequeño a mano y con =scikit-learn=.
+#+begin_example
+Idea central:
+  "Dime con quién andas y te diré quién eres."
+  Un dato nuevo se etiqueta (o se le asigna un número)
+  mirando a los k ejemplos del entrenamiento que tiene MÁS CERCA.
+#+end_example
+------------------------------------------------------------------------
+** Qué es k-NN
+
+*** La idea 
+
+Imagina que llegas a una fiesta y no sabes si el ambiente es formal o casual.
+Miras a las *k* personas más cercanas a ti:
+- Si la mayoría viste formal → decides formal.
+- Si la mayoría viste casual → decides casual.
+Eso es *clasificación con k-NN*.
+Si en vez de una etiqueta quieres estimar un número (precio de una casa),
+miras las *k* casas más parecidas y *promedias* sus precios. Eso es
+*regresión / predicción con k-NN*.
+
+*** Supervisado: no entrena pesos, guarda datos
+k-NN es *aprendizaje supervisado*: necesita ejemplos con etiqueta o valor Y.
+No ajusta pesos como una red: *guarda* el entrenamiento y, al predecir, busca vecinos.
+| Aspecto         | k-NN                            | Árbol / MLP                |
+|-----------------+---------------------------------+----------------------------|
+| Entrenamiento   | Casi nulo (guarda X, y)         | Ajusta reglas o pesos      |
+| Predicción      | Busca vecinos → vota / promedia | Evalúa modelo ajustado     |
+| Nombre habitual | *Lazy learner*                  | *Eager learner*            |
+| Memoria         | Guarda casi todo el dataset     | Compacta en el modelo      |
+*** Clasificar vs predecir con el mismo algoritmo
+| Tarea                 | Qué hace con los k vecinos                       |
+|-----------------------+--------------------------------------------------|
+| Clasificar            | Voto por mayoría (clase más frecuente)           |
+| Predecir (Y numérica) | Promedio (a veces mediana) de los valores y      |
+------------------------------------------------------------------------
+
+** Distancia euclidiana (el corazón de k-NN)
+*** Por qué necesitamos una distancia
+"Más cercano" solo tiene sentido si definimos qué tan lejos está un punto de otro.
+En k-NN clásico se usa la *distancia euclidiana*: la longitud de la línea recta
+entre dos puntos (como con una regla en el plano).
+*** Caso 1D (una sola variable)
+#+begin_example
+  d = |x1 - x2|
+#+end_example
+Ejemplo: 8.5 y 7.0 → distancia = 1.5.
+*** Caso 2D (dos variables) — Pitágoras
+Puntos A=(x1, y1) y B=(x2, y2):
+#+begin_example
+  d(A,B) = sqrt( (x2-x1)^2 + (y2-y1)^2 )
+#+end_example
+Es el teorema de Pitágoras: catetos Delta-x y Delta-y; hipotenusa = distancia.
+#+begin_example
+        y
+        |        B
+        |       /
+        |      /  d
+        |     /
+        |    A
+        +---------- x
+#+end_example
+*** Caso n-dimensional (fórmula general)
+Si cada ejemplo es un vector de n características:
+#+begin_example
+  A = (a1, a2, ..., an)
+  B = (b1, b2, ..., bn)
+  d(A,B) = sqrt( (a1-b1)^2 + (a2-b2)^2 + ... + (an-bn)^2 )
+  Compacto:
+  d(A,B) = sqrt( sum_i (ai - bi)^2 )
+#+end_example
+*** Ejemplo a mano (2D)
+Clasificar Q = (3, 4) con tres puntos etiquetados:
+| Punto | Coordenadas | Clase |
+|-------+-------------+-------|
+| P1    | (1, 2)      | Rojo  |
+| P2    | (5, 6)      | Azul  |
+| P3    | (2, 5)      | Rojo  |
+#+begin_example
+  d(Q,P1) = sqrt( (3-1)^2 + (4-2)^2 ) = sqrt(4+4) = sqrt(8) ≈ 2.83
+  d(Q,P2) = sqrt( (3-5)^2 + (4-6)^2 ) = sqrt(4+4) = sqrt(8) ≈ 2.83
+  d(Q,P3) = sqrt( (3-2)^2 + (4-5)^2 ) = sqrt(1+1) = sqrt(2) ≈ 1.41
+#+end_example
+Orden: P3 (Rojo), luego empate P1/P2.
+- k=1 → P3 → *Rojo*
+- k=3 → dos Rojos, un Azul → *Rojo*
+*** Otras distancias (contexto)
+| Distancia     | Idea breve                         | Uso típico           |
+|---------------+------------------------------------+----------------------|
+| Euclidiana L2 | Línea recta                        | k-NN clásico         |
+| Manhattan L1  | Suma de valores absolutos          | Outliers / ciudad    |
+| Coseno        | Ángulo entre vectores              | Texto / TF-IDF       |
+Este tema se centra en la *euclidiana*.
+------------------------------------------------------------------------
+**  El algoritmo paso a paso
+*** Pseudocódigo (clasificación)
+#+begin_example
+ENTRADA: (X_train, y_train), punto nuevo x_new, entero k
+1. Para cada ejemplo i en X_train:
+      d_i = distancia_euclidiana(x_new, X_train[i])
+2. Ordenar de menor a mayor d_i
+3. Tomar los primeros k vecinos
+4. Contar votos por clase
+5. Devolver la clase con más votos
+#+end_example
+*** Pseudocódigo (predicción numérica)
+#+begin_example
+Igual hasta el paso 3.
+4. Tomar los valores y de esos k vecinos
+5. Devolver el promedio (o la mediana)
+#+end_example
+*** Empates y pesos
+- Empate en distancia: regla estable, azar controlado, u otra métrica.
+- Empate en votos: k impar, o pesos por distancia.
+- Peso típico: peso_i = 1 / (d_i + epsilon).
+------------------------------------------------------------------------
+**  Cómo elegir k
+
+| k pequeño (ej. 1)      | k grande                            |
+|------------------------+-------------------------------------|
+| Frontera irregular     | Frontera más suave                  |
+| Sensible a ruido       | Puede aplastar clases minoritarias  |
+| Overfitting local      | Underfitting / sesgo alto           |
+#+begin_example
+  k = 1  → memoriza vecinos exactos (ruidoso)
+  k → N  → casi siempre la clase mayoritaria del dataset
+#+end_example
+*Práctica:* probar k impares (3, 5, 7…) con validación; no elegir a ojo.
+Regla burda a veces citada: k ≈ sqrt(N) (solo punto de partida).
+------------------------------------------------------------------------
+**  Trampas importantes (EDA antes de k-NN)
+*** 1) Escala de variables (crítica)
+Si una variable está en miles y otra en 0–1, *domina* la grande porque se elevan
+diferencias al cuadrado.
+*Solución:* =StandardScaler= o min-max *antes*, fit solo con train.m
+*** 2) Categóricas
+La euclidiana asume números → encoding (one-hot, etc.) o otra distancia.
+*** 3) Desbalance
+Con k grande, gana la clase mayoritaria. Usa F1/recall, pesos o muestreo.
+*** 4) Alta dimensión
+Las distancias se parecen entre sí ("maldición de la dimensión"). Reduce features o usa PCA.
+*** 5) Costo en predicción
+Ingenuo: O(N · n) por consulta. KD-tree / Ball-tree ayudan en pocas dimensiones.
+*** 6) Leakage
+No escalar con test. No meter columnas del futuro en X.
+
+
 * Reconocimiento de rostros con OpenCV — Eigenfaces, Fisherfaces y LBPH
 
 El *reconocimiento de personas* por vision artificial responde a: *¿quién

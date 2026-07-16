@@ -1440,241 +1440,6 @@ Regreso legal que avanza: A+C → E4 (g=4, h=2, f=6)
 - E5: solo falta C en la derecha → h=1.
 
 
-* Actividades
-
-**  Operación Dino Crash (EDA conceptual)
-
-*** Introducción a la Misión
-Agentes, el cuartel general *quiere que
-piensen como *analistas de datos*: qué dataset haría falta, qué
-preguntas hacerle a los datos y, *solo después de entenderlos*, qué tipo
-de modelo de IA tendría sentido.
-
-*Contexto:* el juego del dinosaurio de Chrome (*Dino Run*) — el que aparece sin internet.
-
-*Reglas de esta operación:*
-- *No se entrega código.* Solo análisis escrito (reporte en Markdown).
-- Justifica cada respuesta con razonamiento sobre *forma de los datos*, no con intuición vaga.
-- Usa tablas, listas y mini-ejemplos numéricos cuando ayuden.
-
-*Entregable único:* =reporte_dino_crash_eda.md=
-
-*** ¿Qué es EDA y por qué va *antes* del modelo?
-
-#+begin_example
-Datos crudos  →  EDA (entender)  →  Decisión de modelo  →  (luego) entrenar
-
-Si eliges el modelo primero, corres el riesgo de usar un martillo
-para un tornillo: datos desbalanceados, variables mal definidas,
-o un problema que no era clasificación sino regresión.
-#+end_example
-
-*** Bloque 1 — ¿Qué dataset necesitamos?
-
-**** Misión 1: Definir el problema y el dataset ideal
-***** La Historia
-Antes de “predecir algo”, hay que decidir *qué pregunta* respondes y *qué fila* representa cada observación.
-
-***** Escenarios posibles (elige analizar los tres en el reporte)
-
-| ID | Pregunta de negocio / juego                      | ¿Una fila = qué?        |
-|----+--------------------------------------------------+-------------------------|
-| P1 | ¿Morirá en el *siguiente* frame?                   | Un frame de una partida |
-| P2 | ¿Cuántos puntos alcanzará *esta* partida al morir? | Una partida completa    |
-| P3 | ¿Qué tipo de obstáculo viene *próximo*?            | Un frame o un evento    |
-
-***** Tu Tarea (escrito)
-Para *cada* escenario P1, P2 y P3:
-
-1. *Variable objetivo (Y):* ¿qué columna sería? ¿tipo? (numérica, categórica, binaria).
-2. *Variables de entrada (X):* lista *mínimo 5* columnas que pedirías y por qué cada una.
-3. *Granularidad:* ¿necesitas un frame cada 16 ms, cada salto, o un resumen por partida?
-4. *Tamaño mínimo razonable:* ¿cuántas filas o partidas harían falta para confiar? Argumenta.
-5. *Riesgo si el dataset está mal definido:* un error de diseño y su consecuencia.
-
-**** Misión 2: Diccionario de datos (qué debe traer el CSV)
-***** La Historia
-Interceptaste un borrador de telemetría. Revisa si alcanza para P1 o si le falta algo.
-
-***** Columnas propuestas
-| Columna       | Tipo sugerido | Descripción breve                      |
-|---------------+---------------+----------------------------------------|
-| =session_id=    | entero        | ID de partida                          |
-| =frame=         | entero        | Índice del frame en la partida         |
-| =time_ms=       | entero        | Tiempo desde que empezó la partida     |
-| =score=         | entero        | Puntuación en pantalla                 |
-| =speed=         | numérico      | Velocidad del escenario                |
-| =obstacle_type= | categórica    | =none=, =cactus_small=, =cactus_large=, =bird= |
-| =dist_obstacle= | numérico      | Distancia al próximo obstáculo (px)    |
-| =jump=          | binaria 0/1   | ¿El dino está saltando?                |
-| =died=          | binaria 0/1   | 1 solo en el último frame de la sesión |
-
-***** Muestra para analizar (10 filas — sesión 7)
-
-| frame | time_ms | score | speed | obstacle_type | dist_obstacle | jump | died |
-|-------+---------+-------+-------+---------------+---------------+------+------|
-| 0     | 0       | 0     | 6.0   | none          | 180           | 0    | 0    |
-| 40    | 640     | 8     | 6.4   | none          | 165           | 0    | 0    |
-| 80    | 1280    | 16    | 6.8   | cactus_small  | 55            | 1    | 0    |
-| 81    | 1296    | 16    | 6.8   | cactus_small  | 38            | 1    | 0    |
-| 82    | 1312    | 16    | 6.8   | cactus_small  | 12            | 0    | 1    |
-| 0     | 0       | 0     | 6.0   | none          | 200           | 0    | 0    |
-| 120   | 1920    | 24    | 7.2   | bird          | 48            | 1    | 0    |
-| 200   | 3200    | 40    | 8.0   | none          | 150           | 0    | 0    |
-| 280   | 4480    | 56    | 8.8   | cactus_large  | 22            | 0    | 1    |
-| 50    | 800     | 10    | 6.5   | cactus_small  | 90            | 0    | 0    |
-
-*(Filas 1–5: misma sesión que termina en frame 82; filas 6–9: otras sesiones resumidas.)*
-
-***** Tu Tarea (escrito)
-1. ¿Qué *patrón* ves en la fila donde =died=1= (frame 82)?
-2. ¿=score= es buena variable para predecir muerte *en el siguiente frame*? ¿Por qué sí o no?
-3. ¿Falta alguna columna crítica para P1? (pista: altura del dino, agachado, lag de reacción del jugador…)
-4. ¿=died= tal como está definida sirve para P1 o solo describe el *final* de la partida?
-
-*** Bloque 2 — Preguntas que todo EDA debe responder
-
-**** Misión 3: Las diez preguntas del analista
-***** La Historia
-Un dataset “bonito en papel” puede esconder trampas. El EDA responde esto *antes* de elegir modelo.
-
-***** Checklist EDA (completa en el reporte para el juego del dino)
-
-|  # | Pregunta EDA                             | ¿Qué buscas?                                   | Si la respuesta es mala, ¿qué modelo evitas o qué haces?  |
-|----+------------------------------------------+------------------------------------------------+-----------------------------------------------------------|
-|  1 | ¿Cuántas observaciones hay?              | Tamaño N, partidas                             | Modelos complejos con pocos datos                         |
-|  2 | ¿Hay valores faltantes?                  | % NA por columna                               | Algunos modelos no toleran NA; imputar o descartar        |
-|  3 | ¿La clase objetivo está balanceada? (P1) | % muerte vs no-muerte por frame                | Métrica accuracy engañosa; considerar F1, ponderar clases |
-|  4 | ¿Hay fugas de información (*leakage*)?     | ¿Y incluye el futuro?                          | Cualquier modelo “perfecto” en validación falsa           |
-|  5 | ¿Variables correlacionadas?              | score vs time_ms                               | Regresión inestable; redundancia                          |
-|  6 | ¿Distribución de =speed=?                  | ¿sube siempre? ¿tope?                          | Modelos que asumen linealidad infinita                    |
-|  7 | ¿Outliers?                               | dist_obstacle negativo, saltos imposibles      | Limpiar antes de entrenar                                 |
-|  8 | ¿Datos i.i.d.?                           | ¿frames de la misma sesión son independientes? | Train/test por *sesión*, no por fila suelta                 |
-|  9 | ¿Estacionariedad?                        | ¿misma distribución al inicio y al final?      | Modelo global puede fallar en partidas largas             |
-| 10 | ¿Sesgo de muestreo?                      | ¿solo expertos? ¿solo móvil?                   | Generalización dudosa                                     |
-
-***** Tu Tarea
-1. Elige *tres* preguntas del checklist y respóndelas *como si* tuvieras el dataset completo del dino (hipótesis razonables).
-2. Para la pregunta 8 (*i.i.d.*): explica por qué mezclar frames de la misma partida en entrenamiento y prueba es un error.
-3. Da un ejemplo concreto de *data leakage* usando =score= o =time_ms= en P1.
-
-**** Misión 4: Leer distribuciones sin gráfica (interpretación)
-***** La Historia
-Te pasan *resúmenes* estadísticos en lugar de código. Debes sacar conclusiones.
-
-***** Resumen hipotético (50 partidas, ~12 000 frames)
-
-| Variable          | Media | Mediana | Mín |  Máx | Comentario del analista previo  |
-|-------------------+-------+---------+-----+------+---------------------------------|
-| =score= (por frame) |    28 |      18 |   0 |  120 | Cola larga hacia la derecha     |
-| =speed=             |   8.5 |     8.2 | 6.0 | 13.0 | Sube con el tiempo de partida   |
-| =dist_obstacle=     |    95 |      88 |   5 |  220 | Muertes suelen con dist < 20    |
-| =died= (por frame)  |     — |       — |   — |    — | Solo 50 unos en todo el dataset |
-
-***** Conteos de =obstacle_type= (todos los frames)
-| Tipo          | % aprox. |
-|---------------+----------|
-| none          | 54%      |
-| cactus_small  | 20%      |
-| cactus_large  | 15%      |
-| bird          | 11%      |
-
-***** Tu Tarea (escrito)
-1. ¿El problema P1 (muerte en siguiente frame) está *desbalanceado*? Cuantifica con los números dados.
-2. ¿Qué implica eso para la *métrica* que usarías? (accuracy vs precision/recall/F1).
-3. ¿=dist_obstacle= parece útil como predictor? Argumenta con la fila de muertes.
-4. ¿La distribución de =score= sugiere regresión simple o necesitas transformación / otro enfoque?
-
-*** Bloque 3 — Del EDA a la elección del modelo
-
-**** Misión 5: Árbol de decisión “dataset → modelo”
-***** La Historia
-El mando quiere una *guía* para no elegir modelos de moda sin datos que los soporten.
-
-***** Tabla guía (completa y comenta en el reporte)
-
-| Si tu EDA encuentra…                     | Tipo de problema         | Modelos razonables                                       | Modelos poco razonables (y por qué)      |
-|------------------------------------------+--------------------------+----------------------------------------------------------+------------------------------------------|
-| Y binaria, tabular, N mediano            | Clasificación            | Regresión logística, árbol, Random Forest                | Red profunda sin más datos (overfitting) |
-| Y binaria *muy* desbalanceada              | Clasificación            | Mismo + class_weight, umbral, SMOTE (con cuidado)        | Accuracy como única métrica              |
-| Y numérica (score final)                 | Regresión                | Regresión lineal, árbol regresor                         | Clasificador binario                     |
-| Y categórica multiclase (tipo obstáculo) | Clasificación multiclase | Logística multinomial, árbol                             | Regresión lineal sobre códigos 1,2,3     |
-| Secuencia de frames por sesión           | Serie / secuencia        | Features + clasificador; LSTM/GRU *si* hay muchas sesiones | Ignorar orden temporal                   |
-| Relación clara y lineal pocas variables  | Interpretable            | Regresión logística / lineal                             | Ensemble opaco sin necesidad             |
-| Muchas variables categóricas             | Tabular                  | Árboles, encoding ordinal/one-hot                        | Distancia euclidiana cruda en texto      |
-
-***** Tu Tarea (escrito)
-Para cada escenario del inicio:
-
-| Escenario | Tras tu EDA, ¿qué fila de la guía aplica? | Modelo que propondrías | 2 condiciones del dataset que *deben* cumplirse |
-|-----------+-------------------------------------------+------------------------+-------------------------------------------------|
-| P1        |                                           |                        |                                                 |
-| P2        |                                           |                        |                                                 |
-| P3        |                                           |                        |                                                 |
-
-**** Misión 6: Contraejemplo — cuándo *no* usar un modelo
-***** La Historia
-A veces el EDA dice: *aún no hay datos suficientes* o *la pregunta está mal planteada*.
-
-***** Tu Tarea (escrito)
-1. Describe un escenario del dino donde un *árbol profundo* parecería buena idea pero el EDA lo desaconsejaría.
-2. Describe un escenario donde una *red neuronal* tendría sentido y qué deberías ver en el EDA para justificarla.
-3. ¿Se podría resolver P1 con *reglas fijas* (=si dist_obstacle < X y jump=0 entonces muerte=)? Compara con un modelo aprendido: ventajas y límites.
-
-**** Bloque 4 — Cierre
-
-***** Misión 7: Informe del analista (entregable final)
-****** Plantilla =reporte_dino_crash_eda.md=
-
-#+begin_example markdown
-# Reporte EDA — Operación Dino Crash
-**Analista:** [Nombre / Matrícula]
-
-## 1. Problema y dataset (Misión 1)
-### P1 — Muerte en el siguiente frame
-- Y:
-- X (mínimo 5 variables):
-- Granularidad:
-- Tamaño mínimo de dataset:
-
-(repite P2, P3)
-
-## 2. Diccionario y muestra (Misión 2)
-- Patrón en died=1:
-- ¿Falta alguna columna?
-
-## 3. Checklist EDA (Misión 3)
-(respuestas a 3 preguntas + leakage + i.i.d.)
-
-## 4. Interpretación de resúmenes (Misión 4)
-(desbalance, métricas, dist_obstacle)
-
-## 5. Elección de modelo (Misiones 5–6)
-(tabla P1/P2/P3 + contraejemplos)
-
-## Síntesis (5 líneas)
-¿Qué dataset pedirías primero y qué modelo *solo después* del EDA?
-#+end_example
-
-***** Rúbrica sugerida (docente)
-
-| Criterio                                             | Puntos |
-|------------------------------------------------------+--------|
-| Definición clara de Y y granularidad por escenario   |    25% |
-| Preguntas EDA pertinentes (balance, leakage, i.i.d.) |    25% |
-| Elección de modelo ligada a hallazgos del EDA        |    30% |
-| Claridad y coherencia del reporte                    |    20% |
-
-***** Sin programación en esta operación
-El objetivo es que el alumno entienda: *el modelo no se elige por fama; se elige porque el dataset, visto con EDA, tiene cierta forma.*
-
-#+RESULTS:
-: None
-
-
-
-
-
 *  Redes Neuronales y Backpropagation
 
 ** ¿Qué es una neurona artificial?
@@ -3395,7 +3160,7 @@ weighted avg       1.00      1.00      1.00        45
 
 
 
-*  Reconocimiento de rostros con OpenCV — Eigenfaces, Fisherfaces y LBPH
+* Reconocimiento de rostros con OpenCV — Eigenfaces, Fisherfaces y LBPH
 
 El *reconocimiento de personas* por vision artificial responde a: *¿quién
 es esta cara?* No basta con *detectar* un rostro (localizar rectángulo);
@@ -4095,4 +3860,624 @@ cv.destroyAllWindows()
 
 #+RESULTS:
 : None
+
+* Actividades
+
+**  Operación Dino Crash (EDA conceptual)
+
+*** Introducción a la Misión
+Agentes, el cuartel general *quiere que
+piensen como *analistas de datos*: qué dataset haría falta, qué
+preguntas hacerle a los datos y, *solo después de entenderlos*, qué tipo
+de modelo de IA tendría sentido.
+
+*Contexto:* el juego del dinosaurio de Chrome (*Dino Run*) — el que aparece sin internet.
+
+*Reglas de esta operación:*
+- *No se entrega código.* Solo análisis escrito (reporte en Markdown).
+- Justifica cada respuesta con razonamiento sobre *forma de los datos*, no con intuición vaga.
+- Usa tablas, listas y mini-ejemplos numéricos cuando ayuden.
+
+*Entregable único:* =reporte_dino_crash_eda.md=
+
+*** ¿Qué es EDA y por qué va *antes* del modelo?
+
+#+begin_example
+Datos crudos  →  EDA (entender)  →  Decisión de modelo  →  (luego) entrenar
+
+Si eliges el modelo primero, corres el riesgo de usar un martillo
+para un tornillo: datos desbalanceados, variables mal definidas,
+o un problema que no era clasificación sino regresión.
+#+end_example
+
+*** Bloque 1 — ¿Qué dataset necesitamos?
+
+**** Misión 1: Definir el problema y el dataset ideal
+***** La Historia
+Antes de “predecir algo”, hay que decidir *qué pregunta* respondes y *qué fila* representa cada observación.
+
+***** Escenarios posibles (elige analizar los tres en el reporte)
+
+| ID | Pregunta de negocio / juego                      | ¿Una fila = qué?        |
+|----+--------------------------------------------------+-------------------------|
+| P1 | ¿Morirá en el *siguiente* frame?                   | Un frame de una partida |
+| P2 | ¿Cuántos puntos alcanzará *esta* partida al morir? | Una partida completa    |
+| P3 | ¿Qué tipo de obstáculo viene *próximo*?            | Un frame o un evento    |
+
+***** Tu Tarea (escrito)
+Para *cada* escenario P1, P2 y P3:
+
+1. *Variable objetivo (Y):* ¿qué columna sería? ¿tipo? (numérica, categórica, binaria).
+2. *Variables de entrada (X):* lista *mínimo 5* columnas que pedirías y por qué cada una.
+3. *Granularidad:* ¿necesitas un frame cada 16 ms, cada salto, o un resumen por partida?
+4. *Tamaño mínimo razonable:* ¿cuántas filas o partidas harían falta para confiar? Argumenta.
+5. *Riesgo si el dataset está mal definido:* un error de diseño y su consecuencia.
+
+**** Misión 2: Diccionario de datos (qué debe traer el CSV)
+***** La Historia
+Interceptaste un borrador de telemetría. Revisa si alcanza para P1 o si le falta algo.
+
+***** Columnas propuestas
+| Columna       | Tipo sugerido | Descripción breve                      |
+|---------------+---------------+----------------------------------------|
+| =session_id=    | entero        | ID de partida                          |
+| =frame=         | entero        | Índice del frame en la partida         |
+| =time_ms=       | entero        | Tiempo desde que empezó la partida     |
+| =score=         | entero        | Puntuación en pantalla                 |
+| =speed=         | numérico      | Velocidad del escenario                |
+| =obstacle_type= | categórica    | =none=, =cactus_small=, =cactus_large=, =bird= |
+| =dist_obstacle= | numérico      | Distancia al próximo obstáculo (px)    |
+| =jump=          | binaria 0/1   | ¿El dino está saltando?                |
+| =died=          | binaria 0/1   | 1 solo en el último frame de la sesión |
+
+***** Muestra para analizar (10 filas — sesión 7)
+
+| frame | time_ms | score | speed | obstacle_type | dist_obstacle | jump | died |
+|-------+---------+-------+-------+---------------+---------------+------+------|
+| 0     | 0       | 0     | 6.0   | none          | 180           | 0    | 0    |
+| 40    | 640     | 8     | 6.4   | none          | 165           | 0    | 0    |
+| 80    | 1280    | 16    | 6.8   | cactus_small  | 55            | 1    | 0    |
+| 81    | 1296    | 16    | 6.8   | cactus_small  | 38            | 1    | 0    |
+| 82    | 1312    | 16    | 6.8   | cactus_small  | 12            | 0    | 1    |
+| 0     | 0       | 0     | 6.0   | none          | 200           | 0    | 0    |
+| 120   | 1920    | 24    | 7.2   | bird          | 48            | 1    | 0    |
+| 200   | 3200    | 40    | 8.0   | none          | 150           | 0    | 0    |
+| 280   | 4480    | 56    | 8.8   | cactus_large  | 22            | 0    | 1    |
+| 50    | 800     | 10    | 6.5   | cactus_small  | 90            | 0    | 0    |
+
+*(Filas 1–5: misma sesión que termina en frame 82; filas 6–9: otras sesiones resumidas.)*
+
+***** Tu Tarea (escrito)
+1. ¿Qué *patrón* ves en la fila donde =died=1= (frame 82)?
+2. ¿=score= es buena variable para predecir muerte *en el siguiente frame*? ¿Por qué sí o no?
+3. ¿Falta alguna columna crítica para P1? (pista: altura del dino, agachado, lag de reacción del jugador…)
+4. ¿=died= tal como está definida sirve para P1 o solo describe el *final* de la partida?
+
+*** Bloque 2 — Preguntas que todo EDA debe responder
+
+**** Misión 3: Las diez preguntas del analista
+***** La Historia
+Un dataset “bonito en papel” puede esconder trampas. El EDA responde esto *antes* de elegir modelo.
+
+***** Checklist EDA (completa en el reporte para el juego del dino)
+
+|  # | Pregunta EDA                             | ¿Qué buscas?                                   | Si la respuesta es mala, ¿qué modelo evitas o qué haces?  |
+|----+------------------------------------------+------------------------------------------------+-----------------------------------------------------------|
+|  1 | ¿Cuántas observaciones hay?              | Tamaño N, partidas                             | Modelos complejos con pocos datos                         |
+|  2 | ¿Hay valores faltantes?                  | % NA por columna                               | Algunos modelos no toleran NA; imputar o descartar        |
+|  3 | ¿La clase objetivo está balanceada? (P1) | % muerte vs no-muerte por frame                | Métrica accuracy engañosa; considerar F1, ponderar clases |
+|  4 | ¿Hay fugas de información (*leakage*)?     | ¿Y incluye el futuro?                          | Cualquier modelo “perfecto” en validación falsa           |
+|  5 | ¿Variables correlacionadas?              | score vs time_ms                               | Regresión inestable; redundancia                          |
+|  6 | ¿Distribución de =speed=?                  | ¿sube siempre? ¿tope?                          | Modelos que asumen linealidad infinita                    |
+|  7 | ¿Outliers?                               | dist_obstacle negativo, saltos imposibles      | Limpiar antes de entrenar                                 |
+|  8 | ¿Datos i.i.d.?                           | ¿frames de la misma sesión son independientes? | Train/test por *sesión*, no por fila suelta                 |
+|  9 | ¿Estacionariedad?                        | ¿misma distribución al inicio y al final?      | Modelo global puede fallar en partidas largas             |
+| 10 | ¿Sesgo de muestreo?                      | ¿solo expertos? ¿solo móvil?                   | Generalización dudosa                                     |
+
+***** Tu Tarea
+1. Elige *tres* preguntas del checklist y respóndelas *como si* tuvieras el dataset completo del dino (hipótesis razonables).
+2. Para la pregunta 8 (*i.i.d.*): explica por qué mezclar frames de la misma partida en entrenamiento y prueba es un error.
+3. Da un ejemplo concreto de *data leakage* usando =score= o =time_ms= en P1.
+
+**** Misión 4: Leer distribuciones sin gráfica (interpretación)
+***** La Historia
+Te pasan *resúmenes* estadísticos en lugar de código. Debes sacar conclusiones.
+
+***** Resumen hipotético (50 partidas, ~12 000 frames)
+
+| Variable          | Media | Mediana | Mín |  Máx | Comentario del analista previo  |
+|-------------------+-------+---------+-----+------+---------------------------------|
+| =score= (por frame) |    28 |      18 |   0 |  120 | Cola larga hacia la derecha     |
+| =speed=             |   8.5 |     8.2 | 6.0 | 13.0 | Sube con el tiempo de partida   |
+| =dist_obstacle=     |    95 |      88 |   5 |  220 | Muertes suelen con dist < 20    |
+| =died= (por frame)  |     — |       — |   — |    — | Solo 50 unos en todo el dataset |
+
+***** Conteos de =obstacle_type= (todos los frames)
+| Tipo          | % aprox. |
+|---------------+----------|
+| none          | 54%      |
+| cactus_small  | 20%      |
+| cactus_large  | 15%      |
+| bird          | 11%      |
+
+***** Tu Tarea (escrito)
+1. ¿El problema P1 (muerte en siguiente frame) está *desbalanceado*? Cuantifica con los números dados.
+2. ¿Qué implica eso para la *métrica* que usarías? (accuracy vs precision/recall/F1).
+3. ¿=dist_obstacle= parece útil como predictor? Argumenta con la fila de muertes.
+4. ¿La distribución de =score= sugiere regresión simple o necesitas transformación / otro enfoque?
+
+*** Bloque 3 — Del EDA a la elección del modelo
+
+**** Misión 5: Árbol de decisión “dataset → modelo”
+***** La Historia
+El mando quiere una *guía* para no elegir modelos de moda sin datos que los soporten.
+
+***** Tabla guía (completa y comenta en el reporte)
+
+| Si tu EDA encuentra…                     | Tipo de problema         | Modelos razonables                                       | Modelos poco razonables (y por qué)      |
+|------------------------------------------+--------------------------+----------------------------------------------------------+------------------------------------------|
+| Y binaria, tabular, N mediano            | Clasificación            | Regresión logística, árbol, Random Forest                | Red profunda sin más datos (overfitting) |
+| Y binaria *muy* desbalanceada              | Clasificación            | Mismo + class_weight, umbral, SMOTE (con cuidado)        | Accuracy como única métrica              |
+| Y numérica (score final)                 | Regresión                | Regresión lineal, árbol regresor                         | Clasificador binario                     |
+| Y categórica multiclase (tipo obstáculo) | Clasificación multiclase | Logística multinomial, árbol                             | Regresión lineal sobre códigos 1,2,3     |
+| Secuencia de frames por sesión           | Serie / secuencia        | Features + clasificador; LSTM/GRU *si* hay muchas sesiones | Ignorar orden temporal                   |
+| Relación clara y lineal pocas variables  | Interpretable            | Regresión logística / lineal                             | Ensemble opaco sin necesidad             |
+| Muchas variables categóricas             | Tabular                  | Árboles, encoding ordinal/one-hot                        | Distancia euclidiana cruda en texto      |
+
+***** Tu Tarea (escrito)
+Para cada escenario del inicio:
+
+| Escenario | Tras tu EDA, ¿qué fila de la guía aplica? | Modelo que propondrías | 2 condiciones del dataset que *deben* cumplirse |
+|-----------+-------------------------------------------+------------------------+-------------------------------------------------|
+| P1        |                                           |                        |                                                 |
+| P2        |                                           |                        |                                                 |
+| P3        |                                           |                        |                                                 |
+
+**** Misión 6: Contraejemplo — cuándo *no* usar un modelo
+***** La Historia
+A veces el EDA dice: *aún no hay datos suficientes* o *la pregunta está mal planteada*.
+
+***** Tu Tarea (escrito)
+1. Describe un escenario del dino donde un *árbol profundo* parecería buena idea pero el EDA lo desaconsejaría.
+2. Describe un escenario donde una *red neuronal* tendría sentido y qué deberías ver en el EDA para justificarla.
+3. ¿Se podría resolver P1 con *reglas fijas* (=si dist_obstacle < X y jump=0 entonces muerte=)? Compara con un modelo aprendido: ventajas y límites.
+
+**** Bloque 4 — Cierre
+
+***** Misión 7: Informe del analista (entregable final)
+****** Plantilla =reporte_dino_crash_eda.md=
+
+#+begin_example markdown
+# Reporte EDA — Operación Dino Crash
+**Analista:** [Nombre / Matrícula]
+
+## 1. Problema y dataset (Misión 1)
+### P1 — Muerte en el siguiente frame
+- Y:
+- X (mínimo 5 variables):
+- Granularidad:
+- Tamaño mínimo de dataset:
+
+(repite P2, P3)
+
+## 2. Diccionario y muestra (Misión 2)
+- Patrón en died=1:
+- ¿Falta alguna columna?
+
+## 3. Checklist EDA (Misión 3)
+(respuestas a 3 preguntas + leakage + i.i.d.)
+
+## 4. Interpretación de resúmenes (Misión 4)
+(desbalance, métricas, dist_obstacle)
+
+## 5. Elección de modelo (Misiones 5–6)
+(tabla P1/P2/P3 + contraejemplos)
+
+## Síntesis (5 líneas)
+¿Qué dataset pedirías primero y qué modelo *solo después* del EDA?
+#+end_example
+
+***** Rúbrica sugerida (docente)
+
+| Criterio                                             | Puntos |
+|------------------------------------------------------+--------|
+| Definición clara de Y y granularidad por escenario   |    25% |
+| Preguntas EDA pertinentes (balance, leakage, i.i.d.) |    25% |
+| Elección de modelo ligada a hallazgos del EDA        |    30% |
+| Claridad y coherencia del reporte                    |    20% |
+
+
+***** Sin programación en esta operación
+El objetivo es que el alumno entienda: *el modelo no se elige por fama; se elige porque el dataset, visto con EDA, tiene cierta forma.*
+
+#+RESULTS:
+: None
+
+
+**  Operación Cuatro Frentes 
+
+*** Operación Cuatro Frentes (Análisis Exploratorio de Datos)
+
+**** Introducción a la Misión
+Agentes, el cuartel necesita *cuatro frentes de inteligencia*. En cada uno deben hacer un *análisis exploratorio de datos (EDA)*: entender el dataset *antes* de proponer un modelo.
+
+*Regla de oro de esta operación:*
+El documento *no* les dice si cada frente es clasificar o predecir. *Ustedes lo proponen* mirando la pregunta de negocio y la forma de la variable objetivo (Y).
+
+*Recordatorio (concepto general, no la respuesta de cada misión):*
+
+| Si la pregunta parece…          | Y suele ser…         | Después del EDA podrías pensar en…         |
+|---------------------------------+----------------------+--------------------------------------------|
+| “¿A qué *grupo/clase* pertenece?” | Etiqueta / categoría | Modelos de clasificación                   |
+| “¿Qué *número* espera?”           | Valor continuo       | Modelos de regresión / predicción numérica |
+
+*Reglas:*
+- *No se entrega código de entrenamiento.* Solo análisis escrito (reporte Markdown o respuestas en este Org).
+- Justifica con forma de los datos (distribuciones, balance, outliers, fugas), no con intuición vaga.
+- Usa tablas, listas y mini-cálculos cuando ayuden.
+- Al final de *cada* misión debes declarar explícitamente:
+  1. Pregunta de negocio (una frase)
+  2. *Tu propuesta:* ¿clasificar o predecir? (+ justificación)
+  3. Y, X candidatas, hallazgos EDA
+  4. Métricas que usarías *según tu propuesta*
+  5. Modelo razonable (solo nombre) *después* del EDA
+
+*Entregable único:* =reporte_cuatro_frentes_eda.md=
+
+#+begin_example
+Datos crudos  →  EDA (entender)  →  Tú decides: ¿clase o número?  →  (luego) modelo
+
+Si eliges mal el tipo de problema, eliges mal la métrica
+y el modelo no responde la pregunta de negocio.
+#+end_example
+
+
+| Misión | Nombre en clave                 | Dominio / contexto       |
+|--------+---------------------------------+--------------------------|
+| 1      | Semáforo Académico              | Riesgo escolar           |
+| 2      | Alerta de Churn Estudiantil     | Abandono / retención     |
+| 3      | Pronóstico de Puntaje Final     | Desempeño numérico       |
+| 4      | Estimación de Tiempo de Estudio | Horas hasta dominio      |
+
+*(El tipo de problema —clasificar o predecir— lo completan ustedes en el reporte.)*
+
+------------------------------------------------------------------------
+
+*** Misión 1 — Semáforo Académico
+
+**** La Historia
+El sistema escolar quiere un *semáforo* por alumno al cierre del parcial:
+- =verde= → riesgo bajo de reprobar
+- =amarillo= → riesgo medio
+- =rojo= → riesgo alto de reprobar
+
+Tu trabajo *ahora* no es entrenar el modelo: es hacer EDA y *proponer* qué tipo de problema es.
+
+**** Diccionario de datos (borrador)
+
+| Columna              | Tipo        | Descripción                                      |
+|----------------------+-------------+--------------------------------------------------|
+| =alumno_id=          | entero      | Identificador del estudiante                     |
+| =asistencia_pct=     | numérico    | % de asistencia (0–100)                          |
+| =tareas_entregadas=  | entero      | Número de tareas entregadas a tiempo             |
+| =promedio_parciales= | numérico    | Promedio de exámenes parciales (0–10)            |
+| =horas_plataforma=   | numérico    | Horas en la plataforma LMS                       |
+| =reprobadas_previas= | entero      | Materias reprobadas en semestres anteriores      |
+| =turno=              | categórica  | =matutino=, =vespertino=                         |
+| =riesgo=             | categórica  | =verde=, =amarillo=, =rojo=                      |
+
+**** Muestra (12 filas)
+
+| alumno_id | asistencia_pct | tareas_entregadas | promedio_parciales | horas_plataforma | reprobadas_previas | turno      | riesgo   |
+|-----------+----------------+-------------------+--------------------+------------------+--------------------+------------+----------|
+| 101       | 92             | 8                 | 8.5                | 14.0             | 0                  | matutino   | verde    |
+| 102       | 88             | 7                 | 7.8                | 11.2             | 0                  | matutino   | verde    |
+| 103       | 75             | 5                 | 6.9                | 6.0              | 1                  | vespertino | amarillo |
+| 104       | 70             | 4                 | 6.5                | 5.5              | 1                  | vespertino | amarillo |
+| 105       | 55             | 2                 | 5.1                | 2.0              | 3                  | matutino   | rojo     |
+| 106       | 48             | 1                 | 4.8                | 1.5              | 2                  | vespertino | rojo     |
+| 107       | 95             | 9                 | 9.0                | 18.0             | 0                  | matutino   | verde    |
+| 108       | 60             | 3                 | 5.5                | 3.0              | 2                  | vespertino | rojo     |
+| 109       | 80             | 6                 | 7.2                | 8.5              | 0                  | matutino   | amarillo |
+| 110       | 82             | 6                 | 7.0                | 9.0              | 1                  | vespertino | amarillo |
+| 111       | 40             | 0                 | 4.0                | 0.5              | 4                  | matutino   | rojo     |
+| 112       | 90             | 8                 | 8.2                | 12.0             | 0                  | vespertino | verde    |
+
+**** Resumen de =riesgo= (dataset completo hipotético, N = 300)
+
+| riesgo   | n   | %    |
+|----------+-----+------|
+| verde    | 120 | 40%  |
+| amarillo | 105 | 35%  |
+| rojo     |  75 | 25%  |
+
+**** Estadísticos por valor de =riesgo= (medias aproximadas)
+
+| riesgo   | asistencia_pct | promedio_parciales | reprobadas_previas |
+|----------+----------------+--------------------+--------------------|
+| verde    | 91             | 8.4                | 0.2                |
+| amarillo | 76             | 6.8                | 0.9                |
+| rojo     | 52             | 5.0                | 2.4                |
+
+**** Tu Tarea (escrito)
+
+1. *Pregunta de negocio* en una frase.
+2. *Propón el tipo de problema:* ¿clasificar o predecir? Justifica mirando =riesgo= (¿qué tipo de variable es?).
+3. Si propusiste clasificar: ¿binaria o multiclase? Si propusiste predecir: ¿qué número exactamente estarías estimando?
+4. Define Y y lista *mínimo 5* variables X (una frase de justificación cada una).
+5. *EDA — patrones:* con la muestra y las medias, describe 2 patrones claros.
+6. *Distribución de Y:* interpreta la tabla de porcentajes. ¿Qué implica para métricas / evaluación?
+7. *Calidad de datos:* inventa *un* problema realista (faltantes, outlier, inconsistencia) y cómo lo detectarías.
+8. *Fuga de información:* ¿usarías la calificación *final del curso* como X? Explica.
+9. *Propuesta post-EDA:* un modelo razonable *acorde a tu tipo propuesto* y una condición del dataset que debe cumplirse.
+
+------------------------------------------------------------------------
+
+*** Misión 2 — Alerta de Churn Estudiantil
+
+**** La Historia
+La universidad quiere saber, a mitad de semestre: *¿este alumno abandonará la materia?*
+En el dataset aparece la columna =abandona= con valores 0 / 1.
+
+Haz EDA y *tú decides* si lo modelarías como clasificación o como predicción (y por qué).
+
+**** Diccionario de datos
+
+| Columna                 | Tipo       | Descripción                                         |
+|-------------------------+------------+-----------------------------------------------------|
+| =alumno_id=             | entero     | ID                                                  |
+| =dias_sin_login=        | entero     | Días desde el último acceso a la plataforma         |
+| =foros_participados=    | entero     | Mensajes en foros                                   |
+| =avance_contenido_pct=  | numérico   | % de unidades vistas                                |
+| =calif_actividad_1=     | numérico   | Nota de la primera actividad (0–10); puede ser NA   |
+| =beca=                  | binaria    | 1 si tiene beca                                     |
+| =trabaja=               | binaria    | 1 si trabaja                                        |
+| =abandona=              | 0/1        | 1 = abandona, 0 = permanece                         |
+
+**** Muestra (10 filas)
+
+| alumno_id | dias_sin_login | foros_participados | avance_contenido_pct | calif_actividad_1 | beca | trabaja | abandona |
+|-----------+----------------+--------------------+----------------------+-------------------+------+---------+----------|
+| 201       | 2              | 5                  | 70                   | 8.0               | 1    | 0       | 0        |
+| 202       | 1              | 3                  | 65                   | 7.5               | 0    | 0       | 0        |
+| 203       | 18             | 0                  | 15                   | NA                | 0    | 1       | 1        |
+| 204       | 21             | 0                  | 10                   | NA                | 0    | 1       | 1        |
+| 205       | 4              | 2                  | 55                   | 6.0               | 1    | 1       | 0        |
+| 206       | 25             | 0                  | 5                    | 3.0               | 0    | 1       | 1        |
+| 207       | 3              | 4                  | 80                   | 9.0               | 1    | 0       | 0        |
+| 208       | 14             | 1                  | 25                   | NA                | 0    | 0       | 1        |
+| 209       | 6              | 2                  | 50                   | 6.5               | 0    | 1       | 0        |
+| 210       | 30             | 0                  | 0                    | NA                | 0    | 1       | 1        |
+
+**** Resumen de =abandona= (N = 500)
+
+| abandona | n   | %    |
+|----------+-----+------|
+| 0        | 430 | 86%  |
+| 1        |  70 | 14%  |
+
+**** Correlaciones / pistas (hipotéticas)
+
+| Relación observada en EDA                          | Fuerza aproximada |
+|----------------------------------------------------+-------------------|
+| =dias_sin_login= alto ↔ =abandona=1                | Fuerte            |
+| =avance_contenido_pct= bajo ↔ =abandona=1          | Fuerte            |
+| =beca=1 ↔ menos abandono                           | Moderada          |
+| =trabaja=1 ↔ más abandono                          | Débil–moderada    |
+| =calif_actividad_1= faltante ↔ más abandono        | Fuerte (cuidado)  |
+
+**** Tu Tarea (escrito)
+
+1. *Pregunta de negocio* en una frase.
+2. *Propón:* ¿clasificar o predecir? Justifica con el tipo de =abandona=.
+3. Con N = 500 y 14% de =abandona=1=, calcula cuántos casos “positivos” hay. ¿Qué pasaría si alguien reportara “86% de aciertos” sin más contexto?
+4. *Valores faltantes:* =calif_actividad_1= tiene muchos NA. Hipótesis + tratamiento (imputar, bandera =tiene_calif=, ambas…).
+5. *Leakage:* ¿incluirías “fecha de baja definitiva” o “nota final” como X? ¿Por qué sí/no?
+6. Elige *3* de estas preguntas EDA y respóndelas con los datos:
+   - ¿Cómo está distribuida Y?
+   - ¿Hay outliers en =dias_sin_login=?
+   - ¿Los casos =abandona=1= se concentran en alumnos que trabajan?
+   - ¿Hay colinealidad sospechosa entre variables?
+7. Compara con la Misión 1: ¿en qué se parecen y en qué se diferencian *la forma de Y* y el EDA que harías?
+8. *Propuesta post-EDA:* modelo + métrica(s) *coherentes con tu tipo propuesto*, justificando el costo de equivocarse.
+
+------------------------------------------------------------------------
+
+*** Misión 3 — Pronóstico de Puntaje Final
+
+**** La Historia
+El mando quiere estimar: *¿qué calificación final (escala 0–100) obtendrá el alumno?*
+La columna candidata a objetivo se llama =calificacion_final=.
+
+Haz EDA y *propón* el tipo de problema (no asumas: argumenta).
+
+**** Diccionario de datos
+
+| Columna                 | Tipo     | Descripción                              |
+|-------------------------+----------+------------------------------------------|
+| =alumno_id=             | entero   | ID                                       |
+| =promedio_tareas=       | numérico | Promedio de tareas (0–100)               |
+| =examen_1=              | numérico | Primer examen (0–100)                    |
+| =examen_2=              | numérico | Segundo examen (0–100)                   |
+| =asistencia_pct=        | numérico | % asistencia                             |
+| =horas_estudio_sem=     | numérico | Horas de estudio a la semana (auto-reporte) |
+| =calificacion_final=    | numérico | Calificación final (0–100)               |
+
+**** Muestra (10 filas)
+
+| alumno_id | promedio_tareas | examen_1 | examen_2 | asistencia_pct | horas_estudio_sem | calificacion_final |
+|-----------+-----------------+----------+----------+----------------+-------------------+--------------------|
+| 301       | 88              | 85       | 90       | 95             | 8                 | 89                 |
+| 302       | 75              | 70       | 78       | 88             | 5                 | 76                 |
+| 303       | 60              | 55       | 62       | 70             | 3                 | 61                 |
+| 304       | 92              | 90       | 94       | 98             | 10                | 93                 |
+| 305       | 50              | 45       | 48       | 60             | 2                 | 49                 |
+| 306       | 80              | 82       | 75       | 85             | 6                 | 79                 |
+| 307       | 68              | 65       | 70       | 75             | 4                 | 69                 |
+| 308       | 95              | 98       | 92       | 100            | 12                | 96                 |
+| 309       | 40              | 35       | 42       | 55             | 1                 | 39                 |
+| 310       | 72              | 68       | 74       | 80             | 5                 | 72                 |
+
+**** Resumen estadístico (N = 200, hipotético)
+
+| Variable              | Media | Mediana | Mín | Máx | Desv. est. |
+|-----------------------+-------+---------+-----+-----+------------|
+| =promedio_tareas=     | 74    | 75      | 30  | 100 | 14         |
+| =examen_1=            | 71    | 72      | 20  | 100 | 16         |
+| =examen_2=            | 73    | 74      | 25  | 100 | 15         |
+| =asistencia_pct=      | 82    | 85      | 40  | 100 | 12         |
+| =horas_estudio_sem=   | 5.5   | 5       | 0   | 25  | 3.2        |
+| =calificacion_final=  | 73    | 74      | 28  | 99  | 13         |
+
+**** Observaciones del analista previo
+- =examen_1= y =examen_2= correlacionan fuerte con =calificacion_final= (~0.85).
+- =horas_estudio_sem= tiene cola derecha (algunos reportan 20–25 h; dudoso).
+- Hay 3 filas con =calificacion_final= > 100 (error de captura) en el CSV crudo — *aún no limpiado*.
+
+**** Tu Tarea (escrito)
+
+1. *Pregunta de negocio* en una frase.
+2. *Propón:* ¿clasificar o predecir? Justifica con el tipo de =calificacion_final=.
+3. Define Y y al menos 4 X. Señala cuál parece más relacionada con Y según las pistas.
+4. *Alternativa:* alguien sugiere convertir la nota a “aprobado / reprobado”. ¿Qué ganas y qué *pierdes* al hacer eso?
+5. Interpreta media vs mediana de =horas_estudio_sem=. ¿Sesgo / outliers?
+6. ¿Qué harías con las 3 filas =calificacion_final= > 100?
+7. Propón *dos métricas* coherentes con *tu* tipo de problema y explica qué mide cada una.
+8. Si al graficar =examen_1= vs =calificacion_final= ves casi una línea, ¿qué modelo simple encajaría? ¿Y si fuera en “escalones”?
+9. Compara con la Misión 1: misma escuela, distinta pregunta. ¿Qué cambia en Y y en el EDA?
+
+------------------------------------------------------------------------
+
+*** Misión 4 — Estimación de Tiempo de Estudio
+
+**** La Historia
+Tutoría quiere estimar: *¿cuántas horas adicionales necesita un alumno para dominar el tema?*
+La columna candidata a objetivo es =horas_adicionales= (números como 2.0, 18.0, 35.0…).
+
+Haz EDA y *propón* el tipo de problema.
+
+**** Diccionario de datos
+
+| Columna                    | Tipo       | Descripción                                      |
+|----------------------------+------------+--------------------------------------------------|
+| =alumno_id=                | entero     | ID                                               |
+| =pretest_score=            | numérico   | Puntaje diagnóstico inicial (0–100)              |
+| =tema_dificultad=          | categórica | =baja=, =media=, =alta=                          |
+| =videos_vistos=            | entero     | Número de videos completados                     |
+| =ejercicios_correctos_pct= | numérico   | % de ejercicios bien resueltos                   |
+| =dispositivo=              | categórica | =pc=, =movil=, =tablet=                          |
+| =horas_adicionales=        | numérico   | Horas hasta dominio                              |
+
+**** Muestra (12 filas)
+
+| alumno_id | pretest_score | tema_dificultad | videos_vistos | ejercicios_correctos_pct | dispositivo | horas_adicionales |
+|-----------+---------------+-----------------+---------------+--------------------------+-------------+-------------------|
+| 401       | 85            | baja            | 2             | 90                       | pc          | 2.0               |
+| 402       | 78            | media           | 4             | 80                       | pc          | 5.5               |
+| 403       | 40            | alta            | 8             | 45                       | movil       | 18.0              |
+| 404       | 55            | alta            | 6             | 50                       | tablet      | 14.0              |
+| 405       | 92            | baja            | 1             | 95                       | pc          | 1.0               |
+| 406       | 30            | alta            | 10            | 35                       | movil       | 28.0              |
+| 407       | 65            | media           | 5             | 70                       | pc          | 8.0               |
+| 408       | 48            | media           | 7             | 55                       | movil       | 12.5              |
+| 409       | 70            | baja            | 3             | 75                       | tablet      | 4.0               |
+| 410       | 25            | alta            | 12            | 30                       | movil       | 35.0              |
+| 411       | 88            | media           | 3             | 85                       | pc          | 3.5               |
+| 412       | 60            | alta            | 5             | 60                       | pc          | 11.0              |
+
+**** Resumen por =tema_dificultad= (medias de =horas_adicionales=)
+
+| tema_dificultad | n (hipotético) | media horas | mediana |
+|-----------------+----------------+-------------+---------|
+| baja            | 80             | 3.2         | 2.5     |
+| media           | 90             | 7.8         | 7.0     |
+| alta            | 70             | 16.5        | 14.0    |
+
+**** Distribución de =horas_adicionales= (N = 240)
+
+| Rango de horas | % alumnos |
+|----------------+-----------|
+| 0–5            | 35%       |
+| 5–10           | 30%       |
+| 10–20          | 22%       |
+| 20–40          | 10%       |
+| > 40           | 3%        |
+
+**** Tu Tarea (escrito)
+
+1. *Pregunta de negocio* en una frase.
+2. *Propón:* ¿clasificar o predecir? Justifica con =horas_adicionales=.
+3. Con la tabla por dificultad, formula una hipótesis EDA (“a mayor dificultad, …”).
+4. ¿Cómo inspeccionarías en EDA las categóricas =tema_dificultad= y =dispositivo=?
+5. La cola > 40 h es solo 3%. ¿Borrar outliers o conservar casos reales? Argumenta *antes* de decidir.
+6. Si =pretest_score= y =ejercicios_correctos_pct= van juntos, ¿redundancia? ¿Cómo lo checarías?
+7. *Alternativa:* binarizar Y con umbral 15 h (“tutoría intensiva: sí/no”). ¿Cuándo tendría sentido y qué se pierde?
+8. Propón métricas *según tu tipo* (si predices número: MAE/RMSE/…; si clasificas: otras). Justifica.
+9. *Propuesta post-EDA:* modelo + 2 chequeos EDA obligatorios antes de entrenar.
+
+------------------------------------------------------------------------
+
+*** Cierre — Informe del analista
+
+**** Plantilla =reporte_cuatro_frentes_eda.md=
+
+#+begin_example markdown
+# Reporte EDA — Operación Cuatro Frentes
+**Analista:** [Nombre / Matrícula]
+
+## Misión 1 — Semáforo Académico
+- Pregunta de negocio:
+- **Tipo propuesto:** [clasificar / predecir] — justificación:
+- Y / forma de Y:
+- X (mínimo 5):
+- Hallazgos EDA:
+- Leakage evitado:
+- Métricas coherentes con mi tipo:
+- Modelo propuesto y condición:
+
+## Misión 2 — Alerta de Churn
+- Pregunta de negocio:
+- **Tipo propuesto:** [clasificar / predecir] — justificación:
+- Distribución de Y e implicaciones:
+- Tratamiento de NA:
+- Métricas y costo de error:
+- Modelo propuesto:
+
+## Misión 3 — Pronóstico de Puntaje
+- Pregunta de negocio:
+- **Tipo propuesto:** [clasificar / predecir] — justificación:
+- Qué se gana/pierde si se convierte a aprobado/reprobado:
+- Outliers / errores de captura:
+- Métricas (2):
+- Modelo propuesto:
+
+## Misión 4 — Tiempo de Estudio
+- Pregunta de negocio:
+- **Tipo propuesto:** [clasificar / predecir] — justificación:
+- Hipótesis dificultad → horas:
+- Cola larga: ¿borrar o conservar?
+- Alternativa de binarizar Y:
+- Métricas y modelo + 2 chequeos EDA:
+
+## Síntesis (máx. 8 líneas)
+1. Tabla resumen de *mis* cuatro propuestas de tipo (M1–M4).
+2. Una pista que usé para decidir “clase vs número” en cualquier misión.
+3. Frase final: “El tipo de problema se deduce de la pregunta y de Y porque…”
+#+end_example
+
+
+
+***** Recordatorio final
+
+#+begin_example
+1) Leer la pregunta de negocio
+2) Mirar qué es Y (etiqueta vs número)
+3) Proponer el tipo de problema
+4) Hacer EDA
+5) Recién entonces nombrar métricas y modelo
+#+end_example
+
+*
+
+
 

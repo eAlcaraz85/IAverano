@@ -3317,6 +3317,1410 @@ Las distancias se parecen entre sí ("maldición de la dimensión"). Reduce feat
 Ingenuo: O(N · n) por consulta. KD-tree / Ball-tree ayudan en pocas dimensiones.
 *** 6) Leakage
 No escalar con test. No meter columnas del futuro en X.
+*  Random Forest 
+
+En este apartado,  desarrolla el algoritmo *Random Forest* (bosque aleatorio)
+desde una perspectiva teórica y aplicada. Se examinan su fundamento en el árbol de
+decisión, el mecanismo de ensamble mediante *bagging*, los principales hiperparámetros,
+las formas de interpretación y un caso de uso tabular completo implementado con
+=scikit-learn=.
+
+*Objetivos de aprendizaje*
+- Comprender el funcionamiento de Random Forest y su relación con el árbol de decisión.
+- Explicar, en términos de sesgo y varianza, por qué un conjunto de árboles puede
+  mejorar la generalización respecto de un único modelo.
+- Identificar hiperparámetros relevantes y criterios de evaluación adecuados.
+- Aplicar el método a un problema de clasificación (abandono de clientes) y a uno
+  de regresión.
+- Reconocer limitaciones, riesgos de sobreajuste y problemas de fuga de información.
+
+*Definición operativa*
+Random Forest construye un conjunto de árboles de decisión entrenados sobre
+submuestras del conjunto de entrenamiento y, en cada partición, sobre un subconjunto
+aleatorio de variables. La predicción final se obtiene por agregación: votación en
+clasificación y promedio en regresión.
+
+*Requisitos de software*
+#+begin_src bash
+pip install numpy pandas scikit-learn matplotlib
+#+end_src
+
+
+** 1. El árbol de decisión como unidad básica
+
+*** Formulación
+Un árbol de decisión particiona el espacio de atributos mediante reglas del tipo
+«¿variable ≤ umbral?». Cada partición busca reducir la impureza de las clases
+(criterios de Gini o entropía en clasificación) o el error de ajuste (por ejemplo,
+MSE en regresión). El resultado es una estructura de nodos (preguntas), ramas
+(respuestas) y hojas (predicciones).
+
+En clasificación, la hoja suele devolver la clase mayoritaria de los ejemplos que
+alcanzan esa región. En regresión, suele devolver la media de los valores observados
+en dicha región. Las fronteras de decisión son, en general, alineadas a los ejes
+coordenados.
+
+*** Interpretación mediante un ejemplo clínico
+El procedimiento es análogo al de un diagnóstico diferencial: se formula una
+secuencia de preguntas (fiebre, tos, antecedentes de viaje, etc.) hasta alcanzar
+una conclusión. Cada pregunta corresponde a un nodo; la conclusión, a una hoja.
+
+*** Interpretación mediante un ejemplo crediticio
+En evaluación de riesgo, un árbol puede materializarse como un conjunto de reglas
+auditorables: umbral de puntuación crediticia, ingreso mínimo, razón deuda-ingreso,
+entre otras. Esta trazabilidad explica su uso en contextos que exigen explicación
+de la decisión.
+
+*** Limitaciones del árbol individual
+Un árbol de gran profundidad tiende a ajustar ruido del conjunto de entrenamiento
+(*sobreajuste*), con el consiguiente deterioro en datos no vistos. Un árbol excesivamente
+superficial, por el contrario, puede resultar demasiado rígido (*subajuste*).
+Además, pequeños cambios en la muestra pueden alterar de forma notable la estructura
+del árbol, lo que se traduce en alta varianza.
+
+------------------------------------------------------------------------
+
+** 2. Del árbol al bosque: ensamble y bagging
+
+*** Motivación
+La agregación de varios modelos inestables, siempre que sus errores no estén
+fuertemente correlacionados, suele reducir la varianza del predictor resultante.
+Random Forest aplica esta idea a árboles de decisión.
+
+*** Bagging (*bootstrap aggregating*)
+Para cada árbol se genera una muestra *bootstrap* (muestreo con reemplazo) del
+conjunto de entrenamiento. Sobre esa muestra se ajusta un árbol. Al predecir, se
+agregan las salidas individuales. El procedimiento es comparable a estimar un
+parámetro poblacional a partir de múltiples remuestreos: cada remuestra aporta
+una estimación; la agregación estabiliza el resultado.
+
+*** Aleatorización de atributos
+Además del remuestreo de observaciones, en cada nodo el algoritmo considera solo
+un subconjunto aleatorio de variables candidatas. De este modo se evita que todos
+los árboles reproduzcan las mismas particiones dominantes y se reduce la correlación
+entre ellos. Sin diversidad, la votación aporta poco beneficio.
+
+*** Agregación
+- Clasificación: voto mayoritario; la proporción de votos puede usarse como
+  estimación de probabilidad.
+- Regresión: promedio de las predicciones numéricas.
+
+En síntesis:
+
+#+begin_example
+Random Forest = bagging de árboles
+              + selección aleatoria de atributos en cada partición
+              + agregación (voto o promedio)
+#+end_example
+
+
+** 3. Sesgo, varianza y efecto del ensamble
+
+Un árbol profundo suele presentar bajo sesgo y alta varianza: puede aproximar
+relaciones complejas, pero es sensible a la muestra. Al promediar muchos árboles
+con errores poco correlacionados, la varianza del ensamble disminuye, en tanto
+que el sesgo no se corrige automáticamente si la información relevante no está
+presente en los datos.
+
+Esta distinción es central: Random Forest no “crea” conocimiento ausente; reduce
+inestabilidad cuando los componentes individuales son flexibles y diversos.
+
+
+** 4. Hiperparámetros principales
+
+| Parámetro | Función | Observación práctica |
+|-----------+---------+----------------------|
+| =n_estimators= | Número de árboles | Más árboles estabilizan; el beneficio marginal decrece |
+| =max_depth= | Profundidad máxima | Limita complejidad y sobreajuste |
+| =min_samples_leaf= / =min_samples_split= | Tamaño mínimo en hojas o para partir | Evita reglas basadas en muy pocos casos |
+| =max_features= | Atributos considerados por partición | En clasificación suele usarse =sqrt= |
+| =class_weight= | Ponderación de clases | Útil ante desbalance (p. ej. abandono o fraude) |
+
+La elección debe validarse con datos de prueba o validación cruzada, alineada a
+la métrica de interés del problema.
+
+
+** 5. Clasificación y regresión
+
+En clasificación, cada árbol emite una etiqueta; el bosque agrega votos.
+En regresión, cada árbol emite un valor continuo; el bosque promedia.
+El mismo principio de ensamble aplica en ambos casos; cambian la función de
+pérdida del árbol base y la forma de agregación.
+
+
+** 6. Estimación out-of-bag (OOB)
+
+En bagging, cada árbol deja fuera algunas observaciones de su muestra bootstrap.
+Dichas observaciones (*out-of-bag*) permiten una estimación interna del error,
+complementaria —aunque no siempre sustituta— de un conjunto de prueba independiente.
+
+
+** 7. Interpretabilidad
+
+Random Forest proporciona medidas de *importancia de variables*
+(=feature_importances_=), basadas en la contribución media a la reducción de
+impureza. Estas medidas indican relevancia predictiva relativa; no establecen
+por sí solas relaciones causales.
+
+Respecto a la interpretabilidad global, un único árbol puede inspeccionarse de
+forma directa; un bosque de cientos de árboles no. En aplicaciones que exigen
+auditoría, es frecuente combinar el bosque (rendimiento) con un modelo más simple
+(explicación), o emplear métodos de explicación posteriores.
+
+
+** 8. Caso aplicado: predicción de abandono (churn)
+
+*** Contexto
+Se modela la probabilidad de cancelación de una suscripción a partir de antigüedad,
+horas de uso, tickets de soporte, precio del plan y uso de aplicación móvil.
+El problema es de clasificación binaria, con posible desbalance, e interacciones
+no lineales entre atributos: escenario adecuado para Random Forest como modelo
+tabular de referencia.
+
+*** Generación de datos sintéticos (fines didácticos)
+
+#+begin_src python
+import numpy as np
+import pandas as pd
+
+rng = np.random.default_rng(21)
+n = 1000
+meses = rng.integers(1, 48, n)
+horas = rng.gamma(2.0, 8.0, n)
+tickets = rng.poisson(1.5, n)
+precio = rng.choice([99, 149, 199], n, p=[0.4, 0.4, 0.2])
+app = rng.integers(0, 2, n)
+
+logit = (
+    -0.04 * meses
+    -0.03 * horas
+    + 0.35 * tickets
+    + 0.004 * precio
+    - 0.4 * app
+    + rng.normal(0, 0.8, n)
+)
+prob = 1 / (1 + np.exp(-logit))
+churn = (rng.random(n) < prob).astype(int)
+
+df = pd.DataFrame({
+    "meses_antiguedad": meses,
+    "horas_mes": horas.round(1),
+    "tickets_soporte": tickets,
+    "precio_plan": precio,
+    "usa_app": app,
+    "churn": churn,
+})
+print(df.head())
+print("\nDistribución de churn:")
+print(df["churn"].value_counts(normalize=True).round(3))
+#+end_src
+
+*** Entrenamiento y evaluación
+
+#+begin_src python
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import (
+    classification_report,
+    confusion_matrix,
+    roc_auc_score,
+)
+
+X = df.drop(columns=["churn"])
+y = df["churn"]
+X_tr, X_te, y_tr, y_te = train_test_split(
+    X, y, test_size=0.25, random_state=42, stratify=y
+)
+
+rf = RandomForestClassifier(
+    n_estimators=300,
+    max_depth=10,
+    min_samples_leaf=5,
+    max_features="sqrt",
+    class_weight="balanced",
+    random_state=42,
+    n_jobs=-1,
+    oob_score=True,
+)
+rf.fit(X_tr, y_tr)
+
+y_hat = rf.predict(X_te)
+y_proba = rf.predict_proba(X_te)[:, 1]
+
+print("Matriz de confusión:")
+print(confusion_matrix(y_te, y_hat))
+print("\nReporte de clasificación:")
+print(classification_report(y_te, y_hat, digits=3))
+print("ROC-AUC:", round(roc_auc_score(y_te, y_proba), 3))
+print("Puntuación OOB:", round(rf.oob_score_, 3))
+#+end_src
+
+*** Importancia de variables
+
+#+begin_src python
+imp = (
+    pd.Series(rf.feature_importances_, index=X.columns)
+    .sort_values(ascending=False)
+)
+print(imp.round(3))
+#+end_src
+
+*** Umbral de decisión
+El umbral de 0.5 no es obligatorio. Si el costo de no detectar un abandono es alto,
+puede reducirse el umbral para aumentar el *recall* de la clase positiva, a costa
+de más falsos positivos.
+
+#+begin_src python
+for umbral in [0.3, 0.5, 0.7]:
+    pred = (y_proba >= umbral).astype(int)
+    print(f"\n=== Umbral {umbral} ===")
+    print(classification_report(y_te, pred, digits=3))
+#+end_src
+
+
+** 9. Variante de regresión: estimación de gasto
+
+#+begin_src python
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, r2_score
+
+gasto = (
+    20
+    + 0.8 * df["horas_mes"]
+    + 0.15 * df["precio_plan"]
+    - 2.0 * df["usa_app"]
+    + rng.normal(0, 8, len(df))
+)
+y_reg = np.clip(gasto, 5, None)
+X_tr, X_te, y_tr, y_te = train_test_split(
+    X, y_reg, test_size=0.25, random_state=0
+)
+
+rfr = RandomForestRegressor(
+    n_estimators=250,
+    max_depth=10,
+    min_samples_leaf=4,
+    random_state=0,
+    n_jobs=-1,
+)
+rfr.fit(X_tr, y_tr)
+pred = rfr.predict(X_te)
+print("MAE:", round(mean_absolute_error(y_te, pred), 2))
+print("R²:", round(r2_score(y_te, pred), 3))
+#+end_src
+
+
+** 10. Comparación con otros métodos
+
+| Método              | Fortaleza relativa                           | Limitación frecuente frente a RF                         |
+|---------------------+----------------------------------------------+----------------------------------------------------------|
+| Árbol individual    | Alta interpretabilidad                       | Mayor varianza                                           |
+| Regresión logística | Coeficientes e interpretación probabilística | Menor flexibilidad ante interacciones complejas          |
+| k-NN                | Intuición por similitud                      | Sensible a escala y costo computacional en predicción    |
+| Redes profundas     | Datos no tabulares (imagen, texto)           | En tabular clásico, RF suele ser un baseline competitivo |
+
+La elección debe subordinarse a la naturaleza de los datos, al requisito de
+explicabilidad y a la métrica de evaluación del problema.
+
+
+** 11. Precauciones metodológicas
+
+1. La importancia de variables no implica causalidad.
+2. Ante clases desbalanceadas, la *accuracy* puede resultar engañosa; conviene
+   reportar precisión, *recall*, F1 o ROC-AUC según el costo del error.
+3. Profundidades excesivas con muestras pequeñas favorecen el sobreajuste.
+4. La inclusión de variables con fuga de información (*leakage*) produce métricas
+   artificialmente altas e inutilizables en producción.
+5. El escalado no es un requisito central de Random Forest, a diferencia de métodos
+   basados en distancia.
+6. El umbral de clasificación debe calibrarse según el costo de falsos positivos
+   y falsos negativos.
+
+
+** 12. Procedimiento recomendado
+
+1. Definir la variable objetivo y la pregunta de negocio.
+2. Depurar datos faltantes, valores anómalos y posibles fugas de información.
+3. Separar entrenamiento y prueba (con estratificación en clasificación).
+4. Ajustar un modelo inicial (=n_estimators= entre 200 y 500; profundidad acotada;
+   =class_weight="balanced"= si hay desbalance).
+5. Evaluar con la métrica alineada al problema.
+6. Inspeccionar importancias con cautela interpretativa.
+7. Ajustar el umbral de decisión cuando proceda.
+8. Refinar hiperparámetros mediante validación, no mediante el conjunto de prueba final.
+
+
+** 13. Ejercicios
+
+1. Compare =n_estimators= = 10 y =n_estimators= = 400 en ROC-AUC y tiempo de cómputo.
+2. Compare =max_depth= = 3 y =max_depth= = 30 en *accuracy* de entrenamiento y de prueba.
+3. Evalúe el efecto de omitir =class_weight="balanced"= sobre el *recall* de la clase positiva.
+4. Proponga un caso de su entorno en el que Random Forest sea pertinente y otro en
+   el que resulte preferible un modelo más interpretable (árbol o logística).
+
+
+** 14. Glosario
+
+| Término                  | Definición breve                                                      |
+|--------------------------+-----------------------------------------------------------------------|
+| Árbol de decisión        | Modelo basado en particiones sucesivas del espacio de atributos       |
+|--------------------------+-----------------------------------------------------------------------|
+| Bagging                  | Entrenamiento sobre remuestras bootstrap y agregación de predicciones |
+|--------------------------+-----------------------------------------------------------------------|
+| Bootstrap                | Muestreo con reemplazo                                                |
+|--------------------------+-----------------------------------------------------------------------|
+| Ensemble                 | Combinación de varios modelos                                         |
+|--------------------------+-----------------------------------------------------------------------|
+| Varianza                 | Sensibilidad del modelo a cambios en la muestra                       |
+|--------------------------+-----------------------------------------------------------------------|
+| Sesgo                    | Error sistemático de aproximación                                     |
+|--------------------------+-----------------------------------------------------------------------|
+| Sobreajuste              | Ajuste excesivo al entrenamiento con mala generalización              |
+|--------------------------+-----------------------------------------------------------------------|
+| Importancia de variables | Medida relativa de uso de atributos en el ensamble                    |
+|--------------------------+-----------------------------------------------------------------------|
+| OOB                      | Observaciones no incluidas en la muestra bootstrap de un árbol        |
+|--------------------------+-----------------------------------------------------------------------|
+| Umbral                   | Punto de corte sobre la probabilidad estimada                         |
+|--------------------------+-----------------------------------------------------------------------|
+|                          |                                                                       |
+
+** 15. Síntesis
+
+Random Forest constituye un método de ensamble que reduce la varianza de predictores
+basados en árboles mediante bagging y aleatorización de atributos. Ofrece un equilibrio
+sólido entre capacidad predictiva y facilidad de uso en problemas tabulares, a costa
+de menor interpretabilidad directa que un árbol único. Su empleo correcto exige
+evaluación cuidadosa, control de sobreajuste y ausencia de fugas de información.
+
+
+
+* Aprendizaje automático con casos aplicados — k-NN, árboles, Random Forest, regresión lineal, logística y multiclase
+
+El presente apartado constituye un tutorial de aprendizaje automático supervisado
+orientado a la aplicación práctica sobre datos tabulares. Cada modelo se presenta
+mediante los siguientes componentes:
+
+1. Fundamentos teóricos: definición del aprendizaje, mecanismo de decisión y motivación del algoritmo.
+2. Ilustraciones interpretativas que facilitan la comprensión del comportamiento del modelo.
+3. Caso de aplicación en un contexto de negocio o dominio (dataset tabular representativo).
+4. Flujo metodológico: datos → EDA → partición train/test → entrenamiento → métricas → interpretación.
+5. Implementación en Python con =scikit-learn=.
+6. Criterios de uso, limitaciones frecuentes y comparación con modelos alternativos.
+
+#+begin_example
+Ilustración general del aprendizaje supervisado:
+
+  El modelo dispone de un conjunto de ejemplos ya etiquetados (datos con Y).
+  El objetivo no consiste en memorizar cada observación, sino en inferir el patrón
+  que permita generalizar a casos no vistos.
+#+end_example
+
+*Modelos cubiertos*
+
+| # | Modelo | Tipo de problema | Caso real de este tutorial |
+|---+--------+------------------+----------------------------|
+| 1 | k-Vecinos (k-NN) | Clasificación / regresión por similitud | Diagnóstico médico por similitud de síntomas |
+| 2 | Árbol de decisión | Clasificación / regresión interpretable | Aprobación de crédito bancario |
+| 3 | Random Forest | Ensemble de árboles | Detección de churn (abandono) de clientes |
+| 4 | Regresión lineal | Predicción numérica | Precio de vivienda |
+| 5 | Regresión logística | Clasificación binaria | Spam / no spam en correo |
+| 6 | Multiclase | Clasificación con >2 clases | Tipo de iris / riesgo académico 3 niveles |
+
+*Requisitos*
+#+begin_src bash
+pip install numpy pandas scikit-learn matplotlib
+#+end_src
+
+*Flujo metodológico común a cada caso*
+
+#+begin_example
+1) Definir la pregunta de negocio y la variable Y
+2) Cargar o generar datos tabulares
+3) Análisis exploratorio breve (tipos, valores faltantes, balance, escalas)
+4) Separar conjuntos de entrenamiento y prueba (sin fugas de información)
+5) Preprocesar (escalar u codificar cuando proceda)
+6) Entrenar el modelo
+7) Evaluar con métricas adecuadas al problema
+8) Interpretar resultados y valorar utilidad en el dominio de aplicación
+#+end_example
+
+------------------------------------------------------------------------
+
+** 2. Conceptos comunes de Machine Learning
+
+*** Aprendizaje supervisado (teoría)
+En el aprendizaje supervisado se dispone de ejemplos =(X, y)= ya etiquetados.
+El modelo aprende a mapear =X → y= con el fin de predecir sobre casos nuevos.
+
+| Si Y es… | Problema | Métricas típicas |
+|----------+----------+------------------|
+| Número continuo | Regresión | MAE, RMSE, R² |
+| 0/1 o dos clases | Clasificación binaria | Accuracy, precisión, recall, F1, ROC-AUC |
+| 3+ clases | Clasificación multiclase | Accuracy, F1 macro/weighted, matriz de confusión |
+
+*Ejemplo interpretativo:*
+Las variables X representan los enunciados del problema; Y corresponde a las
+respuestas correctas del conjunto de entrenamiento. El entrenamiento equivale
+a inferir patrones a partir de ese conjunto. La partición de test simula un
+examen con datos no vistos: la memorización conduce al fracaso en generalización,
+mientras que la captura de patrones permite extrapolar.
+
+*** Subajuste y sobreajuste
+- *Underfitting (subajuste):* el modelo es demasiado simple; ni siquiera explica bien el train.
+- *Overfitting (sobreajuste):* el modelo memoriza el train (incluido el ruido) y falla en test.
+
+*Ilustración:*
+Un modelo con capacidad insuficiente (subajuste) no se ajusta adecuadamente a
+ningún subconjunto de los datos. Un modelo con capacidad excesiva (sobreajuste)
+se adapta de forma demasiado estrecha al conjunto de entrenamiento, incluido
+el ruido, y pierde capacidad de generalización sobre datos nuevos.
+
+*** Train / test y fugas
+- *Train:* aprende patrones.
+- *Test:* mide generalización (datos que el modelo no vio).
+- *Leakage:* usar en X información del futuro o equivalente a Y → métricas falsamente altas.
+
+*Ilustración:*
+Si el conjunto de entrenamiento incluye información equivalente a la variable
+objetivo (fuga de datos), las métricas en validación resultarán artificialmente
+elevadas. En producción, el rendimiento real será sustancialmente inferior,
+puesto que dicha información no estará disponible en el momento de la predicción.
+
+*** Escalado
+Algoritmos basados en *distancia* (k-NN) o en *gradiente* (regresión logística con solvers)
+suelen necesitar =StandardScaler=. Los *árboles* y *Random Forest* suelen tolerar escalas distintas.
+
+*Ilustración:*
+Al calcular similitud mediante distancias, una variable medida en miles (p. ej.,
+ingreso) dominará a otra en el rango 0–1 (p. ej., porcentaje). El escalado
+estandariza las magnitudes y permite comparar las variables en unidades equivalentes.
+
+*** Sesgo frente a varianza
+- *Sesgo:* error sistemático de aproximación.
+- *Varianza:* sensibilidad del modelo ante cambios en la muestra de entrenamiento.
+
+*Ilustración:*
+Un error sistemático constante (sesgo) indica que las predicciones se desvían
+de forma predecible del valor verdadero. Una alta sensibilidad a pequeñas
+variaciones en los datos de entrenamiento (varianza) refleja inestabilidad en
+las predicciones. Los modelos tratados en este tutorial equilibran de distinta
+manera este compromiso.
+
+------------------------------------------------------------------------
+
+** Caso 1 — k-Vecinos (k-NN): diagnóstico por similitud
+
+*** Fundamento teórico
+El algoritmo k-NN (*k-Nearest Neighbors*) no estima un vector de parámetros en el
+sentido clásico: almacena el conjunto de entrenamiento y, en el momento de la
+predicción, identifica los *k* ejemplos más cercanos en el espacio de atributos.
+- *Clasificación:* la etiqueta se asigna por votación mayoritaria entre esos vecinos.
+- *Regresión:* la predicción corresponde al promedio (o mediana) de los valores Y vecinos.
+
+La proximidad se mide habitualmente con la distancia euclidiana:
+=d(A,B) = √ Σ (aᵢ − bᵢ)²=.
+
+Se trata de un *lazy learner*: el costo computacional principal se concentra en la
+fase de predicción.
+
+*** Fundamentos interpretativos
+El algoritmo k-NN clasifica o regresa a partir de la similitud local: la
+predicción para una observación nueva se determina consultando los =k= ejemplos
+históricos más cercanos en el espacio de características. En clasificación,
+prevalece la etiqueta mayoritaria entre esos vecinos; en regresión, se emplea
+el promedio (o la mediana) de sus valores objetivo. El parámetro =k= controla
+el grado de suavizado: valores pequeños producen fronteras más irregulares y
+sensibles al ruido; valores grandes generan decisiones más estables pero menos
+locales.
+
+*** Efecto del parámetro k
+| k reducido | k elevado |
+|------------+-----------|
+| Frontera irregular; mayor sensibilidad al ruido | Frontera más suave |
+| Riesgo de sobreajuste local | Riesgo de diluir clases minoritarias |
+| Mayor varianza local | Mayor sesgo hacia la clase mayoritaria |
+
+*** Resumen operativo
+Un paciente nuevo se clasifica consultando los *k* pacientes históricos más
+similares (en el espacio de síntomas o medidas clínicas). Si la mayoría
+presenta el diagnóstico A, el modelo predice A.
+
+*** Caso real: triaje de diabetes (simplificado)
+Un hospital comunitario requiere un *baseline* rápido: a partir de glucosa,
+IMC y edad, estimar si el paciente pertenece a la categoría de *alto riesgo*
+(clase 1) o *bajo riesgo* (clase 0).
+
+*Justificación del modelo:*
+Se dispone de pocas variables numéricas y el criterio clínico de similitud
+entre pacientes resulta interpretable para el equipo médico.
+
+*** Conjunto de datos sintético (fines didácticos)
+
+#+begin_src python
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import classification_report, confusion_matrix
+
+rng = np.random.default_rng(42)
+n = 300
+# glucosa (mg/dL), imc, edad
+glucosa = rng.normal(110, 25, n).clip(70, 220)
+imc = rng.normal(27, 5, n).clip(18, 45)
+edad = rng.integers(25, 75, n)
+# regla aproximada (en la realidad no es tan limpia)
+riesgo = ((glucosa > 126) | ((imc > 30) & (edad > 50))).astype(int)
+# ruido: algunos labels se invierten
+flip = rng.random(n) < 0.08
+riesgo = np.where(flip, 1 - riesgo, riesgo)
+
+df = pd.DataFrame({
+    "glucosa": glucosa.round(1),
+    "imc": imc.round(1),
+    "edad": edad,
+    "alto_riesgo": riesgo,
+})
+print(df.head())
+print("Balance:\n", df["alto_riesgo"].value_counts(normalize=True).round(2))
+#+end_src
+
+*** Entrenamiento y evaluación
+
+#+begin_src python
+X = df[["glucosa", "imc", "edad"]]
+y = df["alto_riesgo"]
+X_tr, X_te, y_tr, y_te = train_test_split(
+    X, y, test_size=0.25, random_state=42, stratify=y
+)
+
+scaler = StandardScaler()
+X_tr_s = scaler.fit_transform(X_tr)
+X_te_s = scaler.transform(X_te)
+
+knn = KNeighborsClassifier(n_neighbors=5, metric="euclidean")
+knn.fit(X_tr_s, y_tr)
+y_hat = knn.predict(X_te_s)
+
+print(confusion_matrix(y_te, y_hat))
+print(classification_report(y_te, y_hat, digits=3))
+#+end_src
+
+*** Cómo elegir k
+Conviene evaluar =k = 1, 3, 5, 7, 11= mediante validación cruzada (o un bucle
+sobre el conjunto de test *únicamente* con fines didácticos; en producción se
+recomienda emplear =GridSearchCV= o validación cruzada *dentro* del conjunto
+de entrenamiento).
+
+#+begin_src python
+from sklearn.model_selection import cross_val_score
+
+for k in [1, 3, 5, 7, 11]:
+    clf = KNeighborsClassifier(n_neighbors=k)
+    scores = cross_val_score(clf, X_tr_s, y_tr, cv=5, scoring="f1")
+    print(f"k={k:2d}  F1 (CV)≈ {scores.mean():.3f} ± {scores.std():.3f}")
+#+end_src
+
+*** Predicción de un paciente nuevo
+
+#+begin_src python
+nuevo = pd.DataFrame([{"glucosa": 142.0, "imc": 31.5, "edad": 55}])
+nuevo_s = scaler.transform(nuevo)
+print("Predicción alto_riesgo:", knn.predict(nuevo_s)[0])
+print("Proba clase 1:", knn.predict_proba(nuevo_s)[0][1].round(3))
+#+end_src
+
+*** Limitaciones y buenas prácticas (k-NN)
+- Es necesario escalar las variables numéricas.
+- El algoritmo resulta sensible al desbalance de clases y a valores atípicos.
+- La predicción puede ser costosa computacionalmente cuando N es elevado.
+- El modelo no infiere una teoría causal: replica el comportamiento de vecinos
+  similares; conviene documentar esta limitación ante el equipo clínico.
+
+*Ilustración:*
+k-NN no modela mecanismos etiológicos de la enfermedad; reproduce la
+distribución de etiquetas entre observaciones similares. Si el conjunto de
+entrenamiento está sesgado hacia casos leves, las predicciones reflejarán
+dicho sesgo.
+
+*** Variante regresión con k-NN
+Para estimar *días de estancia hospitalaria*, emplee =KNeighborsRegressor= y métricas MAE/RMSE.
+
+------------------------------------------------------------------------
+
+** Caso 2 — Árbol de decisión: aprobación de crédito
+
+*** Teoría descriptiva
+Un *árbol de decisión* parte el espacio de variables con preguntas del tipo
+«¿feature ≤ umbral?». Cada partición busca reducir *impureza* (mezcla de clases)
+o error (en regresión). Criterios comunes: *Gini*, *entropía* (clasificación), MSE (regresión).
+
+- *Nodo:* una pregunta.
+- *Rama:* respuesta sí/no (o ≤ / >).
+- *Hoja:* decisión final (clase mayoritaria o promedio).
+
+Las fronteras son *alineadas a los ejes* (cajas rectangulares en 2D). Por eso un árbol
+explica bien reglas “si ingreso alto y score alto…”, pero le cuesta una frontera diagonal fina.
+
+*** Fundamentos interpretativos
+El árbol de decisión construye una secuencia de reglas condicionales del tipo
+«¿ingresos > X?», particionando el espacio de variables en regiones disjuntas.
+Cada hoja terminal asigna una decisión (aprobar o rechazar). La estructura resultante
+es interpretable y puede representarse gráficamente, lo cual resulta ventajoso
+en contextos que exigen trazabilidad de las decisiones.
+
+*** Profundidad, sesgo y varianza
+| Árbol poco profundo | Árbol muy profundo |
+|---------------------+--------------------|
+| Reglas simples, interpretable | Reglas muy específicas |
+| Puede subajustar | Puede sobreajustar |
+| Más sesgo | Más varianza |
+
+*** Resumen operativo
+El modelo formula preguntas secuenciales sobre las variables de entrada y
+asigna una decisión en cada hoja terminal. La profundidad del árbol determina
+el equilibrio entre interpretabilidad y capacidad de ajuste.
+
+*** Caso real: scoring crediticio simplificado
+Un banco regional requiere reglas claras para predecir =aprueba_credito= (0/1)
+a partir de ingreso mensual, historial (score), edad y deuda actual.
+
+*Justificación del modelo:*
+Los requisitos de cumplimiento normativo exigen explicar el motivo de cada
+rechazo; un árbol de profundidad limitada resulta auditable.
+
+*** Dataset
+
+#+begin_src python
+import numpy as np
+import pandas as pd
+from sklearn.tree import DecisionTreeClassifier, export_text
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report, accuracy_score
+
+rng = np.random.default_rng(7)
+n = 400
+ingreso = rng.normal(18000, 6000, n).clip(5000, 45000)
+score = rng.normal(650, 80, n).clip(300, 850)
+edad = rng.integers(21, 70, n)
+deuda = rng.normal(8000, 5000, n).clip(0, 40000)
+
+# política aproximada del banco + ruido
+aprueba = (
+    (score >= 620) & (ingreso >= 12000) & (deuda / np.maximum(ingreso, 1) < 0.45)
+).astype(int)
+flip = rng.random(n) < 0.07
+aprueba = np.where(flip, 1 - aprueba, aprueba)
+
+credito = pd.DataFrame({
+    "ingreso_mensual": ingreso.round(0),
+    "score_bureau": score.round(0),
+    "edad": edad,
+    "deuda_actual": deuda.round(0),
+    "aprueba": aprueba,
+})
+print(credito.head())
+print(credito["aprueba"].value_counts())
+#+end_src
+
+*** Entrenar un árbol interpretable
+
+#+begin_src python
+X = credito[["ingreso_mensual", "score_bureau", "edad", "deuda_actual"]]
+y = credito["aprueba"]
+X_tr, X_te, y_tr, y_te = train_test_split(
+    X, y, test_size=0.25, random_state=0, stratify=y
+)
+
+# max_depth bajo = más interpretable, menos overfitting
+arbol = DecisionTreeClassifier(
+    max_depth=4,
+    min_samples_leaf=15,
+    random_state=0,
+)
+arbol.fit(X_tr, y_tr)
+y_hat = arbol.predict(X_te)
+
+print("Accuracy test:", round(accuracy_score(y_te, y_hat), 3))
+print(classification_report(y_te, y_hat, digits=3))
+print(export_text(arbol, feature_names=list(X.columns)))
+#+end_src
+
+*** Importancia de variables
+
+#+begin_src python
+imp = pd.Series(arbol.feature_importances_, index=X.columns).sort_values(ascending=False)
+print(imp.round(3))
+#+end_src
+
+*** Limitaciones (árboles)
+- Un árbol *muy profundo* tiende a memorizar el conjunto de entrenamiento (overfitting).
+- Las fronteras son alineadas a los ejes (axis-aligned): relaciones diagonales finas resultan más costosas de capturar.
+- Ante desbalance de clases, conviene emplear =class_weight="balanced"= o técnicas de muestreo.
+- Generalmente no requiere escalado de variables.
+
+*Ilustración:*
+Un árbol poco profundo equivale a un conjunto reducido de reglas explícitas
+(p. ej., «si score < 500, rechazar»): transparente, pero posiblemente insuficiente.
+Un árbol sin restricción de profundidad puede generar reglas excesivamente
+específicas que no generalizan.
+
+*** Extensión: árbol como regresor
+=DecisionTreeRegressor= para predecir *monto máximo de crédito aprobado* (Y continua).
+
+------------------------------------------------------------------------
+
+** Caso 3 — Random Forest: churn de clientes (telecom / streaming)
+
+*** Teoría descriptiva
+*Random Forest* es un *ensemble*: combina muchos árboles de decisión.
+Usa *bagging* (entrenar cada árbol en una *muestra bootstrap* — con reemplazo)
+y, además, en cada split solo considera un *subconjunto aleatorio de variables*.
+Eso hace que los árboles sean *diversos*. Al final:
+
+- Clasificación → *voto* mayoritario (o proporción de votos ≈ probabilidad).
+- Regresión → *promedio* de las predicciones.
+
+Un árbol solo suele tener alta *varianza* (cambia mucho si cambian los datos).
+Promediar árboles poco correlacionados *reduce esa varianza*.
+
+*** Fundamentos interpretativos
+Random Forest agrega las predicciones de múltiples árboles entrenados sobre
+submuestras bootstrap de los datos y subconjuntos aleatorios de variables en
+cada partición. La diversidad entre árboles reduce la varianza del ensemble
+respecto a un árbol individual. En clasificación, la decisión final corresponde
+al voto mayoritario; en regresión, al promedio de las predicciones.
+
+*** Resumen operativo
+Se entrenan múltiples árboles sobre submuestras de datos y características
+(bagging). La predicción final es el voto (clasificación) o el promedio
+(regresión). El método resulta más robusto que un árbol aislado, aunque
+menos interpretable.
+
+*** Caso real: abandono de suscripción
+Una plataforma requiere identificar qué usuarios *cancelarán* el mes próximo
+(=churn= 1/0) utilizando: meses de antigüedad, horas de uso, tickets de soporte,
+precio del plan y uso de aplicación móvil.
+
+*Justificación del modelo:*
+Existen múltiples interacciones no lineales entre variables; se prioriza el
+rendimiento predictivo sobre la legibilidad de una regla única. Constituye un
+baseline sólido para datos tabulares.
+
+*** Dataset
+
+#+begin_src python
+import numpy as np
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import roc_auc_score, classification_report
+
+rng = np.random.default_rng(21)
+n = 800
+meses = rng.integers(1, 48, n)
+horas = rng.gamma(2.0, 8.0, n)
+tickets = rng.poisson(1.5, n)
+precio = rng.choice([99, 149, 199], n, p=[0.4, 0.4, 0.2])
+app = rng.integers(0, 2, n)
+
+# churn más probable: poco uso, muchos tickets, plan caro, poca antigüedad
+logit = (
+    -0.04 * meses
+    -0.03 * horas
+    +0.35 * tickets
+    +0.004 * precio
+    -0.4 * app
+    + rng.normal(0, 0.8, n)
+)
+prob = 1 / (1 + np.exp(-logit))
+churn = (rng.random(n) < prob).astype(int)
+
+churn_df = pd.DataFrame({
+    "meses_antiguedad": meses,
+    "horas_mes": horas.round(1),
+    "tickets_soporte": tickets,
+    "precio_plan": precio,
+    "usa_app": app,
+    "churn": churn,
+})
+print(churn_df["churn"].value_counts(normalize=True).round(2))
+#+end_src
+
+*** Entrenamiento
+
+#+begin_src python
+X = churn_df.drop(columns=["churn"])
+y = churn_df["churn"]
+X_tr, X_te, y_tr, y_te = train_test_split(
+    X, y, test_size=0.25, random_state=42, stratify=y
+)
+
+rf = RandomForestClassifier(
+    n_estimators=200,
+    max_depth=8,
+    min_samples_leaf=5,
+    class_weight="balanced",
+    random_state=42,
+    n_jobs=-1,
+)
+rf.fit(X_tr, y_tr)
+y_hat = rf.predict(X_te)
+y_proba = rf.predict_proba(X_te)[:, 1]
+
+print(classification_report(y_te, y_hat, digits=3))
+print("ROC-AUC:", round(roc_auc_score(y_te, y_proba), 3))
+
+imp = pd.Series(rf.feature_importances_, index=X.columns).sort_values(ascending=False)
+print("Importancias:\n", imp.round(3))
+#+end_src
+
+*** Por qué ROC-AUC aquí
+El churn suele estar *desbalanceado*. La accuracy puede resultar engañosa;
+AUC y F1/recall de la clase positiva proporcionan información más relevante.
+
+*Ilustración:*
+Si únicamente el 15 % de los clientes cancela, un modelo que predice siempre
+«permanece» alcanza un 85 % de accuracy. Dicho resultado parece favorable,
+pero el modelo resulta inútil para estrategias de retención. Por ello conviene
+evaluar recall y AUC.
+
+*** Limitaciones (Random Forest)
+- Incrementar el número de árboles no garantiza mejoras indefinidas (aumenta el costo computacional).
+- Puede sobreajustar si =max_depth= es muy elevado y N es reducido.
+- Las importancias de variables son aproximadas y no implican causalidad.
+- Resulta menos interpretable que un árbol único: si el negocio exige una regla
+  explícita, conviene combinar RF (rendimiento) con un árbol reducido
+  (explicación) o técnicas como SHAP (nivel avanzado).
+
+*Ilustración:*
+El bosque aporta rendimiento predictivo; un árbol de profundidad limitada o
+un modelo logístico pueden complementarlo para redactar explicaciones auditables.
+
+------------------------------------------------------------------------
+
+** Caso 4 — Regresión lineal: precio de vivienda
+
+*** Teoría descriptiva
+La *regresión lineal* modela =ŷ = w·x + b= (una combinación lineal de las entradas).
+Se eligen =w= y =b= para minimizar, típicamente, el *error cuadrático medio* (MSE)
+entre predicción y valor real.
+
+Cada coeficiente =w_i= se interpreta, *si el modelo es razonable*, como:
+«al subir la feature =i= en una unidad, dejando el resto fijo, =ŷ= cambia ≈ =w_i=».
+
+Es el *baseline* clásico de predicción numérica: simple, rápido, interpretable,
+pero asume que el mundo se comporta de forma aproximadamente lineal y aditiva.
+
+*** Fundamentos interpretativos
+La regresión lineal expresa la variable objetivo como combinación aditiva de
+las características de entrada, con coeficientes fijos. Cada coeficiente
+cuantifica el cambio esperado en la predicción ante un incremento unitario de
+la variable correspondiente, manteniendo constantes las demás. En una dimensión,
+el modelo corresponde a la recta de mínimos cuadrados que mejor se ajusta a
+la nube de observaciones.
+
+*** Resumen operativo
+El modelo aproxima =y ≈ w·x + b=. Cada coeficiente =w_i= indica cuánto cambia
+=y= al incrementar la feature =i= (manteniendo el resto constante), *si* el
+modelo resulta adecuado para los datos.
+
+*** Caso real: valuación inmobiliaria
+Una inmobiliaria estima =precio_miles= a partir de =m2=, =habitaciones=, =antiguedad=
+y =distancia_metro_km=.
+
+*Justificación del modelo:*
+Constituye un baseline sólido con coeficientes interpretables para el área
+comercial, aplicable a datos tabulares con relaciones aproximadamente aditivas.
+
+*** Dataset
+
+#+begin_src python
+import numpy as np
+import pandas as pd
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+
+rng = np.random.default_rng(11)
+n = 500
+m2 = rng.uniform(40, 220, n)
+hab = rng.integers(1, 5, n)
+antig = rng.integers(0, 40, n)
+dist = rng.uniform(0.1, 8.0, n)
+
+# precio en miles (MXN o USD ficticios) + ruido
+precio = (
+    40
+    + 0.85 * m2
+    + 18 * hab
+    - 1.2 * antig
+    - 6.5 * dist
+    + rng.normal(0, 15, n)
+)
+
+vivienda = pd.DataFrame({
+    "m2": m2.round(1),
+    "habitaciones": hab,
+    "antiguedad_anios": antig,
+    "dist_metro_km": dist.round(2),
+    "precio_miles": precio.round(1),
+})
+print(vivienda.describe().round(1))
+#+end_src
+
+*** Entrenamiento y métricas
+
+#+begin_src python
+X = vivienda.drop(columns=["precio_miles"])
+y = vivienda["precio_miles"]
+X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.25, random_state=0)
+
+lin = LinearRegression()
+lin.fit(X_tr, y_tr)
+y_hat = lin.predict(X_te)
+
+mae = mean_absolute_error(y_te, y_hat)
+rmse = mean_squared_error(y_te, y_hat, squared=False)
+r2 = r2_score(y_te, y_hat)
+print(f"MAE={mae:.2f}  RMSE={rmse:.2f}  R²={r2:.3f}")
+print("Intercepto:", round(lin.intercept_, 2))
+print("Coeficientes:")
+for name, c in zip(X.columns, lin.coef_):
+    print(f"  {name:20s} {c:8.3f}")
+#+end_src
+
+*** Interpretación de ejemplo
+Si =coef(m2) ≈ 0.85=, entonces *cerca de* +0.85 mil unidades de precio por cada m² adicional
+(con el resto fijo). Conviene verificar los signos: =antiguedad= y =dist_metro= deberían ser negativos
+en este generador.
+
+*Ilustración:*
+La interpretación «cada m² incrementa el precio en X unidades» presupone que
+el resto de variables permanece constante. Si en los datos reales el tamaño
+y la ubicación están correlacionados, los coeficientes pueden verse afectados
+por colinealidad.
+
+*** Limitaciones (regresión lineal)
+- Asume relaciones *lineales* y efectos aditivos (salvo que se construyan features adicionales).
+- Los valores atípicos y la colinealidad distorsionan los coeficientes.
+- No acota Y: puede predecir precio negativo si extrapola fuera del rango de entrenamiento.
+- Ante escalas distintas, para comparar *magnitud* de coeficientes, conviene estandarizar features
+  (=StandardScaler=) o reportar coeficientes en unidades originales con precaución.
+
+*** Extensiones útiles
+- =Ridge= / =Lasso=: regularización cuando hay muchas features.
+- Features polinomiales (=PolynomialFeatures=) si hay curvatura (con control de overfitting).
+
+*Ilustración:*
+La regularización (Ridge/Lasso) penaliza coeficientes de magnitud excesiva,
+lo cual resulta útil cuando existen numerosas variables ruidosas o correlacionadas.
+
+------------------------------------------------------------------------
+
+** Caso 5 — Regresión logística: detección de spam
+
+*** Teoría descriptiva
+A pesar del nombre, la *regresión logística* es un modelo de *clasificación*.
+Calcula un score lineal =z = w·x + b= y lo pasa por la *sigmoide*:
+
+=p = 1 / (1 + e^{-z})=
+
+Así =p= queda entre 0 y 1 e se interpreta como *probabilidad* de la clase positiva.
+Luego: clase 1 si =p ≥ umbral= (a menudo 0.5, pero el umbral es una *decisión de negocio*).
+
+Comparte con el perceptron el uso de un hiperplano de separación; la logística
+proporciona probabilidades continuas en lugar de un corte binario rígido.
+
+*** Fundamentos interpretativos
+El score lineal crudo puede adoptar cualquier valor real; la función sigmoide
+lo transforma en una probabilidad comprendida entre 0 y 1. El umbral de
+clasificación (típicamente 0,5, pero ajustable) determina el equilibrio entre
+sensibilidad y especificidad según los costos asociados a cada tipo de error.
+
+*** Resumen operativo
+El modelo calcula =p = σ(w·x + b)= (sigmoide). Se interpreta =p= como probabilidad
+de pertenencia a la clase 1. Umbral típico: clase 1 si =p ≥ 0.5= (ajustable
+según el costo de los errores de clasificación).
+
+*** Caso real: filtro de correo
+Variables tabulares simples (en producción se emplearía TF-IDF; aquí se utilizan
+conteos numéricos para centrarse en el *modelo*):
+
+- =pct_mayusculas=
+- =num_enlaces=
+- =num_palabras_urgentes= («gratis», «gana», «urgente»…)
+- =longitud_asunto=
+
+*Justificación del modelo:*
+Clasificación binaria con salida probabilística; baseline sólido e interpretable
+mediante coeficientes (odds ratio).
+
+*** Dataset
+
+#+begin_src python
+import numpy as np
+import pandas as pd
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+from sklearn.metrics import classification_report, roc_auc_score
+
+rng = np.random.default_rng(99)
+n = 600
+pct_may = rng.uniform(0, 0.8, n)
+enlaces = rng.poisson(1.2, n)
+urgentes = rng.poisson(0.8, n)
+long_as = rng.integers(5, 80, n)
+
+logit = (
+    -2.0
+    + 3.5 * pct_may
+    + 0.6 * enlaces
+    + 0.9 * urgentes
+    - 0.01 * long_as
+    + rng.normal(0, 0.5, n)
+)
+p = 1 / (1 + np.exp(-logit))
+spam = (rng.random(n) < p).astype(int)
+
+mail = pd.DataFrame({
+    "pct_mayusculas": pct_may.round(3),
+    "num_enlaces": enlaces,
+    "num_palabras_urgentes": urgentes,
+    "longitud_asunto": long_as,
+    "es_spam": spam,
+})
+print(mail["es_spam"].value_counts(normalize=True).round(2))
+#+end_src
+
+*** Pipeline: escalar + logística
+
+#+begin_src python
+X = mail.drop(columns=["es_spam"])
+y = mail["es_spam"]
+X_tr, X_te, y_tr, y_te = train_test_split(
+    X, y, test_size=0.25, random_state=42, stratify=y
+)
+
+pipe = Pipeline([
+    ("scaler", StandardScaler()),
+    ("clf", LogisticRegression(max_iter=1000, random_state=42)),
+])
+pipe.fit(X_tr, y_tr)
+y_hat = pipe.predict(X_te)
+y_proba = pipe.predict_proba(X_te)[:, 1]
+
+print(classification_report(y_te, y_hat, digits=3))
+print("ROC-AUC:", round(roc_auc_score(y_te, y_proba), 3))
+
+clf = pipe.named_steps["clf"]
+print("Coeficientes (espacio estandarizado):")
+for name, c in zip(X.columns, clf.coef_[0]):
+    print(f"  {name:24s} {c:8.3f}")
+#+end_src
+
+*** Umbral y costo de error
+Si *dejar pasar spam* es peor que marcar un correo legítimo (falso positivo),
+conviene reducir el umbral (p. ej., 0.3) para incrementar el recall de spam:
+
+#+begin_src python
+umbral = 0.3
+y_hat_coste = (y_proba >= umbral).astype(int)
+print(classification_report(y_te, y_hat_coste, digits=3))
+#+end_src
+
+*Ilustración:*
+La selección del umbral equivale a una política de decisión: un umbral estricto
+reduce los falsos negativos a costa de incrementar los falsos positivos, y
+viceversa. El valor 0,5 no constituye un criterio universal, sino un punto de
+partida que debe alinearse con los costos operativos.
+
+*** Limitaciones (logística)
+- No debe confundirse con regresión *lineal*: aquí Y es clase/probabilidad, no un valor numérico libre.
+- Los coeficientes en escala estandarizada difieren de las unidades originales.
+- Ante separación perfecta, los coeficientes pueden adoptar valores extremos (conviene emplear regularización =C=).
+
+------------------------------------------------------------------------
+
+** Caso 6 — Clasificación multiclase: riesgo académico (3 niveles)
+
+*** Teoría descriptiva
+Cuando Y tiene *más de dos clases*, el problema es *multiclase*.
+No basta un sí/no: hay que repartir probabilidad o votos entre varias etiquetas.
+
+Estrategias comunes:
+- *One-vs-Rest:* entrena un clasificador binario por clase («¿es verde?», «¿es amarillo?»…).
+- *Multinomial / softmax:* una sola logística generalizada que reparte probabilidades
+  entre todas las clases (suman 1).
+- Árboles, Random Forest y k-NN: manejan multiclase de forma natural (hojas con
+  varias etiquetas; voto entre vecinos de varias clases).
+
+*** Fundamentos interpretativos
+En clasificación multiclase, la variable objetivo adopta tres o más categorías
+mutuamente excluyentes (p. ej., verde, amarillo, rojo). A diferencia de la
+clasificación binaria, el modelo debe distribuir probabilidades o votos entre
+todas las clases. Las etiquetas numéricas codificadas (1, 2, 3) no deben
+tratarse como valores ordinales equidistantes salvo que el problema lo justifique
+explícitamente.
+
+*** Resumen operativo
+Cuando Y tiene *más de dos clases* (verde / amarillo / rojo, o especies de iris),
+se emplean clasificadores *multiclase*.
+
+Estrategias comunes en sklearn:
+- *Multinomial / softmax* (logística multiclase): =LogisticRegression(multi_class=...)=
+  (en versiones recientes el comportamiento multinomial es el default adecuado).
+- *One-vs-Rest*: un clasificador binario por clase.
+- Árboles / Random Forest / k-NN: manejan multiclase de forma natural.
+
+*** Caso real: semáforo académico
+Una universidad clasifica alumnos en =verde=, =amarillo=, =rojo= según asistencia,
+promedio parcial y tareas entregadas. *No* es regresión: Y es categórica ordinal
+en el negocio, pero se modela como *multiclase*.
+
+*** Dataset
+
+#+begin_src python
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.pipeline import Pipeline
+
+rng = np.random.default_rng(3)
+n = 450
+asistencia = rng.uniform(40, 100, n)
+promedio = rng.uniform(4.0, 10.0, n)
+tareas = rng.integers(0, 12, n)
+
+# reglas aproximadas → etiqueta
+riesgo = np.where(
+    (asistencia >= 85) & (promedio >= 8.0) & (tareas >= 8),
+    "verde",
+    np.where(
+        (asistencia >= 70) & (promedio >= 6.5) & (tareas >= 5),
+        "amarillo",
+        "rojo",
+    ),
+)
+# ruido
+mask = rng.random(n) < 0.06
+riesgo = np.where(mask, rng.choice(["verde", "amarillo", "rojo"], n), riesgo)
+
+acad = pd.DataFrame({
+    "asistencia_pct": asistencia.round(1),
+    "promedio_parcial": promedio.round(2),
+    "tareas_entregadas": tareas,
+    "riesgo": riesgo,
+})
+print(acad["riesgo"].value_counts())
+#+end_src
+
+*** Comparar varios modelos multiclase
+
+#+begin_src python
+X = acad.drop(columns=["riesgo"])
+y = acad["riesgo"]
+X_tr, X_te, y_tr, y_te = train_test_split(
+    X, y, test_size=0.25, random_state=42, stratify=y
+)
+
+modelos = {
+    "logistica_multiclase": Pipeline([
+        ("scaler", StandardScaler()),
+        ("clf", LogisticRegression(max_iter=2000, multi_class="multinomial")),
+    ]),
+    "knn": Pipeline([
+        ("scaler", StandardScaler()),
+        ("clf", KNeighborsClassifier(n_neighbors=5)),
+    ]),
+    "arbol": DecisionTreeClassifier(max_depth=5, random_state=0),
+    "random_forest": RandomForestClassifier(
+        n_estimators=150, max_depth=8, random_state=0
+    ),
+}
+
+for nombre, modelo in modelos.items():
+    modelo.fit(X_tr, y_tr)
+    y_hat = modelo.predict(X_te)
+    print("=" * 60)
+    print(nombre)
+    print(classification_report(y_te, y_hat, digits=3))
+#+end_src
+
+*** Matriz de confusión (ejemplo con Random Forest)
+
+#+begin_src python
+rf = modelos["random_forest"]
+y_hat = rf.predict(X_te)
+print(confusion_matrix(y_te, y_hat, labels=["verde", "amarillo", "rojo"]))
+print("Orden de filas/columnas: verde, amarillo, rojo")
+#+end_src
+
+*** Nota sobre ordinalidad
+«Verde < amarillo < rojo» es *ordinal*. Un modelo multiclase *no ordenado* trata
+las clases como categorías sin orden. Si el orden importa mucho, existen modelos
+ordinales específicos; para el curso, multiclase + métricas por clase suele bastar,
+documentando la limitación.
+
+*Ilustración:*
+Las categorías S/M/L presentan un orden natural, mientras que colores como
+rojo, azul y verde no lo poseen. El semáforo académico exhibe orden ordinal
+en el contexto de negocio, pero muchos clasificadores multiclase lo tratan como
+categorías nominales. Conviene documentar las implicaciones de esta simplificación.
+
+*** Limitaciones (multiclase)
+- La accuracy global puede ocultar fallos en la clase minoritaria (frecuentemente «rojo»).
+- Conviene reportar métricas *por clase* (precision/recall) o F1 *macro* si todas las clases tienen igual relevancia.
+- No se debe emplear regresión lineal sobre códigos 1, 2, 3 como si fueran números equidistantes
+  sin justificación teórica.
+
+------------------------------------------------------------------------
+
+** 3. Guía de decisión: ¿qué modelo emplear?
+
+#+begin_example
+¿Y es un número continuo?
+  → Regresión lineal (baseline) → árbol/RF regresor si hay no linealidad fuerte
+
+¿Y es sí/no (binario)?
+  → Logística (interpretable) → árbol / RF / k-NN según datos
+
+¿Y tiene 3+ clases?
+  → Logística multinomial / árbol / RF / k-NN
+
+¿Se requiere explicar cada decisión a un humano (banco, médico)?
+  → Árbol poco profundo o logística
+
+¿Se prioriza rendimiento tabular con interacciones?
+  → Random Forest (o gradient boosting, fuera de este tutorial)
+
+¿Pocos datos, pocas features, criterio de similitud?
+  → k-NN (con escalado)
+
+¿La entrada son imágenes?
+  → CNN (otro tema); estos modelos son para *tabular*
+#+end_example
+
+*Ilustración:*
+La selección del modelo debe alinearse con el tipo de variable objetivo, los
+requisitos de interpretabilidad y las características del dataset. La regresión
+lineal constituye un baseline numérico; la logística aporta probabilidades para
+clasificación binaria; k-NN se basa en similitud local; el árbol genera reglas
+secuenciales; Random Forest agrega múltiples árboles mediante votación.
+
+------------------------------------------------------------------------
+
+** 4. Pipeline completo reutilizable (plantilla)
+
+Emplee esta plantilla en nuevas prácticas: modifique el CSV y el tipo de estimador.
+
+#+begin_src python
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.pipeline import Pipeline
+from sklearn.metrics import classification_report
+# from sklearn.ensemble import RandomForestClassifier  # ejemplo
+
+# df = pd.read_csv("mi_dataset.csv")
+# y = df["target"]
+# X = df.drop(columns=["target"])
+#
+# num_cols = X.select_dtypes(include="number").columns.tolist()
+# cat_cols = X.select_dtypes(exclude="number").columns.tolist()
+#
+# pre = ColumnTransformer([
+#     ("num", StandardScaler(), num_cols),
+#     ("cat", OneHotEncoder(handle_unknown="ignore"), cat_cols),
+# ])
+#
+# pipe = Pipeline([
+#     ("pre", pre),
+#     ("model", RandomForestClassifier(n_estimators=200, random_state=0)),
+# ])
+#
+# X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.2, random_state=0, stratify=y)
+# pipe.fit(X_tr, y_tr)
+# print(classification_report(y_te, pipe.predict(X_te)))
+print("Plantilla lista: descomente y adapte a su CSV.")
+#+end_src
+
+** 5. Checklist EDA antes de entrenar (cualquier modelo)
+
+1. ¿Cuál es la pregunta de negocio en *una* frase?
+2. ¿Y es número, binaria o multiclase?
+3. ¿Hay NA? ¿Outliers absurdos?
+4. ¿Desbalance de clases?
+5. ¿Leakage (columnas del futuro)?
+6. ¿Necesito escalar? (k-NN / logística sí; árboles/RF no necesariamente)
+7. ¿Train/test estratificado en clasificación?
+8. ¿Métrica alineada al costo del error?
+
+
+** 6. Ejercicios para el estudiante
+
+*** Ejercicio 1 (k-NN)
+Modifique el caso de diabetes: elimine el =StandardScaler= y compare F1. Explique el cambio observado.
+
+*** Ejercicio 2 (Árbol)
+Entrene con =max_depth=2= y =max_depth=20=. Compare accuracy train vs test. ¿Se observa overfitting?
+
+*** Ejercicio 3 (Random Forest)
+En churn, modifique el umbral de probabilidad y tabule recall vs precisión.
+
+*** Ejercicio 4 (Lineal)
+Añada una feature inútil aleatoria. ¿Cómo cambian R² y los coeficientes?
+
+*** Ejercicio 5 (Logística)
+Reporte el efecto de =umbral= 0.2, 0.5 y 0.8 en spam.
+
+*** Ejercicio 6 (Multiclase)
+¿Qué modelo de la comparación obtiene mejor F1 *macro* en riesgo académico? Justifique la respuesta.
+
+
+** 7. Resumen final
+
+| Modelo | Aprende… | Caso real del tutorial | Cuidado principal |
+|--------+----------+------------------------+-------------------|
+| k-NN | Similitud local | Riesgo diabetes | Escalar; costo en predicción |
+| Árbol | Reglas if-then | Crédito | Profundidad / overfitting |
+| Random Forest | Voto de muchos árboles | Churn | Menos interpretable |
+| Regresión lineal | Hiperplano numérico | Precio vivienda | No linealidad; outliers |
+| Logística | Probabilidad binaria | Spam | Umbral y desbalance |
+| Multiclase | Varias etiquetas | Semáforo académico | Métricas por clase |
+
+#+begin_example
+Aprendizaje automático tabular bien fundamentado =
+
+  pregunta clara + datos limpios + modelo adecuado + métrica pertinente
+#+end_example
+
+El punto de partida de un proyecto de aprendizaje automático no reside en el
+algoritmo más reciente, sino en la formulación del problema, la calidad de los
+datos y la naturaleza de la variable objetivo. Los seis modelos tratados en este
+tutorial constituyen el núcleo práctico para la mayoría de problemas tabulares
+en un curso introductorio de ML.
+
+#+begin_example
+k-NN        → clasificación por similitud de vecinos
+Árbol       → reglas condicionales secuenciales
+RF          → agregación por votación de múltiples árboles
+Lineal      → predicción numérica mediante combinación lineal
+Logística   → probabilidad de pertenencia a clase binaria
+Multiclase  → clasificación con más de dos etiquetas; métricas por clase
+#+end_example
+
 
 
 * Reconocimiento de rostros con OpenCV — Eigenfaces, Fisherfaces y LBPH
@@ -4635,8 +6039,4 @@ Haz EDA y *propón* el tipo de problema.
 4) Hacer EDA
 5) Recién entonces nombrar métricas y modelo
 #+end_example
-
-*
-
-
 

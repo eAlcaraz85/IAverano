@@ -3694,6 +3694,255 @@ de menor interpretabilidad directa que un árbol único. Su empleo correcto exig
 evaluación cuidadosa, control de sobreajuste y ausencia de fugas de información.
 
 
+*  Cómo usar ML clásico en rumores y bots (caso práctico)
+
+** El problema práctico
+
+En redes (X/Twitter, grupos, foros) un rumor no «aparece» solo: alguien lo publica,
+otros lo repiten, cuentas automatizadas lo clonan y el alcance crece en minutos.
+
+Los algoritmos clásicos no «entienden» el chisme. Sirven para responder preguntas
+concretas con datos:
+
+| Pregunta práctica                         | Algoritmo              | Salida típica        |
+|-------------------------------------------+------------------------+----------------------|
+| ¿Estos mensajes hablan de lo mismo / son copia? | Similitud coseno | Número 0–1           |
+| ¿Esta cuenta se parece a bots conocidos?  | k-NN                   | Etiqueta bot/humano  |
+| ¿Qué hará esta cuenta ante el rumor?      | Árbol de decisión      | Regla → acción       |
+| ¿Cuánto crecerá el alcance si hay más bots? | Regresión lineal     | Número (alcance)     |
+
+A continuación, cada uno con un mini-caso numérico de patio escolar / campus.
+
+------------------------------------------------------------------------
+
+** 1. Similitud coseno — detectar el mismo rumor o una copia
+
+*** Para qué se usa en la práctica
+Conviertes cada tweet en un vector de conteos de palabras (bolsa de términos).
+Si dos vectores apuntan casi en la misma dirección, el coseno se acerca a 1:
+mismo contenido o copy-paste. Si hablan de cosas distintas, baja hacia 0.
+
+Eso permite:
+- agrupar mensajes del *mismo* rumor,
+- marcar *clones* (muy típico de bots),
+- separar ruido (otro tema).
+
+*** Mini-caso
+Vocabulario fijo: examen, filtro, pdf, rumor, cafeteria, menu.
+
+| ID | Usuario  | Texto resumido     | Vector        |
+|----+----------+--------------------+---------------|
+| T1 | @ana     | examen filtro pdf rumor | (1,1,1,1,0,0) |
+| T2 | @bruno   | mismo rumor (repite «examen») | (2,1,1,1,0,0) |
+| T3 | @carla   | cafeteria menu     | (0,0,0,0,2,1) |
+| T4 | @bot_x07 | idéntico a Ana     | (1,1,1,1,0,0) |
+
+*** Fórmula
+\[
+\cos(\mathbf{a},\mathbf{b})=\frac{\mathbf{a}\cdot\mathbf{b}}{\|\mathbf{a}\|\,\|\mathbf{b}\|}
+\]
+
+*** Cuentas del mini-caso
+- \(\cos(T1,T4)=1.0\) → copia exacta (señal fuerte de bot o pegar/copiar).
+- \(\cos(T1,T2)\approx 0.945\) → mismo rumor, redacción parecida.
+- \(\cos(T1,T3)=0\) → otro tema (no entra al hilo del examen).
+
+Detalle T1–T2: producto punto \(=5\), \(\|T1\|=2\), \(\|T2\|=\sqrt{7}\approx 2.646\),
+\(5/(2\times 2.646)\approx 0.945\).
+
+#+begin_src python
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+
+X = np.array([
+    [1, 1, 1, 1, 0, 0],  # Ana
+    [2, 1, 1, 1, 0, 0],  # Bruno
+    [0, 0, 0, 0, 2, 1],  # Carla
+    [1, 1, 1, 1, 0, 0],  # bot
+], dtype=float)
+print("Matriz coseno:\n", np.round(cosine_similarity(X), 3))
+#+end_src
+
+*** Qué no resuelve el coseno
+No dice *quién publicó primero*. Para el origen hace falta la hora del mensaje
+(timeline). En la práctica se combina: coseno para «mismo hilo», tiempo para «origen».
+
+------------------------------------------------------------------------
+
+** 2. k-NN — clasificar cuentas como bot o humano
+
+**** Para qué se usa en la práctica
+Ya no miras solo el texto: miras *conducta* (tweets por hora, % de retweets,
+antigüedad de la cuenta, etc.). Tienes un historial de cuentas ya etiquetadas.
+Una cuenta nueva se etiqueta según la mayoría de sus =k= vecinos más cercanos
+en ese espacio de rasgos.
+
+*** Mini-caso
+
+| cuenta | tweets/hora | pct_rt | días_cuenta | etiqueta |
+|--------+-------------+--------+-------------+----------|
+| H1     | 2           | 0.20   | 10          | humano   |
+| H2     | 3           | 0.30   | 12          | humano   |
+| B1     | 40          | 0.90   | 1           | bot      |
+| B2     | 35          | 0.85   | 2           | bot      |
+
+Cuenta sospechosa \(N = (38,\ 0.88,\ 1.5)\).
+
+Distancia euclidiana:
+\[
+d=\sqrt{(x_1-x_2)^2+(y_1-y_2)^2+(z_1-z_2)^2}
+\]
+
+| Vecino | \(d\) a N | Lectura        |
+|--------+-----------+----------------|
+| B1     | ≈ 2.06    | muy cerca      |
+| B2     | ≈ 3.04    | cerca          |
+| H2     | ≈ 36.55   | lejos          |
+| H1     | ≈ 37.01   | lejos          |
+
+Con =k=3= los vecinos son B1, B2, H2 → mayoría *bot*.
+En verificación: priorizas revisar / silenciar esa cuenta.
+
+#+begin_src python
+import numpy as np
+from sklearn.neighbors import KNeighborsClassifier
+
+X = np.array([[2,0.2,10],[3,0.3,12],[40,0.9,1],[35,0.85,2]])
+y = ["humano","humano","bot","bot"]
+N = np.array([[38, 0.88, 1.5]])
+
+clf = KNeighborsClassifier(n_neighbors=3)
+clf.fit(X, y)
+print("Clase:", clf.predict(N)[0])
+#+end_src
+
+*** Buena práctica
+Escala las features (=StandardScaler=): si mezclas «seguidores» (miles) con
+«pct_rt» (0–1), la distancia la domina una sola columna y el k-NN miente.
+
+------------------------------------------------------------------------
+
+** 3. Árbol de decisión — decidir qué hacer ante una cuenta
+
+*** Para qué se usa en la práctica
+El coseno y el k-NN dan *señales*. El árbol las combina en una *regla de acción*
+legible: amplificar en masa, amplificar como influencer, ignorar, etc.
+Útil para protocolos de la unidad de verificación («si pasa A y B → hacer C»).
+
+*** Mini-caso (historial corto)
+
+| coseno_alto | es_bot | muchos_seguidores | accion         |
+|-------------+--------+-------------------+----------------|
+| 1           | 1      | 0                 | amplifica_masa |
+| 1           | 1      | 0                 | amplifica_masa |
+| 1           | 0      | 1                 | amplifica_inf  |
+| 1           | 0      | 1                 | amplifica_inf  |
+| 0           | 0      | 1                 | ignora         |
+| 0           | 0      | 0                 | ignora         |
+| 1           | 0      | 0                 | amplifica_leve |
+| 0           | 1      | 0                 | ignora         |
+
+Reglas que salen en la práctica:
+#+begin_example
+si NO hay alineación con el rumor (coseno bajo) → ignora
+si coseno alto Y es bot                 → amplifica_masa  → mutear red
+si coseno alto Y muchos seguidores      → amplifica_inf   → contactar / contrarrestar
+#+end_example
+
+Caso nuevo: coseno alto, no bot, muchos seguidores → *amplifica_inf*.
+
+#+begin_src python
+import pandas as pd
+from sklearn.tree import DecisionTreeClassifier, export_text
+
+df = pd.DataFrame([
+    [1,1,0,"amplifica_masa"], [1,1,0,"amplifica_masa"],
+    [1,0,1,"amplifica_inf"],  [1,0,1,"amplifica_inf"],
+    [0,0,1,"ignora"],         [0,0,0,"ignora"],
+    [1,0,0,"amplifica_leve"], [0,1,0,"ignora"],
+], columns=["coseno_alto","es_bot","muchos_seguidores","accion"])
+
+X, y = df.iloc[:, :3], df["accion"]
+clf = DecisionTreeClassifier(max_depth=3, random_state=0).fit(X, y)
+print(export_text(clf, feature_names=list(X.columns)))
+print("Nuevo (1,0,1):", clf.predict([[1, 0, 1]])[0])
+#+end_src
+
+------------------------------------------------------------------------
+
+** 4. Regresión lineal — estimar el alcance del rumor
+
+*** Para qué se usa en la práctica
+Aquí no clasificas: *predices un número* (cuentas alcanzadas). Sirve para
+argumentar con evidencia: «si no cortamos bots, el alcance a la hora 1 será ~X».
+
+Modelo:
+\[
+\widehat{alcance}=\beta_0+\beta_1\cdot minutos+\beta_2\cdot bots
+\]
+
+*** Mini-caso
+
+| minutos | bots | alcance observado |
+|---------+------+-------------------|
+| 10      | 0    | 40                |
+| 10      | 5    | 110               |
+| 30      | 0    | 75                |
+| 30      | 5    | 150               |
+| 50      | 0    | 110               |
+| 50      | 5    | 190               |
+
+#+begin_src python
+import numpy as np
+from sklearn.linear_model import LinearRegression
+
+X = np.array([[10,0],[10,5],[30,0],[30,5],[50,0],[50,5]])
+y = np.array([40,110,75,150,110,190])
+reg = LinearRegression().fit(X, y)
+print("β0 =", round(reg.intercept_, 2))
+print("β_minutos =", round(reg.coef_[0], 2))
+print("β_bots =", round(reg.coef_[1], 2))
+print("Alcance @60min, 0 bots ≈", round(reg.predict([[60, 0]])[0], 1))
+print("Alcance @60min, 10 bots ≈", round(reg.predict([[60, 10]])[0], 1))
+#+end_src
+
+En este ajuste, \(\beta_{bots}\) sale *grande y positivo* (~14): cada bot activo
+suma mucho al alcance. En la práctica eso justifica priorizar cortar la red de
+clones, no solo «esperar a que pase el tiempo» (\(\beta_{minutos}\) también suma,
+pero menos por unidad en este ejemplo).
+
+------------------------------------------------------------------------
+
+*** 5. Cómo se encadenan en un caso real
+
+Un flujo típico de verificación:
+
+1. *Coseno* → ¿qué mensajes son el rumor X? ¿cuáles son clones?
+2. *Timeline* → de ese clúster, ¿quién publicó primero? (origen)
+3. *k-NN* → de las cuentas del clúster, ¿cuáles parecen bots?
+4. *Árbol* → ¿mutear red, contactar influencer o ignorar ruido?
+5. *Regresión* → si no actuamos, ¿qué alcance esperamos?
+
+Ejemplo narrativo con los números de arriba:
+- @ana origina (humana, más temprana).
+- @bruno amplifica el mismo rumor (coseno alto, humana).
+- @bot_x07 clona (coseno 1 + k-NN bot) → dispersión automatizada.
+- @carla es ruido (coseno 0 con el rumor).
+- Sin cortar bots, la regresión proyecta un alcance mucho mayor a los 60 min.
+
+*Idea clave:* «autor del rumor» ≠ «quien más lo dispersa». El ML clásico ayuda a
+separar esas figuras y a elegir la intervención.
+
+
+*** Resumen
+
+| Algoritmo | Entrada práctica              | Salida útil para rumores      |
+|-----------+-------------------------------+-------------------------------|
+| Coseno    | Vectores de texto             | Mismo hilo / copia / ruido    |
+| k-NN      | Rasgos de conducta + historial| Bot vs humano                 |
+| Árbol     | Señales combinadas            | Acción prioritaria            |
+| Regresión | Tiempo, bots, (desmentidos…)  | Alcance esperado              |
+
 
 * Aprendizaje automático con casos aplicados — k-NN, árboles, Random Forest, regresión lineal, logística y multiclase
 
@@ -6039,4 +6288,608 @@ Haz EDA y *propón* el tipo de problema.
 4) Hacer EDA
 5) Recién entonces nombrar métricas y modelo
 #+end_example
+
+
+
+**  Dispersión de rumores 
+
+*** Cómo usar este documento
+
+Aplica al caso #ExamenFiltrado lo visto en
+=rumor_bots_ejemplo_simple.org= (cómo se usan coseno, k-NN, árbol y regresión
+en un problema de rumores).
+
+Aquí trabajas con los CSV de =dispersion_rumores/=: misiones, archivos, pasos
+y tablas para que *tú* calcules y concluyas.
+
+#+begin_example
+rumor_bots_ejemplo_simple.org   →  cómo se usan los algoritmos (caso práctico)
+dispersion_rumores_alumnos.org  →  actividad con los datos del campus
+#+end_example
+
+*Carpeta de datos:* =/dispersion_rumores/=
+(=datasets/= + =pistas/=)
+
+*Tiempo sugerido:* 90–120 min.
+
+**** Reglas
+1. Justifica con números (coseno, k, regla, \(\beta\)).
+2. No inventes filas: solo los CSV y las pistas.
+3. Entregable: este Org completado (o PDF exportado).
+
+------------------------------------------------------------------------
+
+*** Contexto del caso (léelo completo)
+
+En ~60 minutos explotó el hashtag *#ExamenFiltrado*:
+«el examen de IA ya está filtrado en un PDF por WhatsApp».
+
+En la red hay de todo:
+- alguien que *publicó primero* el rumor del examen,
+- cuentas que *copian* casi el mismo texto (posibles bots),
+- humanos que *amplifican* con sus palabras,
+- un *otro rumor* (comedor) y ruido (becas),
+- cuentas que *desmienten*.
+
+Tu trabajo no es solo decir «fulano es malo». Es explicar la *dispersión*:
+origen → copias → amplificadores → (tal vez) desmentido.
+
+Lee también:
+- =pistas/00_briefing.txt=
+- =pistas/textos_tweets.md=
+- =pistas/catalogo_archivos.md=
+
+------------------------------------------------------------------------
+
+*** Misión 0 — Aclara el problema (10 min, sin Python)
+
+Antes de modelar, escribe con tus palabras (igual que el Bloque 0 del ejemplo):
+
+| Pregunta | Tu respuesta (2–4 líneas) |
+|----------+---------------------------|
+| ¿Qué es el *origen* del rumor? | |
+| ¿Qué es la *dispersión*? | |
+| ¿Por qué un coseno alto *no* basta para saber quién empezó? | |
+| ¿Qué peligro hay si solo miras «quién tiene más seguidores»? | |
+
+------------------------------------------------------------------------
+
+*** Misión 1 — EDA: ¿cuándo explotó la conversación? (15 min)
+
+**** Objetivo
+Ver *en qué ventana de tiempo* se dispara el volumen (pista de red automatizada).
+
+**** Archivo
+=datasets/eda_ventanas_10min.csv=
+
+Columnas: =ventana_min_ini=, =ventana_min_fin=, =tweets=, =usuarios_unicos=,
+=pct_cuentas_nuevas=.
+
+**** Pasos (hazlos)
+1. Ordena o mira las filas por ventana.
+2. Identifica la ventana con más tweets.
+3. Mira =pct_cuentas_nuevas= en esa ventana: ¿sube?
+
+**** Entrega M1
+
+| Pregunta | Respuesta |
+|----------+-----------|
+| Ventana crítica (min ini–fin) | |
+| Tweets en esa ventana | |
+| pct_cuentas_nuevas | |
+| Interpretación en 3 líneas | |
+
+------------------------------------------------------------------------
+
+*** Misión 2 — Coseno: ¿mismo rumor o copia? (20 min)
+
+**** Objetivo
+Igual que el Bloque 1 del ejemplo: vectores de palabras → similitud coseno.
+
+**** Archivo
+=datasets/similitud_tweets_tf.csv=
+- =tipo= = =semilla= → prototipos (examen, comedor, becas, desmentido)
+- =tipo= = =tweet= → mensajes del incidente
+- Resto → conteos de términos
+
+**** Pasos
+1. Separa semillas y tweets.
+2. Calcula coseno *tweet × semilla* → ¿de qué tema habla cada tweet?
+3. Calcula coseno *entre tweets*.
+4. Usa umbral ≥ *0.90* para marcar pares «casi clon» (como T1–T4 del ejemplo).
+   Si eliges otro umbral, justifícalo en una línea.
+
+**** Plantilla
+
+#+begin_src python :eval no
+import pandas as pd
+from sklearn.metrics.pairwise import cosine_similarity
+
+df = pd.read_csv("datasets/similitud_tweets_tf.csv")
+feats = [c for c in df.columns if c not in ("documento", "tipo")]
+
+semillas = df[df["tipo"] == "semilla"].set_index("documento")[feats]
+tweets = df[df["tipo"] == "tweet"].set_index("documento")[feats]
+
+sim_sem = pd.DataFrame(
+    cosine_similarity(tweets.values, semillas.values),
+    index=tweets.index, columns=semillas.index,
+)
+sim_tw = pd.DataFrame(
+    cosine_similarity(tweets.values),
+    index=tweets.index, columns=tweets.index,
+)
+
+print(sim_sem.round(3))
+# TODO: imprime pares i<j con sim_tw >= 0.90
+#+end_src
+
+**** Entrega M2
+
+| Tweet | Semilla más cercana | Coseno |
+|-------+---------------------+--------|
+|       |                     |        |
+|       |                     |        |
+|       |                     |        |
+
+Pares casi-clon (≥ 0.90):
+:
+
+¿Qué tweets son *otro tema* (comedor/becas) y no el rumor de examen?
+:
+
+------------------------------------------------------------------------
+
+*** Misión 3 — Timeline + cascada: ¿quién primero y cómo se repartió? (20 min)
+
+**** Objetivo
+El ejemplo ya dijo: *el coseno no dice quién empezó*. Aquí usas tiempo + enlaces.
+
+**** Archivos
+- =datasets/timeline_tweets.csv= → =usuario=, =minuto=, =cuenta_dias=, =seguidores=
+- =datasets/cascada_enlaces.csv= → =origen= se relaciona con =destino_influencia=
+  (=tipo_enlace=: copia_texto, cita_comenta, desmiente, …)
+
+**** Pasos
+1. Filtra (con tu resultado M2) solo cuentas del *rumor de examen*.
+2. Entre esas, ¿quién tiene el *menor* =minuto=? → candidato a origen.
+3. Mira =cuenta_dias=: origen humano suele ser cuenta vieja; bots, muy nuevas.
+4. Con la cascada, describe la cadena: quién copia a quién / quién comenta / quién desmiente.
+
+**** Entrega M3
+
+| Rol que propones      | Usuario | Minuto | Evidencia (1 frase) |
+|-----------------------+---------+--------+---------------------|
+| Origen del examen     |         |        |                     |
+| Amplificador humano   |         |        |                     |
+| Red de copias (lista) |         |        |                     |
+| Desmentido            |         |        |                     |
+
+Cascada en ASCII (completa tú):
+#+begin_example
+@???  --?-->  @???
+@???  --?-->  @???
+#+end_example
+
+Pregunta de pensamiento (5 líneas): ¿por qué «más likes» o «más seguidores»
+no define automáticamente al originador?
+
+
+*** Misión 4 — k-NN: ¿bot o humano? (20 min)
+
+**** Objetivo
+Igual que el Bloque 2 del ejemplo: clasificar cuentas nuevas por vecinos.
+
+**** Archivos
+- Entrenamiento: =datasets/knn_cuentas_historial.csv= (con =etiqueta=)
+- Caso: =datasets/knn_cuentas_caso.csv= (sin etiqueta)
+
+**** Features
+=seguidores=, =cuenta_dias=, =tweets_por_hora=, =pct_retweet=, =hora_pico=,
+=sim_max_con_rumor=, =diversidad_lexica=
+
+**** Pasos
+1. Separa =X=, =y=; aplica =StandardScaler= (explica por qué, como en el ejemplo).
+2. Prueba =k = 3, 5, 7= con =cross_val_score= (=f1_macro= o accuracy).
+3. Elige un =k= y predice todas las cuentas del caso.
+4. Contrasta con M2–M3: ¿los «clones» salen bot? ¿El origen sale humano?
+
+**** Plantilla
+
+#+begin_src python :eval no
+import pandas as pd
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import cross_val_score
+
+train = pd.read_csv("datasets/knn_cuentas_historial.csv")
+caso = pd.read_csv("datasets/knn_cuentas_caso.csv")
+feats = [c for c in train.columns if c not in ("cuenta_id", "etiqueta")]
+
+scaler = StandardScaler()
+X = scaler.fit_transform(train[feats])
+y = train["etiqueta"]
+X_new = scaler.transform(caso[feats])
+
+for k in (3, 5, 7):
+    knn = KNeighborsClassifier(n_neighbors=k)
+    scores = cross_val_score(knn, X, y, cv=5, scoring="f1_macro")
+    print(k, scores.mean(), scores.std())
+
+# TODO: entrena con tu k, predice, imprime cuenta_id + etiqueta
+#+end_src
+
+**** Entrega M4
+
+| Cuenta | Predicción | ¿Cuadra con M2/M3? |
+|--------+------------+--------------------|
+|        |            |                    |
+
+Si hubiera conflicto entre coseno y k-NN, ¿qué harías? (4–6 líneas)
+:
+
+
+
+*** Misión 5 — Árbol: ¿amplifica o contrarresta? (15 min)
+
+**** Objetivo
+Como el Bloque 3 del ejemplo: reglas if/else sobre el comportamiento esperado.
+
+**** Archivos
+- =datasets/arbol_amplificacion_historial.csv=
+- =datasets/arbol_escenarios_caso.csv= (red_bots, diego, vale, omar, sofia_comedor)
+
+**** Pasos
+1. Entrena =DecisionTreeClassifier(max_depth=4)=.
+2. Imprime reglas con =export_text=.
+3. Predice cada escenario del CSV.
+4. Elige *una* acción de verificación prioritaria (mutear bots / hablar con influencer /
+   impulsar desmentido) y apóyala con la regla del árbol.
+
+**** Entrega M5
+
+| Escenario | Acción predicha |
+|-----------+-----------------|
+| red_bots  |                 |
+| diego     |                 |
+| vale      |                 |
+| omar      |                 |
+| sofia_comedor |             |
+
+Acción prioritaria para el campus + justificación (5–8 líneas):
+:
+
+
+
+*** Misión 6 — Regresión: ¿qué mueve el alcance? (15 min)
+
+**** Objetivo
+Como el Bloque 4 del ejemplo: predecir un *número* (alcance).
+
+**** Archivo
+=datasets/regresion_alcance_rumor.csv=
+
+Variables: =minutos_desde_origen=, =bots_activos=, =desmentidos_activos=
+→ =alcance_cuentas=
+
+**** Pasos
+1. Ajusta regresión lineal con las tres X.
+2. Interpreta el *signo* de cada \(\beta\) (sobre todo bots vs desmentidos).
+3. Completa la tabla de escenarios.
+
+**** Entrega M6
+
+| Coeficiente | Valor aprox. | Significado en una frase |
+|-------------+--------------+--------------------------|
+| β0          |              |                          |
+| β_minutos   |              |                          |
+| β_bots      |              |                          |
+| β_desmentidos |            |                          |
+
+| Escenario | minutos | bots | desmentidos | alcance predicho |
+|-----------+---------+------+-------------+------------------|
+| A         | 60      | 10   | 0           |                  |
+| B         | 60      | 10   | 2           |                  |
+| C         | 60      | 0    | 2           |                  |
+
+¿Qué escenario conviene más al campus y por qué? (4 líneas)
+
+
+
+*** Misión 7 — Informe final de dispersión (15 min)
+
+Redacta *un solo texto* (15–25 líneas) que responda, en orden:
+
+1. ¿Quién originó el rumor del examen?
+2. ¿Cómo se dispersó (copias / amplificadores)?
+3. ¿Qué cuentas son bots según tu k-NN?
+4. ¿Qué intervención priorizas (usa árbol + regresión)?
+5. Una limitación de tu análisis.
+
+Texto:
+
+
+**** Autochequeo
+- [ ] Separé origen ≠ bot ≠ amplificador ≠ desmentido
+- [ ] Usé coseno *y* timeline (no solo uno)
+- [ ] Escalé en k-NN y reporté k
+- [ ] La recomendación sale de M5 y/o M6
+
+
+*** Rúbrica
+
+| Misión                         | Pts |
+|--------------------------------+-----|
+| 0 Problema + 1 EDA             |  15 |
+| 2 Coseno                       |  20 |
+| 3 Timeline / cascada           |  20 |
+| 4 k-NN                         |  20 |
+| 5 Árbol + 6 Regresión          |  15 |
+| 7 Informe                      |  10 |
+**  El Código Coilocito — Caso forense
+
+*** Tu rol
+
+Eres ingeniera/ingeniero de visión del laboratorio Arispe. La seguridad te marcó como
+*sospechoso/a principal* (tenías root y firmaste el último commit antes del apagón).
+Debes limpiar tu nombre *con evidencia y modelos*, no con opiniones.
+
+#+begin_quote
+Si no demuestras quién robó el algoritmo de coilocitos, tu carrera — y el código que
+podría abaratar diagnósticos — terminan en una patente cerrada.
+#+end_quote
+
+**** Reglas
+1. Trabajo individual
+2. Toda conclusión lleva *justificación numérica* (tabla, métrica o regla del árbol).
+3. No inventes datos que no estén en =datasets/= o =pistas/=.
+4. Entregable: este Org completado *o* =informe_coilocito.org= + capturas.
+5. *Prohibido* usar la carpeta =soluciones/= si el docente la dejó en el servidor.
+
+
+*** Premisa (contexto)
+
+El *Dr. Arispe* desapareció una semana antes de presentar en *IEEE* un paper sobre
+detección de *coilocitos* (células anómalas clave en cáncer cervical) con *SIFT/SURF*.
+Sabotearon el servidor y robaron el algoritmo: alta precisión con pocos recursos frente
+a Deep Learning. Quien lo tenga puede patentar equipos médicos baratos… o cerrar el código.
+
+**** Sospechosos (aún no sabes quién es)
+
+| Sospechoso                 | Motivo aparente                         | Huella técnica típica           |
+|----------------------------+-----------------------------------------+---------------------------------|
+| Dr. Valeriano (rival)      | DL ridiculizado; financiamiento         | GPU, CNN, correos de queja      |
+| Elena «La Full-Stack»      | Conglomerado quiere cerrar el código    | Django, PostgreSQL, VPN, Docker |
+| Hacker interno anónimo     | Venganza / exalumno                     | Emacs, SSH, borrados torpes     |
+
+**** Material que te dan (no lo regeneres)
+
+#+begin_example
+codigo_coilocito/
+  datasets/     ← CSV para entrenar y predecir
+  pistas/       ← briefing y textos de apoyo
+#+end_example
+
+Lee primero =pistas/00_briefing.txt= y =pistas/pista_laboratorio.md=.
+
+------------------------------------------------------------------------
+
+*** ACTO I — Matching con similitud coseno
+
+**** Pregunta del caso
+¿Qué pista se parece más a qué perfil de sospechoso?
+
+**** Dataset
+=datasets/similitud_tf_documentos.csv=
+- =tipo= = =perfil= → tres sospechosos
+- =tipo= = =pista= → cuatro pistas (A–D)
+- Resto de columnas → conteos de términos (vector)
+
+**** Lo que TÚ debes hacer
+1. Cargar el CSV y separar perfiles vs pistas.
+2. Calcular la matriz de *similitud coseno* (a mano para 1 par + con código para todas).
+3. Completar la tabla de matching.
+4. Escribir una hipótesis *preliminar* (aún no acusas en firme).
+
+**** Fórmula
+\[
+\cos(\mathbf{a},\mathbf{b}) = \frac{\mathbf{a}\cdot\mathbf{b}}{\|\mathbf{a}\|\,\|\mathbf{b}\|}
+\]
+
+**** Plantilla de código
+
+#+begin_src python :eval no
+import pandas as pd
+from sklearn.metrics.pairwise import cosine_similarity
+# Si el docente pide "a mano", usa numpy: dot / (norm*norm)
+
+df = pd.read_csv("datasets/similitud_tf_documentos.csv")
+
+# TODO 1: lista de columnas numéricas (todas excepto documento y tipo)
+feats = []  # <-- completa
+
+# TODO 2: dos DataFrames indexados por "documento"
+perfiles = None  # <-- df filtrado tipo=="perfil"
+pistas = None    # <-- df filtrado tipo=="pista"
+
+# TODO 3: matriz de similitud (filas=pistas, columnas=perfiles)
+sim = None  # <-- cosine_similarity(...) envuelto en DataFrame con índices
+
+print(sim)
+print("mejor match por pista:")
+# TODO 4: para cada pista, el perfil con mayor coseno
+#+end_src
+
+**** Entrega Acto I
+
+| Pista | Perfil más similar | Coseno (aprox.) |
+|-------+--------------------+-----------------|
+| A     |                    |                 |
+| B     |                    |                 |
+| C     |                    |                 |
+| D     |                    |                 |
+
+Hipótesis preliminar (5–8 líneas):
+: 
+
+------------------------------------------------------------------------
+
+*** ACTO II — Tipo de ataque con k-NN
+
+**** Pregunta del caso
+¿El sabotaje se parece más a fuerza bruta corporativa, sabotaje interno descuidado,
+o robo sigiloso de cuello blanco?
+
+**** Datasets
+- Entrenamiento: =datasets/knn_historial_ataques.csv=
+- Caso sin etiqueta: =datasets/knn_caso_arispe.csv=
+
+**** Lo que TÚ debes hacer
+1. Definir =X= (features) y =y= (etiqueta_ataque).
+2. *Escalar* features (explica por qué).
+3. Probar al menos tres valores de =k= y reportar una métrica (accuracy o F1 macro).
+4. Predecir la etiqueta del caso Arispe.
+5. Relacionar esa clase con tu matching del Acto I.
+
+**** Plantilla 
+
+#+begin_src python :eval no
+import pandas as pd
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import cross_val_score
+
+train = pd.read_csv("datasets/knn_historial_ataques.csv")
+caso = pd.read_csv("datasets/knn_caso_arispe.csv")
+
+# TODO 1: features = todas las columnas excepto ids/etiqueta
+feats = []
+
+# TODO 2: scaler + transform de train y caso
+scaler = StandardScaler()
+X = None
+y = None
+X_new = None
+
+# TODO 3: prueba k = 3, 5, 7 (o los que indique el docente)
+for k in []:  # <-- completa
+    knn = KNeighborsClassifier(n_neighbors=k)
+    scores = cross_val_score(knn, X, y, cv=5, scoring="f1_macro")
+    print(k, scores.mean(), scores.std())
+
+# TODO 4: entrena con el k que elijas y predice el caso Arispe
+modelo = None
+pred = None
+print("predicción:", pred)
+#+end_src
+
+**** Trampa a evitar
+Compara *una* corrida sin scaler. ¿Cambia la predicción? ¿Por qué?
+
+**** Entrega Acto II
+- k elegido: ____
+- F1 macro (o accuracy) CV: ____
+- Predicción caso Arispe: ____
+- Relación con Acto I (5 líneas):
+: 
+
+
+*** ACTO III — Fuga con árbol de decisión
+
+**** Pregunta del caso
+Si identificas un culpable y este huye, ¿qué ruta predice el árbol?
+
+**** Datasets
+- =datasets/arbol_fugas_historial.csv= (entrenar)
+- =datasets/arbol_escenario_culpable.csv= (predecir *después* de tu acusación)
+- =datasets/arbol_escenario_valeriano.csv= (contrafactual: ¿y si fuera el rival?)
+
+**** Lo que TÚ debes hacer
+1. Entrenar un árbol *legible* (=max_depth= 3, 4 o 5).
+2. Pegar o describir las reglas principales (=export_text= o diagrama).
+3. Predecir la ruta en el escenario del culpable *que tú acusaste*.
+4. Correr el contrafactual de Valeriano y explicar si cambiaría la persecución.
+5. Redactar la orden de interceptación (máx. 5 líneas).
+
+**** Plantilla
+
+#+begin_src python :eval no
+import pandas as pd
+from sklearn.tree import DecisionTreeClassifier, export_text
+
+hist = pd.read_csv("datasets/arbol_fugas_historial.csv")
+esc = pd.read_csv("datasets/arbol_escenario_culpable.csv")
+
+# TODO 1: features
+feats = []
+
+# TODO 2: entrenar árbol
+clf = DecisionTreeClassifier(max_depth=4, random_state=42)
+# clf.fit(...)
+
+print(export_text(clf, feature_names=feats))
+
+# TODO 3: predecir esc y, aparte, el CSV de Valeriano
+print("ruta:", None)
+#+end_src
+
+**** Entrega Acto III
+- Culpable que acusas: ____
+- Ruta predicha: ____
+- Contrafactual Valeriano → ruta: ____
+- Orden de interceptación:
+: 
+
+------------------------------------------------------------------------
+
+*** ACTO EXTRA — Regresión lineal
+
+**** Pregunta
+¿Cuánto crece el tiempo de inferencia al aumentar el número de células, en SIFT/SURF
+frente a CNN?
+
+**** Dataset
+=datasets/regresion_benchmark_coilocitos.csv=
+
+**** Lo que TÚ debes hacer
+1. Filtrar por =metodo=.
+2. Ajustar =tiempo_inferencia_s ~ n_celulas= para cada método.
+3. Reportar \(\beta_0\), \(\beta_1\).
+4. Estimar tiempo a =n_celulas = 10000= y *advertir* el riesgo de extrapolar.
+5. Conectar el resultado con un posible móvil (sin inventar hechos fuera de los datos).
+
+#+begin_src python :eval no
+import pandas as pd
+from sklearn.linear_model import LinearRegression
+
+df = pd.read_csv("datasets/regresion_benchmark_coilocitos.csv")
+
+for metodo, g in df.groupby("metodo"):
+    # TODO: X, y, fit, predict [[10000]]
+    pass
+#+end_src
+
+**** Entrega Extra
+| Método | β0 | β1 | t@10k (s) |
+|--------+----+----+-----------|
+|        |    |    |           |
+|        |    |    |           |
+
+Interpretación (5–8 líneas):
+: 
+
+------------------------------------------------------------------------
+
+*** Veredicto final 
+
+Con *toda* la evidencia (coseno + k-NN + árbol + regresión):
+
+1. ¿A quién acusas y por qué? (coherencia entre actos)
+2. ¿Qué pista o resultado podría estar *engañándote*?
+3. ¿Qué harías si tu k-NN y tu coseno no coincidieran?
+
+Respuesta (15–25 líneas):
+
+
+
 

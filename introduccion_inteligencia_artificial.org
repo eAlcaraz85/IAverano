@@ -3694,6 +3694,8 @@ de menor interpretabilidad directa que un árbol único. Su empleo correcto exig
 evaluación cuidadosa, control de sobreajuste y ausencia de fugas de información.
 
 
+
+
 *  Cómo usar ML clásico en rumores y bots (caso práctico)
 
 ** El problema práctico
@@ -4969,6 +4971,596 @@ Lineal      → predicción numérica mediante combinación lineal
 Logística   → probabilidad de pertenencia a clase binaria
 Multiclase  → clasificación con más de dos etiquetas; métricas por clase
 #+end_example
+
+
+
+* NLTK paso a paso — Análisis del corpus «no todos pueden votar»
+
+
+** 1.1 ¿Qué es NLTK?
+*
+NLTK* (*Natural Language Toolkit*) es una biblioteca de Python para *procesar
+texto*: cortar en palabras, quitar ruido, contar, clasificar, etc.
+No “entiende” el significado como un humano; aplica *pasos mecánicos* que
+preparan el texto para estadísticas o aprendizaje automático.
+
+** 1.2 Pipeline típico de análisis de texto
+
+#+begin_example
+  texto crudo
+      → limpieza (minúsculas, quitar símbolos)
+      → tokenización (partir en palabras)
+      → quitar stopwords (“de”, “que”, “la”…)
+      → frecuencias / nubes / features
+      → (opcional) clasificador (Naive Bayes, etc.)
+#+end_example
+
+** 1.3 Conceptos clave
+
+| Concepto            | Idea en una frase                                      |
+|---------------------+--------------------------------------------------------|
+| *Corpus*            | Colección de textos (aquí: 1500 comentarios en un CSV) |
+| *Token*             | Unidad mínima: casi siempre una *palabra*              |
+| *Tokenización*      | Cortar el texto en tokens                              |
+| *Stopwords*         | Palabras muy frecuentes y poco informativas            |
+| *Bolsa de palabras* | Texto = conjunto/conteo de tokens (sin orden)          |
+| *FreqDist*          | Distribución de frecuencias de NLTK                    |
+| *Naive Bayes*       | Clasificador probabilístico simple sobre features      |
+
+** 1.4 ¿Por qué quitar stopwords?
+En «no es justo que no todos puedan votar», palabras como *que*, *no*, *es*
+aparecen en casi todo. Si solo cuentas frecuencias brutas, dominan y ocultan
+términos del *tema* (*votar*, *permiso*, *verificadas*, *bots*).
+
+** 1.5 Bolsa de palabras (bag of words)
+Para un clasificador, cada comentario se convierte en presencia/ausencia (o
+conteo) de palabras. Ejemplo:
+
+#+begin_example
+  "no puedo votar"  →  {no:1, puedo:1, votar:1}
+#+end_example
+
+Naive Bayes estima \(P(\text{clase}\mid\text{palabras})\) asumiendo que las
+palabras son *independientes* dada la clase (de ahí “naive” = ingenuo). Sirve
+como primer modelo transparente; no es el más potente, pero enseña el flujo.
+
+
+
+** 2. Requisitos
+
+#+begin_src shell :exports code
+python3 -m pip install --user nltk pandas
+#+end_src
+
+La primera vez, NLTK descarga recursos (=punkt=, =stopwords=, a veces
+=punkt_tab=):
+
+#+begin_src python
+import nltk
+for r in ("punkt", "punkt_tab", "stopwords"):
+    nltk.download(r, quiet=True)
+print("recursos OK")
+#+end_src
+
+
+
+** 3. Cargar el corpus (CSV = corpus tabular)
+
+En NLP, un *corpus* no tiene que ser un libro: puede ser una tabla con una
+columna de texto. Aquí cada fila es un *documento* (un comentario).
+
+#+begin_src python
+import pandas as pd
+from pathlib import Path
+
+CSV = Path("/home/likcos/Scripts/dispersion_rumores/datasets/comentarios_no_todos_pueden_votar.csv")
+df = pd.read_csv(CSV)
+print("filas:", len(df))
+print("columnas:", list(df.columns))
+print(df.head(3).to_string(index=False))
+print("\n--- puede_votar ---")
+print(df["puede_votar"].value_counts())
+print("\n--- categoria ---")
+print(df["categoria"].value_counts())
+#+end_src
+
+*Lectura:* =puede_votar= 0/1 materializa la regla del tema: *no todos pueden votar*.
+=categoria= agrupa quejas, reglas, a favor/en contra, preguntas.
+
+
+
+** 4. Limpieza + tokenización con NLTK
+
+*** Teoría
+1. Pasar a minúsculas (Votar = votar).
+2. Quitar lo que no es letra/espacio (signos, #hashtags opcionales).
+3. =word_tokenize= parte en tokens.
+4. Filtrar stopwords en español + tokens muy cortos.
+
+#+begin_src python
+import re
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+
+nltk.download("punkt", quiet=True)
+nltk.download("punkt_tab", quiet=True)
+nltk.download("stopwords", quiet=True)
+
+STOP = set(stopwords.words("spanish"))
+# A veces "no" aporta polaridad; puedes DEJARLA sacándola de STOP:
+STOP.discard("no")  # útil en quejas: "no puedo votar"
+
+
+def tokens_es(texto: str) -> list[str]:
+    t = str(texto).lower()
+    t = re.sub(r"https?://\S+|www\.\S+", " ", t)
+    t = re.sub(r"[@#]\w+", " ", t)          # menciones / hashtags
+    t = re.sub(r"[^a-záéíóúüñ\s]", " ", t)  # solo letras
+    toks = word_tokenize(t, language="spanish")
+    return [w for w in toks if w not in STOP and len(w) > 2]
+
+
+# Demo con 2 comentarios
+for i in (0, 2):
+    raw = df.loc[i, "comentario"]
+    print("RAW :", raw)
+    print("TOKS:", tokens_es(raw))
+    print()
+#+end_src
+
+
+** 5. Frecuencias del corpus completo (FreqDist)
+
+*** Teoría
+=FreqDist= cuenta cuántas veces aparece cada token. Las palabras más frecuentes
+del corpus (sin stopwords) suelen ser las del *tema*.
+
+#+begin_src python
+from nltk import FreqDist
+
+todos = []
+for c in df["comentario"]:
+    todos.extend(tokens_es(c))
+
+fd = FreqDist(todos)
+print("tokens totales (con repetición):", len(todos))
+print("vocabulario (únicos):", len(fd))
+print("\nTop 20 palabras del tema:")
+for w, n in fd.most_common(20):
+    print(f"  {w:20s}  {n}")
+#+end_src
+
+*Interpretación esperada:* palabras como *votar*, *voto*, *pueden*, *cuentas*,
+*verificadas*, *bots*, *permiso* deberían destacar — coherente con el tema.
+
+
+** 6. Comparar dos subcorpus: ¿quién puede votar?
+
+*** Teoría
+Dividir el corpus según una etiqueta y comparar frecuencias es *análisis
+contrastivo*. Aquí: comentarios de quienes *sí* pueden votar vs quienes *no*.
+
+#+begin_src python
+def top_de(mascara, k=12):
+    toks = []
+    for c in df.loc[mascara, "comentario"]:
+        toks.extend(tokens_es(c))
+    return FreqDist(toks).most_common(k)
+
+print("=== NO pueden votar (puede_votar=0) ===")
+for w, n in top_de(df["puede_votar"] == 0):
+    print(f"  {w:20s}  {n}")
+
+print("\n=== SÍ pueden votar (puede_votar=1) ===")
+for w, n in top_de(df["puede_votar"] == 1):
+    print(f"  {w:20s}  {n}")
+#+end_src
+
+Pregunta para pensar: ¿aparecen más *permiso* / *deja* / *bloquea* en el grupo
+que no puede votar?
+
+
+** 7. Bigramas (pares de palabras)
+
+*** Teoría
+Un *bigrama* es un par consecutivo =(w1, w2)=. Captura expresiones como
+«pueden votar», «cuentas verificadas».
+
+#+begin_src python
+from nltk import bigrams
+from nltk.probability import FreqDist as FD
+
+pares = []
+for c in df["comentario"]:
+    toks = tokens_es(c)
+    pares.extend(bigrams(toks))
+
+fd_bi = FD(pares)
+print("Top 15 bigramas:")
+for bg, n in fd_bi.most_common(15):
+    print(f"  {' '.join(bg):35s}  {n}")
+#+end_src
+
+
+** 8. Cruce con etiquetas del CSV (sin ML todavía)
+
+Antes de clasificar, describe el corpus con tablas (EDA de texto):
+
+#+begin_src python
+print("Sentimiento × puede_votar:")
+print(pd.crosstab(df["sentimiento"], df["puede_votar"]))
+print("\nCategoria (muestra %):")
+print((df["categoria"].value_counts(normalize=True) * 100).round(1))
+print("\nVoto (quién emitió qué):")
+print(df["voto"].value_counts())
+#+end_src
+
+
+** 9. Clasificador Naive Bayes (teoría + práctica)
+
+*** 9.1 Idea
+Queremos predecir =puede_votar= (0/1) *solo a partir del texto* del comentario.
+Cada documento → diccionario ={palabra: True}= (features binarias).
+NLTK entrena =NaiveBayesClassifier= sobre esa bolsa.
+
+*** 9.2 Preparar features
+
+#+begin_src python
+from nltk.classify import NaiveBayesClassifier, accuracy
+from sklearn.model_selection import train_test_split
+
+def doc_features(texto: str) -> dict:
+    return {f"w_{t}": True for t in tokens_es(texto)}
+
+labeled = [(doc_features(r.comentario), r.puede_votar) for r in df.itertuples()]
+train, test = train_test_split(labeled, test_size=0.25, random_state=42)
+
+clf = NaiveBayesClassifier.train(train)
+print("Accuracy en test:", round(accuracy(clf, test), 3))
+print("\nFeatures más informativas:")
+clf.show_most_informative_features(12)
+#+end_src
+
+*** 9.3 Probar frases nuevas
+
+#+begin_src python
+ejemplos = [
+    "por qué no me deja votar si soy alumno",
+    "apoyo que solo voten cuentas verificadas contra bots",
+    "qué requisitos hay para poder votar en la encuesta",
+]
+for e in ejemplos:
+    pred = clf.classify(doc_features(e))
+    print(f"puede_votar≈{pred}  |  {e}")
+#+end_src
+
+*Nota pedagógica:* el accuracy puede ser alto porque el dataset es sintético y
+las plantillas se repiten. En texto real bajaría; igual el *flujo* es el correcto.
+
+
+*** 10. Exportar un resumen
+
+#+begin_src python
+resumen = pd.DataFrame(fd.most_common(30), columns=["token", "frecuencia"])
+out = Path("/home/likcos/Scripts/dispersion_rumores/datasets/nltk_top_tokens_voto.csv")
+resumen.to_csv(out, index=False)
+print("guardado:", out)
+#+end_src
+
+
+
+
+
+* NLTK — Cargar un corpus desde archivos de texto y PDF
+
+** Objetivo
+
+Aprender a tratar una *carpeta de archivos* como corpus de NLTK:
+1. Archivos =.txt= con =PlaintextCorpusReader= (forma canónica en NLTK).
+2. Archivos =.pdf= extrayendo texto y analizándolo igual (tokens, frecuencias).
+
+*Carpeta del corpus de ejemplo:*
+#+begin_example
+/home/likcos/Scripts/corpus_archivos/
+  txt/     ← documentos .txt
+  pdf/     ← documentos .pdf (generar con el script)
+  generar_pdfs_ejemplo.py
+#+end_example
+
+
+** 1. Teoría: ¿qué es un corpus en disco?
+
+*** 1.1 Corpus ≠ un solo string
+En el tutorial del CSV, cada *fila* era un documento.
+Aquí cada *archivo* es un documento (noticia, ensayo, informe, apunte…).
+
+| Origen     | Documento        | Cómo se carga              |
+|------------+------------------+----------------------------|
+| CSV        | una fila/columna | =pandas.read_csv=          |
+| Carpeta txt| un =.txt=        | =PlaintextCorpusReader=    |
+| Carpeta pdf| un =.pdf=        | extraer texto → analizar   |
+
+*** 1.2 =PlaintextCorpusReader= (idea)
+NLTK asume una carpeta raíz y un patrón de archivos (ej. =.*\.txt=).
+Te da:
+- =fileids()= — lista de archivos
+- =raw(fileid)= — texto crudo
+- =words(fileid)= — tokens (usa el tokenizador de NLTK)
+- =sents(fileid)= — oraciones
+
+*** 1.3 PDF: capa extra
+Un PDF *no* es texto plano: es un formato binario con tipografía y dibujo.
+Primero hay que *extraer* cadenas de texto (p. ej. con =pypdf=) y luego aplicar
+el mismo pipeline NLTK (tokenizar, stopwords, FreqDist).
+
+#+begin_example
+  PDF  →  extractor  →  string  →  NLTK (igual que un .txt)
+#+end_example
+
+*** 1.4 Encoding
+Los =.txt= en español suelen ir en *UTF-8*. Si ves =Ã±= o caracteres raros,
+el archivo no se abrió con la codificación correcta.
+
+
+
+** 2. Preparar el corpus de ejemplo
+
+*** 2.1 Textos ya incluidos
+En =corpus_archivos/txt/= hay cinco documentos (voto + IA + ML).
+
+*** 2.2 Generar los PDF de ejemplo
+
+#+begin_src shell :exports code
+cd /home/likcos/Scripts/corpus_archivos
+python3 generar_pdfs_ejemplo.py
+ls -la txt pdf
+#+end_src
+
+*** 2.3 Dependencias
+
+#+begin_src shell :exports code
+python3 -m pip install --user nltk pypdf
+#+end_src
+
+#+begin_src python
+import nltk
+for r in ("punkt", "punkt_tab", "stopwords"):
+    nltk.download(r, quiet=True)
+print("NLTK OK")
+#+end_src
+
+
+** 3. Cargar los =.txt= con PlaintextCorpusReader
+
+#+begin_src python
+from pathlib import Path
+from nltk.corpus.reader.plaintext import PlaintextCorpusReader
+import nltk
+
+ROOT = Path("/home/likcos/Scripts/corpus_archivos")
+TXT_DIR = ROOT / "txt"
+
+# NLTK 3.9+: permite leer corpus fuera de las rutas por defecto
+if str(TXT_DIR) not in nltk.data.path:
+    nltk.data.path.append(str(TXT_DIR.parent))
+
+corpus_txt = PlaintextCorpusReader(str(TXT_DIR), r".*\.txt", encoding="utf-8")
+
+print("Archivos del corpus:")
+for fid in corpus_txt.fileids():
+    n_words = len(corpus_txt.words(fid))
+    n_sents = len(corpus_txt.sents(fid))
+    print(f"  {fid:30s}  palabras≈{n_words:4d}  oraciones≈{n_sents}")
+
+print("\n--- Muestra raw (primer archivo) ---")
+print(corpus_txt.raw(corpus_txt.fileids()[0])[:300])
+#+end_src
+
+*Qué observas:* NLTK ya tokenizó al llamar =words()= / =sents()=.
+Eso es el valor de tratar la carpeta como corpus, no abrir archivo por archivo
+a mano (aunque también se puede; ver §5).
+
+
+
+** 4. Análisis NLTK sobre el corpus de texto
+
+*** 4.1 Stopwords + FreqDist global
+
+#+begin_src python
+import re
+from nltk.corpus import stopwords
+from nltk import FreqDist
+from nltk.tokenize import word_tokenize
+
+STOP = set(stopwords.words("spanish"))
+STOP.discard("no")
+
+
+def tokens_limpios(texto: str) -> list[str]:
+    t = texto.lower()
+    t = re.sub(r"[^a-záéíóúüñ\s]", " ", t)
+    toks = word_tokenize(t, language="spanish")
+    return [w for w in toks if w not in STOP and len(w) > 2]
+
+
+todos = []
+por_doc = {}
+for fid in corpus_txt.fileids():
+    toks = tokens_limpios(corpus_txt.raw(fid))
+    por_doc[fid] = toks
+    todos.extend(toks)
+
+fd = FreqDist(todos)
+print("Documentos:", len(por_doc))
+print("Tokens (sin stopwords):", len(todos))
+print("Vocabulario:", len(fd))
+print("\nTop 15 del corpus TXT:")
+for w, n in fd.most_common(15):
+    print(f"  {w:20s}  {n}")
+#+end_src
+
+*** 4.2 Comparar documentos (frecuencias por archivo)
+
+#+begin_src python
+print("Top 5 por documento:\n")
+for fid, toks in por_doc.items():
+    top = FreqDist(toks).most_common(5)
+    print(fid)
+    for w, n in top:
+        print(f"    {w} ({n})")
+    print()
+#+end_src
+
+Así ves que =02_quejas_*= habla de exclusión/voto y =05_ml_*= de algoritmos:
+el *mismo pipeline*, *distintos contenidos*.
+
+*** 4.3 Bigramas del corpus de archivos
+
+#+begin_src python
+from nltk import bigrams
+
+pares = []
+for toks in por_doc.values():
+    pares.extend(bigrams(toks))
+print("Top bigramas TXT:")
+for bg, n in FreqDist(pares).most_common(10):
+    print(f"  {' '.join(bg):30s}  {n}")
+#+end_src
+
+
+** 5. Alternativa: cargar =.txt= “a mano” (sin PlaintextCorpusReader)
+
+Útil si quieres control total del encoding o filtrar archivos:
+
+#+begin_src python
+docs_manual = {}
+for path in sorted(TXT_DIR.glob("*.txt")):
+    docs_manual[path.name] = path.read_text(encoding="utf-8")
+
+print("Cargados:", list(docs_manual))
+print("Chars totales:", sum(len(v) for v in docs_manual.values()))
+#+end_src
+
+Luego aplicas =tokens_limpios= igual que arriba.
+
+
+** 6. Cargar PDFs y pasarlos por NLTK
+
+*** 6.1 Extraer texto con pypdf
+
+#+begin_src python
+from pypdf import PdfReader
+
+PDF_DIR = ROOT / "pdf"
+
+
+def pdf_a_texto(path: Path) -> str:
+    reader = PdfReader(str(path))
+    partes = []
+    for page in reader.pages:
+        partes.append(page.extract_text() or "")
+    return "\n".join(partes)
+
+
+corpus_pdf = {}
+if PDF_DIR.exists():
+    for path in sorted(PDF_DIR.glob("*.pdf")):
+        corpus_pdf[path.name] = pdf_a_texto(path)
+        print(f"{path.name}: {len(corpus_pdf[path.name])} caracteres")
+else:
+    print("No hay carpeta pdf/. Ejecuta generar_pdfs_ejemplo.py")
+
+if corpus_pdf:
+    ejemplo = next(iter(corpus_pdf))
+    print("\n--- Extracto ---")
+    print(corpus_pdf[ejemplo][:250])
+#+end_src
+
+*** 6.2 Mismo análisis NLTK que con TXT
+
+#+begin_src python
+if corpus_pdf:
+    toks_pdf = []
+    for nombre, texto in corpus_pdf.items():
+        t = tokens_limpios(texto)
+        print(f"{nombre}: {len(t)} tokens limpios")
+        toks_pdf.extend(t)
+    print("\nTop 10 PDF:")
+    for w, n in FreqDist(toks_pdf).most_common(10):
+        print(f"  {w:20s}  {n}")
+else:
+    print("(omite: sin PDFs)")
+#+end_src
+
+*** 6.3 Unificar TXT + PDF en un solo corpus lógico
+
+#+begin_src python
+corpus_mixto = {}
+for fid in corpus_txt.fileids():
+    corpus_mixto[f"txt:{fid}"] = corpus_txt.raw(fid)
+for nombre, texto in corpus_pdf.items():
+    corpus_mixto[f"pdf:{nombre}"] = texto
+
+print("Documentos mezclados:", len(corpus_mixto))
+toks_mix = []
+for texto in corpus_mixto.values():
+    toks_mix.extend(tokens_limpios(texto))
+print("Top 12 corpus unificado:")
+for w, n in FreqDist(toks_mix).most_common(12):
+    print(f"  {w:20s}  {n}")
+#+end_src
+
+
+** 7. Clasificar documentos por “carpeta temática” (opcional)
+
+Si nombras archivos por tema, puedes etiquetar y entrenar Naive Bayes
+*a nivel documento* (no a nivel comentario):
+
+#+begin_src python
+from nltk.classify import NaiveBayesClassifier, accuracy
+
+# Etiqueta burda según el nombre del archivo (solo demo)
+def etiqueta(nombre: str) -> str:
+    n = nombre.lower()
+    if "voto" in n or "queja" in n or "restric" in n or "desment" in n:
+        return "voto_campus"
+    return "ia_ml"
+
+
+def feats(texto: str) -> dict:
+    return {f"w_{t}": True for t in tokens_limpios(texto)}
+
+
+labeled = []
+for fid in corpus_txt.fileids():
+    labeled.append((feats(corpus_txt.raw(fid)), etiqueta(fid)))
+for nombre, texto in corpus_pdf.items():
+    labeled.append((feats(texto), etiqueta(nombre)))
+
+print("Documentos etiquetados:", len(labeled))
+if len(labeled) >= 4:
+    # Con pocos docs el accuracy es solo ilustrativo
+    clf = NaiveBayesClassifier.train(labeled)
+    print("Entrenado (demo). Features útiles:")
+    clf.show_most_informative_features(8)
+    prueba = "no me deja votar en la encuesta del campus"
+    print("Predicción ejemplo:", clf.classify(feats(prueba)), "|", prueba)
+#+end_src
+
+
+** 8. Cómo usar TUS propios archivos
+
+1. Crea una carpeta, por ejemplo =~/Documents/mi_corpus/=.
+2. Mete =.txt= en UTF-8 (un tema o varios).
+3. Si tienes PDF, colócalos en otra subcarpeta y usa =pdf_a_texto=.
+4. Cambia =TXT_DIR= / =PDF_DIR= en este Org a tus rutas.
+5. Repite FreqDist / bigramas / clasificador.
+
+*Consejo:* un PDF escaneado (solo imagen) *no* tiene texto extraíble;
+hace falta OCR (Tesseract). Los PDF “de verdad” (exportados desde Word/LaTeX)
+sí suelen funcionar con =pypdf=.
+
 
 
 

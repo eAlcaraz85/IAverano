@@ -5028,19 +5028,22 @@ como primer modelo transparente; no es el más potente, pero enseña el flujo.
 
 ** 2. Requisitos
 
-#+begin_src shell :exports code
+#+begin_src shell 
 python3 -m pip install --user nltk pandas
 #+end_src
 
 La primera vez, NLTK descarga recursos (=punkt=, =stopwords=, a veces
 =punkt_tab=):
 
-#+begin_src python
+#+begin_src python :results output
 import nltk
 for r in ("punkt", "punkt_tab", "stopwords"):
     nltk.download(r, quiet=True)
 print("recursos OK")
 #+end_src
+
+#+RESULTS:
+: recursos OK
 
 
 
@@ -5049,7 +5052,7 @@ print("recursos OK")
 En NLP, un *corpus* no tiene que ser un libro: puede ser una tabla con una
 columna de texto. Aquí cada fila es un *documento* (un comentario).
 
-#+begin_src python
+#+begin_src python :session nltk_voto :results output
 import pandas as pd
 from pathlib import Path
 
@@ -5064,6 +5067,31 @@ print("\n--- categoria ---")
 print(df["categoria"].value_counts())
 #+end_src
 
+#+RESULTS:
+#+begin_example
+filas: 1500
+columnas: ['id', 'usuario', 'comentario', 'categoria', 'sentimiento', 'puede_votar', 'cuenta_verificada', 'dias_cuenta', 'voto']
+ id    usuario                                          comentario           categoria sentimiento  puede_votar  cuenta_verificada  dias_cuenta                  voto
+  1 @user_0001      si eres sospechoso de bot no te dejan votar...       explica_regla      neutro            1                  1         1006 a_favor_de_restringir
+  2 @user_0002  sin filtro de voto gana quien tenga más bots #voto a_favor_restriccion    positivo            1                  0          423 a_favor_de_restringir
+  3 @user_0003 llevo poco tiempo registrado y no me deja votar pls               queja    negativo            0                  0            1           sin_permiso
+
+--- puede_votar ---
+puede_votar
+0    804
+1    696
+Name: count, dtype: int64
+
+--- categoria ---
+categoria
+queja                    417
+explica_regla            344
+en_contra_restriccion    272
+a_favor_restriccion      261
+neutro_pregunta          206
+Name: count, dtype: int64
+#+end_example
+
 *Lectura:* =puede_votar= 0/1 materializa la regla del tema: *no todos pueden votar*.
 =categoria= agrupa quejas, reglas, a favor/en contra, preguntas.
 
@@ -5077,7 +5105,7 @@ print(df["categoria"].value_counts())
 3. =word_tokenize= parte en tokens.
 4. Filtrar stopwords en español + tokens muy cortos.
 
-#+begin_src python
+#+begin_src python :session nltk_voto :results output
 import re
 import nltk
 from nltk.corpus import stopwords
@@ -5109,6 +5137,13 @@ for i in (0, 2):
     print()
 #+end_src
 
+#+RESULTS:
+: RAW : si eres sospechoso de bot no te dejan votar...
+: TOKS: ['sospechoso', 'bot', 'dejan', 'votar']
+: 
+: RAW : llevo poco tiempo registrado y no me deja votar pls
+: TOKS: ['llevo', 'tiempo', 'registrado', 'deja', 'votar', 'pls']
+
 
 ** 5. Frecuencias del corpus completo (FreqDist)
 
@@ -5116,7 +5151,7 @@ for i in (0, 2):
 =FreqDist= cuenta cuántas veces aparece cada token. Las palabras más frecuentes
 del corpus (sin stopwords) suelen ser las del *tema*.
 
-#+begin_src python
+#+begin_src python :session nltk_voto :results output 
 from nltk import FreqDist
 
 todos = []
@@ -5131,6 +5166,34 @@ for w, n in fd.most_common(20):
     print(f"  {w:20s}  {n}")
 #+end_src
 
+#+RESULTS:
+#+begin_example
+tokens totales (con repetición): 6693
+vocabulario (únicos): 117
+
+Top 20 palabras del tema:
+  votar                 1038
+  pueden                331
+  voto                  287
+  pls                   189
+  encuesta              141
+  cuentas               125
+  alumnos               116
+  permiso               110
+  poder                 105
+  puedo                 102
+  votos                 101
+  solo                  98
+  cuenta                86
+  bloquea               81
+  bots                  73
+  dejan                 71
+  puedan                71
+  dice                  69
+  restricción           68
+  días                  65
+#+end_example
+
 *Interpretación esperada:* palabras como *votar*, *voto*, *pueden*, *cuentas*,
 *verificadas*, *bots*, *permiso* deberían destacar — coherente con el tema.
 
@@ -5141,7 +5204,7 @@ for w, n in fd.most_common(20):
 Dividir el corpus según una etiqueta y comparar frecuencias es *análisis
 contrastivo*. Aquí: comentarios de quienes *sí* pueden votar vs quienes *no*.
 
-#+begin_src python
+#+begin_src python :session nltk_voto :results output
 def top_de(mascara, k=12):
     toks = []
     for c in df.loc[mascara, "comentario"]:
@@ -5157,6 +5220,37 @@ for w, n in top_de(df["puede_votar"] == 1):
     print(f"  {w:20s}  {n}")
 #+end_src
 
+#+RESULTS:
+#+begin_example
+=== NO pueden votar (puede_votar=0) ===
+  votar                 640
+  pueden                186
+  voto                  109
+  pls                   100
+  permiso               93
+  encuesta              91
+  puedo                 65
+  cuenta                59
+  bloquea               59
+  dice                  53
+  puedan                49
+  alumnos               47
+
+=== SÍ pueden votar (puede_votar=1) ===
+  votar                 398
+  voto                  178
+  pueden                145
+  pls                   89
+  cuentas               84
+  votos                 82
+  poder                 71
+  alumnos               69
+  solo                  68
+  bots                  58
+  encuesta              50
+  restricción           49
+#+end_example
+
 Pregunta para pensar: ¿aparecen más *permiso* / *deja* / *bloquea* en el grupo
 que no puede votar?
 
@@ -5167,7 +5261,7 @@ que no puede votar?
 Un *bigrama* es un par consecutivo =(w1, w2)=. Captura expresiones como
 «pueden votar», «cuentas verificadas».
 
-#+begin_src python
+#+begin_src python :session nltk_voto :results output
 from nltk import bigrams
 from nltk.probability import FreqDist as FD
 
@@ -5182,12 +5276,32 @@ for bg, n in fd_bi.most_common(15):
     print(f"  {' '.join(bg):35s}  {n}")
 #+end_src
 
+#+RESULTS:
+#+begin_example
+Top 15 bigramas:
+  pueden votar                         331
+  poder votar                          105
+  permiso votar                        84
+  votar encuesta                       78
+  dejan votar                          71
+  votar pls                            71
+  puedan votar                         71
+  cuentas verificadas                  60
+  puede votar                          56
+  alumnos deberían                     46
+  deberían poder                       46
+  quiero votar                         46
+  votar plataforma                     46
+  plataforma bloquea                   46
+  alumno aun                           46
+#+end_example
+
 
 ** 8. Cruce con etiquetas del CSV (sin ML todavía)
 
 Antes de clasificar, describe el corpus con tablas (EDA de texto):
 
-#+begin_src python
+#+begin_src python :session nltk_voto :results output 
 print("Sentimiento × puede_votar:")
 print(pd.crosstab(df["sentimiento"], df["puede_votar"]))
 print("\nCategoria (muestra %):")
@@ -5196,47 +5310,297 @@ print("\nVoto (quién emitió qué):")
 print(df["voto"].value_counts())
 #+end_src
 
+#+RESULTS:
+#+begin_example
+Sentimiento × puede_votar:
+puede_votar    0    1
+sentimiento          
+negativo     524  165
+neutro       247  303
+positivo      33  228
 
-** 9. Clasificador Naive Bayes (teoría + práctica)
+Categoria (muestra %):
+categoria
+queja                    27.8
+explica_regla            22.9
+en_contra_restriccion    18.1
+a_favor_restriccion      17.4
+neutro_pregunta          13.7
+Name: proportion, dtype: float64
 
-*** 9.1 Idea
-Queremos predecir =puede_votar= (0/1) *solo a partir del texto* del comentario.
-Cada documento → diccionario ={palabra: True}= (features binarias).
-NLTK entrena =NaiveBayesClassifier= sobre esa bolsa.
+Voto (quién emitió qué):
+voto
+sin_permiso              804
+abstencion               257
+a_favor_de_restringir    243
+abrir_voto_a_todos       196
+Name: count, dtype: int64
+#+end_example
 
-*** 9.2 Preparar features
+
+
+** 9. Clasificadores sobre el texto (teoría + varios modelos)
+
+*** 9.0 Qué problema resolvemos
+Queremos predecir una *etiqueta* a partir del *comentario*:
+
+| Objetivo (=y=)     | Tipo de salida      | Ejemplo de uso práctico          |
+|--------------------+---------------------+----------------------------------|
+| =puede_votar=      | binaria 0/1         | ¿este texto suena a “sin permiso”? |
+| =sentimiento=      | 3 clases            | tono del comentario              |
+| =categoria=        | varias clases       | queja / regla / a favor…         |
+
+El texto se convierte en *números* (bolsa de palabras o TF–IDF) y luego entra
+a un modelo clásico.
+
+#+begin_example
+  comentario
+      → tokens_es(...)
+      → vector (Count o TF-IDF)
+      → modelo (Naive Bayes, logística, árbol, k-NN, SVM…)
+      → etiqueta predicha
+#+end_example
+
+*** 9.1 Teoría: de texto a features
+
+**** Bolsa de palabras (bag of words)
+Cada documento es un vector: cuántas veces aparece cada palabra del vocabulario.
+No guarda el orden (“no puedo votar” ≈ “votar no puedo” para el modelo).
+
+**** TF–IDF (idea)
+- *TF*: qué tan frecuente es la palabra *en ese* comentario.
+- *IDF*: qué tan rara es en *todo* el corpus.
+Palabras muy comunes en todos lados bajan de peso; palabras distintivas suben.
+
+**** Naive Bayes (NLTK / sklearn)
+Estima \(P(\text{clase}\mid\text{palabras})\) asumiendo independencia entre
+palabras dada la clase. Rápido, interpretable, buen *baseline* en texto corto.
+
+**** Regresión logística
+Aprende un peso por feature; la salida pasa por una sigmoide (binario) o
+softmax (multiclase). Muy usada en NLP clásico.
+
+**** SVM lineal (=LinearSVC=)
+Busca un hiperplano que separe clases con margen; con TF–IDF suele ir muy bien
+en texto.
+
+**** Árbol / Random Forest
+Reglas if/else sobre “¿aparece la palabra X?”. Interpretables; con muchas
+features ruidosas a veces empeoran.
+
+**** k-NN
+El comentario nuevo se etiqueta como sus vecinos más cercanos en el espacio
+vectorial. Hay que cuidar la escala; con TF–IDF + coseno/métrica adecuada
+funciona como “buscar textos parecidos”.
+
+*** 9.2 Preparar train/test una sola vez (sklearn)
 
 #+begin_src python
-from nltk.classify import NaiveBayesClassifier, accuracy
 from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.pipeline import Pipeline
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import LinearSVC
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
 
-def doc_features(texto: str) -> dict:
-    return {f"w_{t}": True for t in tokens_es(texto)}
+# Usamos el texto ya limpio (misma función tokens_es de bloques anteriores)
+def texto_limpio(s: str) -> str:
+    return " ".join(tokens_es(s))
 
-labeled = [(doc_features(r.comentario), r.puede_votar) for r in df.itertuples()]
-train, test = train_test_split(labeled, test_size=0.25, random_state=42)
+df = df.copy()
+df["texto_proc"] = df["comentario"].map(texto_limpio)
 
-clf = NaiveBayesClassifier.train(train)
-print("Accuracy en test:", round(accuracy(clf, test), 3))
-print("\nFeatures más informativas:")
-clf.show_most_informative_features(12)
+X = df["texto_proc"]
+y_voto = df["puede_votar"].astype(int)
+y_sent = df["sentimiento"]
+y_cat = df["categoria"]
+
+Xtr, Xte, ytr_v, yte_v = train_test_split(
+    X, y_voto, test_size=0.25, random_state=42, stratify=y_voto
+)
+print("Train:", len(Xtr), "| Test:", len(Xte))
+print("Distribución y_voto train:\n", ytr_v.value_counts(normalize=True).round(3))
 #+end_src
 
-*** 9.3 Probar frases nuevas
+*** 9.3 Naive Bayes con NLTK (features binarias)
+
+#+begin_src python
+from nltk.classify import NaiveBayesClassifier, accuracy as nltk_acc
+
+def doc_features(texto: str) -> dict:
+    # presencia de palabra (True/False), estilo NLTK clásico
+    return {f"w_{t}": True for t in tokens_es(texto)}
+
+labeled = [(doc_features(r.comentario), int(r.puede_votar)) for r in df.itertuples()]
+train_nltk, test_nltk = train_test_split(labeled, test_size=0.25, random_state=42)
+
+clf_nb_nltk = NaiveBayesClassifier.train(train_nltk)
+print("NLTK NaiveBayes accuracy:", round(nltk_acc(clf_nb_nltk, test_nltk), 3))
+print("\nFeatures más informativas (razón de likelihoods):")
+clf_nb_nltk.show_most_informative_features(12)
+#+end_src
+
+*** 9.4 Misma tarea con varios modelos sklearn
+
+Comparamos *el mismo* split y *el mismo* vectorizador TF–IDF.
+
+#+begin_src python
+def evaluar(nombre, pipe, X_train, y_train, X_test, y_test):
+    pipe.fit(X_train, y_train)
+    pred = pipe.predict(X_test)
+    acc = accuracy_score(y_test, pred)
+    print(f"\n=== {nombre} ===  accuracy={acc:.3f}")
+    print(classification_report(y_test, pred, digits=3))
+    print("matriz de confusión:\n", confusion_matrix(y_test, pred))
+    return pipe, acc
+
+tfidf = TfidfVectorizer(min_df=2, ngram_range=(1, 2))  # unigramas + bigramas
+
+modelos = [
+    ("MultinomialNB (TF-IDF)", Pipeline([("tfidf", tfidf), ("clf", MultinomialNB())])),
+    ("LogisticRegression", Pipeline([
+        ("tfidf", TfidfVectorizer(min_df=2, ngram_range=(1, 2))),
+        ("clf", LogisticRegression(max_iter=2000, random_state=42)),
+    ])),
+    ("LinearSVC", Pipeline([
+        ("tfidf", TfidfVectorizer(min_df=2, ngram_range=(1, 2))),
+        ("clf", LinearSVC(random_state=42)),
+    ])),
+    ("DecisionTree", Pipeline([
+        ("tfidf", TfidfVectorizer(min_df=2, ngram_range=(1, 2))),
+        ("clf", DecisionTreeClassifier(max_depth=12, random_state=42)),
+    ])),
+    ("RandomForest", Pipeline([
+        ("tfidf", TfidfVectorizer(min_df=2, ngram_range=(1, 2))),
+        ("clf", RandomForestClassifier(n_estimators=200, random_state=42)),
+    ])),
+    ("k-NN (k=7)", Pipeline([
+        ("tfidf", TfidfVectorizer(min_df=2, ngram_range=(1, 2))),
+        ("clf", KNeighborsClassifier(n_neighbors=7, metric="cosine")),
+    ])),
+]
+
+resultados = []
+entrenados = {}
+for nombre, pipe in modelos:
+    # clonamos vectorizador dentro de cada pipeline (ya viene aparte)
+    p, acc = evaluar(nombre, pipe, Xtr, ytr_v, Xte, yte_v)
+    resultados.append((nombre, acc))
+    entrenados[nombre] = p
+
+print("\n--- Ranking accuracy (puede_votar) ---")
+for n, a in sorted(resultados, key=lambda x: -x[1]):
+    print(f"  {a:.3f}  {n}")
+#+end_src
+
+*** 9.5 CountVectorizer vs TF–IDF (mismo modelo)
+
+#+begin_src python
+pipes_vec = {
+    "NB + Count": Pipeline([
+        ("vec", CountVectorizer(min_df=2, ngram_range=(1, 2))),
+        ("clf", MultinomialNB()),
+    ]),
+    "NB + TF-IDF": Pipeline([
+        ("vec", TfidfVectorizer(min_df=2, ngram_range=(1, 2))),
+        ("clf", MultinomialNB()),
+    ]),
+    "LogReg + Count": Pipeline([
+        ("vec", CountVectorizer(min_df=2, ngram_range=(1, 2))),
+        ("clf", LogisticRegression(max_iter=2000, random_state=42)),
+    ]),
+    "LogReg + TF-IDF": Pipeline([
+        ("vec", TfidfVectorizer(min_df=2, ngram_range=(1, 2))),
+        ("clf", LogisticRegression(max_iter=2000, random_state=42)),
+    ]),
+}
+
+print("Comparación vectorizador (tarea puede_votar):")
+for nombre, pipe in pipes_vec.items():
+    pipe.fit(Xtr, ytr_v)
+    acc = accuracy_score(yte_v, pipe.predict(Xte))
+    print(f"  {nombre:20s}  acc={acc:.3f}")
+#+end_src
+
+*** 9.6 Otras etiquetas: sentimiento y categoría
+
+#+begin_src python
+# Sentimiento (3 clases)
+Xs_tr, Xs_te, ys_tr, ys_te = train_test_split(
+    X, y_sent, test_size=0.25, random_state=42, stratify=y_sent
+)
+pipe_sent = Pipeline([
+    ("tfidf", TfidfVectorizer(min_df=2, ngram_range=(1, 2))),
+    ("clf", LogisticRegression(max_iter=2000, random_state=42)),
+])
+pipe_sent.fit(Xs_tr, ys_tr)
+print("=== Sentimiento (LogReg + TF-IDF) ===")
+print("accuracy:", round(accuracy_score(ys_te, pipe_sent.predict(Xs_te)), 3))
+print(classification_report(ys_te, pipe_sent.predict(Xs_te), digits=3))
+
+# Categoria (multiclase)
+Xc_tr, Xc_te, yc_tr, yc_te = train_test_split(
+    X, y_cat, test_size=0.25, random_state=42, stratify=y_cat
+)
+pipe_cat = Pipeline([
+    ("tfidf", TfidfVectorizer(min_df=2, ngram_range=(1, 2))),
+    ("clf", LinearSVC(random_state=42)),
+])
+pipe_cat.fit(Xc_tr, yc_tr)
+print("\n=== Categoria (LinearSVC + TF-IDF) ===")
+print("accuracy:", round(accuracy_score(yc_te, pipe_cat.predict(Xc_te)), 3))
+print(classification_report(yc_te, pipe_cat.predict(Xc_te), digits=3))
+#+end_src
+
+*** 9.7 Probar frases nuevas con varios modelos
 
 #+begin_src python
 ejemplos = [
     "por qué no me deja votar si soy alumno",
     "apoyo que solo voten cuentas verificadas contra bots",
     "qué requisitos hay para poder votar en la encuesta",
+    "esto silencia a los de nuevo ingreso es injusto",
 ]
+
+# Elige uno de los pipelines entrenados en 9.4
+pipe_ref = entrenados.get("LogisticRegression") or entrenados[list(entrenados)[0]]
+
+print("Predicción puede_votar (0=no, 1=sí):\n")
 for e in ejemplos:
-    pred = clf.classify(doc_features(e))
-    print(f"puede_votar≈{pred}  |  {e}")
+    proc = texto_limpio(e)
+    pred_sk = pipe_ref.predict([proc])[0]
+    pred_nltk = clf_nb_nltk.classify(doc_features(e))
+    pred_sent = pipe_sent.predict([proc])[0]
+    pred_cat = pipe_cat.predict([proc])[0]
+    print(f"TXT: {e}")
+    print(f"  sklearn(LogReg) puede_votar={pred_sk} | NLTK_NB={pred_nltk}")
+    print(f"  sentimiento≈{pred_sent} | categoria≈{pred_cat}\n")
 #+end_src
 
-*Nota pedagógica:* el accuracy puede ser alto porque el dataset es sintético y
-las plantillas se repiten. En texto real bajaría; igual el *flujo* es el correcto.
+*** 9.8 ¿Qué modelo elegir? (guía rápida)
+
+| Situación                         | Modelo razonable           |
+|-----------------------------------+----------------------------|
+| Baseline rápido e interpretable   | MultinomialNB / NLTK NB    |
+| Buen equilibrio texto corto       | LogisticRegression + TF-IDF|
+| Muchas clases, texto ruidoso      | LinearSVC + TF-IDF         |
+| Quieres reglas legibles           | DecisionTree (poca profundidad) |
+| Ensemble robusto tabular/texto    | RandomForest               |
+| “Textos parecidos → misma etiqueta” | k-NN + TF-IDF (cosine)   |
+
+*Nota pedagógica:* en este CSV sintético los accuracies pueden salir altos porque
+las plantillas se repiten. En comentarios reales del campus bajarían; el *método*
+(comparar modelos con el mismo split) es lo que importa.
+
+*** 9.9 Ejercicios extra
+1. Cambia =ngram_range=(1,1)= vs =(1,2)= y compara accuracy.
+2. Entrena k-NN con =k=3,5,11= y anota cuál gana.
+3. Usa =CountVectorizer= + árbol: ¿las reglas mencionan “permiso”, “bots”?
+4. Predice =voto= (cuidado: muchas filas son =sin_permiso= → desbalance).
 
 
 *** 10. Exportar un resumen
@@ -5247,9 +5611,6 @@ out = Path("/home/likcos/Scripts/dispersion_rumores/datasets/nltk_top_tokens_vot
 resumen.to_csv(out, index=False)
 print("guardado:", out)
 #+end_src
-
-
-
 
 
 * NLTK — Cargar un corpus desde archivos de texto y PDF
@@ -5560,6 +5921,525 @@ if len(labeled) >= 4:
 *Consejo:* un PDF escaneado (solo imagen) *no* tiene texto extraíble;
 hace falta OCR (Tesseract). Los PDF “de verdad” (exportados desde Word/LaTeX)
 sí suelen funcionar con =pypdf=.
+
+
+
+
+* RAG y Fine-Tuning con LoRA — Guía extensa (Ollama + entrenamiento local)
+
+
+1. *RAG* (*Retrieval-Augmented Generation*) — recuperar documentos y generar con
+   un LLM. Ejemplos prácticos con *Ollama*.
+2. *Fine-tuning con LoRA* — adaptar los pesos del modelo a tu tarea. Entrenamiento
+   con Python (Hugging Face + PEFT); Ollama sirve para *servir* el modelo después.
+
+#+begin_example
+RAG          →  “el modelo lee tus documentos en el momento de preguntar”
+Fine-tuning  →  “el modelo aprende el estilo/tarea y cambia (o añade) pesos”
+#+end_example
+
+Scripts relacionados en esta máquina:
+
+| Pieza | Ruta |
+|-------+------|
+| Demo RAG Ollama | =/home/likcos/Scripts/rag_ollama_demo.py= |
+| Corpus texto | =/home/likcos/Scripts/corpus_archivos/txt/= |
+| CSV comentarios | =.../dispersion_rumores/datasets/comentarios_no_todos_pueden_votar.csv= |
+| Tutor LoRA completo | =/home/likcos/Scripts/lora_tutor/= |
+
+------------------------------------------------------------------------
+
+** APARTADO A — RAG (Retrieval-Augmented Generation)
+
+*** A.1 El problema que resuelve RAG
+
+Un LLM (Llama, Mistral, etc.) fue entrenado con datos *hasta cierta fecha* y
+*no conoce* automáticamente:
+
+- el reglamento interno de tu campus,
+- tu CSV de comentarios,
+- el PDF que subiste ayer,
+- políticas que cambian cada semana.
+
+Si le preguntas sin contexto, *alucina* (inventa con seguridad).
+
+*RAG* no reentrena el modelo: *busca* trozos relevantes en *tu* base de
+conocimiento y se los pega al prompt para que responda *apoyado* en ellos.
+
+*** A.2 Definición formal (tres letras)
+
+| Letra | Nombre inglés | Qué hace |
+|-------+---------------+----------|
+| R | *Retrieval* | Recuperar los *k* fragmentos más relevantes |
+| A | *Augmented* | Aumentar el prompt con esos fragmentos |
+| G | *Generation* | El LLM genera la respuesta condicionada al contexto |
+
+*** A.3 Analogía didáctica
+
+Imagina un examen a libro abierto:
+
+1. No memorizas todo el libro otra vez (eso sería fine-tuning).
+2. Abres el índice, buscas las páginas útiles (recuperación / embeddings).
+3. Lees esos párrafos y *redactas* la respuesta (generación).
+
+*** A.4 Pipeline completo (teoría)
+
+#+begin_example
+[Documentos: txt, pdf, csv, web…]
+        │
+        ▼
+  1. Carga y limpieza
+        │
+        ▼
+  2. Chunking (partir en trozos de ~200–800 caracteres, con solape)
+        │
+        ▼
+  3. Embedding de cada chunk → vector en R^n
+        │
+        ▼
+  4. Índice / base vectorial (memoria, FAISS, Chroma, SQLite…)
+        │
+        ▼
+[Pregunta del usuario] → embedding de la pregunta
+        │
+        ▼
+  5. Similitud (coseno) → top-k chunks
+        │
+        ▼
+  6. Prompt = instrucción + chunks + pregunta
+        │
+        ▼
+  7. LLM (Ollama) genera respuesta
+#+end_example
+
+*** A.5 Chunking (por qué importa)
+
+| Error de chunking | Efecto |
+|-------------------+--------|
+| Trozos demasiado grandes | Ruido; el modelo se distrae |
+| Trozos demasiado chicos | Pierdes contexto (mitad de una regla) |
+| Sin solape | Cortes a mitad de frase importante |
+| Cortar solo por caracteres ciegos | Rompes listas / código |
+
+Práctica razonable para español en foros/apuntes: *300–500 caracteres*, solape
+*50–100*.
+
+*** A.6 Embeddings y similitud coseno
+
+Un *embedding* es un vector que representa el *significado* aproximado de un
+texto. Textos parecidos → vectores cercanos.
+
+Similitud coseno (la misma idea que en el caso de rumores/bots):
+
+\[
+\cos(\mathbf{a},\mathbf{b})
+  = \frac{\mathbf{a}\cdot\mathbf{b}}{\|\mathbf{a}\|\,\|\mathbf{b}\|}
+\]
+
+En RAG:
+
+- indexas cada chunk con el *mismo* modelo de embedding,
+- embeds la pregunta,
+- tomas los *k* cosenos más altos.
+
+*** A.7 Ollama en el mapa RAG
+
+*Ollama* es un servidor local de modelos. Para RAG suele usarse así:
+
+| Rol | Modelo ejemplo en Ollama | Endpoint típico |
+|-----+--------------------------+-----------------|
+| Embeddings | =nomic-embed-text= | =/api/embeddings= |
+| Generación | =llama3.2=, =mistral=, =qwen2.5= | =/api/chat= |
+
+#+begin_src bash :exports code
+# Instalar Ollama (si no lo tienes): https://ollama.com
+ollama serve          # en una terminal
+ollama pull llama3.2
+ollama pull nomic-embed-text
+ollama list
+#+end_src
+
+*Importante:* Ollama *no indexa* solo. Tú (o un framework: LangChain, LlamaIndex)
+haces la recuperación; Ollama genera (y opcionalmente embebe).
+
+*** A.8 Anatomía del prompt aumentado
+
+#+begin_example
+SYSTEM:
+  Responde SOLO con el contexto. Si no está, di que no aparece.
+  Cita el número de fragmento.
+
+USER:
+  Contexto:
+  [1] (fuente=01_regla_voto.txt) No todos pueden votar...
+  [2] (fuente=02_quejas_alumnos.txt) Varios alumnos se quejan...
+
+  Pregunta: ¿Quién sí puede votar según los documentos?
+
+  Respuesta:
+#+end_example
+
+Sin esa instrucción (“solo con el contexto”), el modelo mezcla memoria paramétrica
+con tus docs y vuelve a alucinar.
+
+*** A.9 Qué puede salir mal (tabla de diagnóstico)
+
+| Síntoma | Causa probable | Mitigación |
+|---------+----------------+------------|
+| Responde inventando | Prompt débil / k=0 útil | Forzar “solo contexto”; subir k |
+| Ignora el PDF bueno | Mal embedding / chunk | Cambiar modelo embed; chunking |
+| Contesta con ruido | k demasiado alto | Bajar k; filtrar por metadata |
+| Lento | Embeber todo en cada pregunta | Cachear embeddings de docs |
+| Vacío | Ollama apagado / modelo no pull | =ollama serve= + =pull= |
+
+*** A.10 RAG vs “pegar todo el archivo en el prompt”
+
+| Enfoque | Cuándo sirve | Límite |
+|---------+--------------+--------|
+| Meter todo el texto | Docs muy cortos | Se acaba el *context window* |
+| RAG | Muchos docs / corpus grande | Depende de la calidad del retrieve |
+
+*** A.11 Ejemplo práctico 1 — Demo lista (script)
+
+#+begin_src bash :exports code
+cd /home/likcos/Scripts
+
+# Corpus de archivos .txt
+python3 rag_ollama_demo.py \
+  --docs /home/likcos/Scripts/corpus_archivos/txt \
+  --pregunta "¿Por qué no todos pueden votar?" \
+  --chat-model llama3.2 \
+  --embed-model nomic-embed-text \
+  --k 4
+
+# O el CSV de comentarios
+python3 rag_ollama_demo.py \
+  --docs /home/likcos/Scripts/dispersion_rumores/datasets/comentarios_no_todos_pueden_votar.csv \
+  --pregunta "¿Qué dicen quienes están a favor de restringir el voto?" \
+  --k 5
+#+end_src
+
+Si fallan los embeddings, el script puede caer a *TF–IDF + coseno* (misma idea de
+recuperación, menos “semántica”):
+
+#+begin_src bash :exports code
+python3 rag_ollama_demo.py --tfidf \
+  --docs /home/likcos/Scripts/corpus_archivos/txt \
+  --pregunta "¿Qué es un agente racional?"
+#+end_src
+
+*** A.12 Ejemplo práctico 2 — RAG mínimo en Python (para leer línea a línea)
+
+#+begin_src python :eval no
+import requests
+import numpy as np
+
+OLLAMA = "http://127.0.0.1:11434"
+
+docs = [
+    "Solo cuentas verificadas pueden votar en la encuesta del campus.",
+    "Las cuentas nuevas no pueden votar por seguridad contra bots.",
+    "Un agente racional elige la acción con mejor resultado esperado.",
+]
+
+def embed(text, model="nomic-embed-text"):
+    r = requests.post(f"{OLLAMA}/api/embeddings",
+                      json={"model": model, "prompt": text}, timeout=60)
+    v = np.array(r.json()["embedding"], dtype=float)
+    return v / (np.linalg.norm(v) + 1e-12)
+
+# Índice
+M = np.stack([embed(d) for d in docs])
+
+pregunta = "¿Quién puede votar?"
+q = embed(pregunta)
+sims = M @ q
+k = 2
+idx = np.argsort(-sims)[:k]
+contexto = "\n".join(f"[{i+1}] {docs[j]}" for i, j in enumerate(idx))
+
+prompt_user = f"Contexto:\n{contexto}\n\nPregunta: {pregunta}\nResponde solo con el contexto."
+r = requests.post(
+    f"{OLLAMA}/api/chat",
+    json={
+        "model": "llama3.2",
+        "stream": False,
+        "messages": [
+            {"role": "system", "content": "Responde solo con el contexto dado."},
+            {"role": "user", "content": prompt_user},
+        ],
+    },
+    timeout=120,
+)
+print(r.json()["message"]["content"])
+#+end_src
+
+*** A.13 Variantes avanzadas (mapa, sin implementar todo)
+
+| Técnica | Idea |
+|---------+------|
+| *Hybrid search* | Combinar BM25 (palabras exactas) + embeddings |
+| *Reranking* | Recuperar 20 y reordenar con un modelo cruzado |
+| *Metadata filters* | Solo docs de 2026 / solo “reglamento” |
+| *Query rewriting* | LLM reescribe la pregunta antes de buscar |
+| *Citations* | Obligar a citar chunk id (auditoría) |
+| *Agentic RAG* | El modelo decide si necesita recuperar otra vez |
+
+*** A.14 Evaluación rápida de un RAG (checklist alumno)
+
+1. Pregunta cuya respuesta *está* en un solo archivo → ¿la cita?
+2. Pregunta *fuera* del corpus → ¿admite que no sabe?
+3. Pregunta con sinónimos (“sufragio” vs “voto”) → ¿el embedding aguanta?
+4. Cambia =k= de 1 a 8 → ¿en qué punto aparece ruido?
+
+*** A.15 Cuándo usar RAG (y cuándo no)
+
+*Usa RAG si:*
+- tus datos cambian seguido,
+- necesitas citas / trazabilidad,
+- no quieres reentrenar cada semana,
+- el conocimiento es factual y documental.
+
+*No basta solo RAG si:*
+- quieres un *estilo* fijo (tutor que siempre explica paso a paso),
+- necesitas una *habilidad* nueva (formato JSON estricto, jerga interna),
+- el modelo base es demasiado débil en la tarea aunque le pegues contexto.
+
+Ahí entra el *fine-tuning* (apartado B), a menudo *combinado* con RAG.
+
+------------------------------------------------------------------------
+
+** APARTADO B — Fine-Tuning con LoRA
+
+*** B.1 Qué es fine-tuning
+
+*Fine-tuning* (ajuste fino) = tomar un modelo *ya preentrenado* y continuar
+entrenándolo con un dataset *más pequeño y especializado* para que se adapte a
+una tarea o dominio.
+
+#+begin_example
+Modelo base (sabio general)
+        +
+Dataset propio (tutor, legales, soporte campus…)
+        ↓
+Modelo adaptado (mejor en ESA tarea)
+#+end_example
+
+Analogía: la persona ya leyó la biblioteca pública (preentrenamiento). Fine-tuning
+es un *curso intensivo* de un tema concreto.
+
+*** B.2 Fine-tuning completo vs LoRA
+
+| | Full fine-tuning | LoRA |
+|---+------------------+------|
+| Qué se actualiza | *Todos* los pesos | Unas matrices pequeñas (*adaptadores*) |
+| VRAM | Muy alta | Mucho menor |
+| Riesgo de olvidar lo general | Alto (*catastrophic forgetting*) | Menor |
+| Artefacto | Modelo entero nuevo | Archivos pequeños de adaptador |
+| Ideal para | Labs con muchos GPUs | Clase / laptop con 8–16 GB |
+
+*** B.3 Teoría LoRA (Low-Rank Adaptation)
+
+En cada capa (p. ej. proyecciones de atención =q_proj, k_proj, v_proj, o_proj=)
+hay una matriz de pesos grande \(W\).
+
+LoRA *congela* \(W\) y aprende dos matrices chicas \(A\) y \(B\) tales que:
+
+\[
+W' = W + \Delta W, \quad \Delta W = B A
+\]
+
+con rango bajo \(r\) (p. ej. 8, 16, 32). Es decir: no reescriben la biblioteca;
+añaden un “cuaderno de notas” delgado.
+
+Hiperparámetros típicos:
+
+| Parámetro | Significado práctico |
+|-----------+----------------------|
+| =r= (rank) | Capacidad del adaptador (más r → más expresivo y más VRAM) |
+| =lora_alpha= | Escala de \(\Delta W\) (a menudo alpha ≈ 2r) |
+| =target_modules= | A qué matrices aplicar LoRA |
+| =dropout= | Regularización del adaptador |
+
+*** B.4 Ollama y LoRA: roles distintos (muy importante)
+
+#+begin_example
+  Ollama  →  INFERENCIA (chatear / API). No entrena LoRA.
+  Python (PEFT/Transformers)  →  ENTRENAMIENTO LoRA.
+#+end_example
+
+Flujo realista en tu carpeta =lora_tutor/=:
+
+#+begin_example
+JSONL de ejemplos
+    → train_lora.py   (Hugging Face + PEFT + LoRA)
+    → adaptadores guardados
+    → inference.py    (probar en Python)
+    → (opcional) fusionar + GGUF + Modelfile
+    → ollama create mi-tutor
+    → ollama run mi-tutor
+#+end_example
+
+*** B.5 Dataset para fine-tuning (formato)
+
+Lo habitual en instrucción/respuesta (JSONL, una línea = un ejemplo):
+
+#+begin_src json
+{"instruction": "Explica qué es k-NN en una analogía", "response": "Imagina que..."}
+#+end_src
+
+Buenas prácticas:
+
+- 100–1000+ ejemplos de calidad > 10 000 basura.
+- Mismo tono (si quieres un *tutor*, que todas las respuestas enseñen).
+- Mezcla: conceptos, errores típicos, ejercicios cortos.
+- Evita contradicciones entre ejemplos.
+
+Puedes construir un JSONL a partir de tu CSV de votos (ejemplo de idea):
+
+#+begin_src python :eval no
+import json, pandas as pd
+from pathlib import Path
+
+df = pd.read_csv(
+    "/home/likcos/Scripts/dispersion_rumores/datasets/comentarios_no_todos_pueden_votar.csv"
+)
+out = Path("/tmp/voto_sft_ejemplos.jsonl")
+with out.open("w", encoding="utf-8") as f:
+    for _, r in df.head(50).iterrows():
+        instr = "Clasifica el comentario: ¿el autor parece poder votar? Responde si/no y por qué."
+        resp = (
+            f"puede_votar={r.puede_votar}. "
+            f"Categoría={r.categoria}. Comentario: {r.comentario}"
+        )
+        f.write(json.dumps({"instruction": instr, "response": resp}, ensure_ascii=False) + "\n")
+print("ejemplos en", out)
+#+end_src
+
+(Eso es *solo una semilla* didáctica; un dataset SFT real se revisa a mano.)
+
+*** B.6 Qué aprende el modelo con LoRA (y qué no)
+
+| LoRA suele ayudar | LoRA no sustituye |
+|-------------------+-------------------|
+| Estilo / formato de respuesta | Hechos que cambian cada día → mejor RAG |
+| Jerga y plantillas de tu curso | Conocimiento gigante nuevo sin datos |
+| Seguir instrucciones estrictas | Memoria perfecta de PDFs enormes |
+| Tarea estrecha (tutor, clasificador verbal) | Actualizar noticias en tiempo real |
+
+Por eso en producción es común: *modelo fine-tuned (estilo) + RAG (hechos)*.
+
+*** B.7 Ejemplo práctico — entrenar con tu proyecto =lora_tutor=
+
+**** Requisitos
+- Python 3.10+
+- GPU Nvidia recomendada (8 GB+); CPU posible pero lento
+- Dependencias: ver =lora_tutor/requirements_lora.txt=
+
+#+begin_src bash :exports code
+cd /home/likcos/Scripts/lora_tutor
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements_lora.txt
+#+end_src
+
+**** Entrenar
+
+#+begin_src bash :exports code
+cd /home/likcos/Scripts/lora_tutor
+source venv/bin/activate
+python train_lora.py
+# Revisa rutas de modelo base y salida dentro del script
+#+end_src
+
+El script aplica LoRA a módulos de atención (=q_proj=, =k_proj=, …) y guarda
+adaptadores (ligeros frente al modelo completo).
+
+**** Inferencia en Python
+
+#+begin_src bash :exports code
+python inference.py
+#+end_src
+
+**** Llevar el resultado a Ollama (opcional)
+
+1. Fusionar adaptador + base (según =convert_to_gguf.py= / notas del README).
+2. Convertir a *GGUF* (formato que Ollama consume bien).
+3. Crear un =Modelfile= y:
+
+#+begin_src bash :exports code
+ollama create tutor-prog -f Modelfile
+ollama run tutor-prog
+#+end_src
+
+Detalle paso a paso: =/home/likcos/Scripts/lora_tutor/README_lora_tutor.org=
+y =tutorial_lora_tutor_programacion.org=.
+
+*** B.8 Esqueleto conceptual de LoRA con PEFT (para leer)
+
+#+begin_src python :eval no
+from peft import LoraConfig, get_peft_model, TaskType
+
+lora_config = LoraConfig(
+    task_type=TaskType.CAUSAL_LM,
+    r=16,
+    lora_alpha=32,
+    lora_dropout=0.05,
+    target_modules=["q_proj", "k_proj", "v_proj", "o_proj"],
+)
+# model = get_peft_model(base_model, lora_config)
+# luego Trainer / SFTTrainer con tu JSONL
+#+end_src
+
+*** B.9 QLoRA (mención)
+
+*QLoRA* = LoRA + modelo base cargado en *cuantización* (4-bit). Reduce VRAM aún
+más. Misma idea de adaptadores; cambia cómo se carga el modelo base.
+
+*** B.10 Errores frecuentes en fine-tuning
+
+| Error | Qué pasa | Qué hacer |
+|-------+----------+-----------|
+| Dataset minúsculo y repetido | Memoriza frases | Más variedad |
+| =r= enorme sin datos | Overfitting / VRAM | Empieza r=8–16 |
+| LR demasiado alto | El modelo “se rompe” | Bajar learning rate |
+| Evaluar solo loss | No ves calidad real | Probar prompts a mano |
+| Esperar que Ollama entrene | No existe esa API | Entrena en Python |
+
+*** B.11 Mini-evaluación cualitativa post-LoRA
+
+Antes/después, prueba los *mismos* prompts:
+
+1. “Explica A* como a un principiante.”
+2. “Corrige este código Python con un error de índice.”
+3. “Responde en JSON con claves X, Y.”
+
+Anota: ¿sigue instrucciones? ¿tono tutor? ¿alucina menos en el dominio?
+
+
+** APARTADO C — RAG vs LoRA vs ambos (síntesis)
+
+*** C.1 Tabla de decisión
+
+| Necesitas… | Empieza con |
+|------------+-------------|
+| Responder con *tus PDFs/CSV* actuales | *RAG* + Ollama |
+| Un *estilo* fijo (tutor, soporte) | *LoRA* |
+| Hechos frescos *y* estilo | *LoRA + RAG* |
+| Prototipo en una tarde | Solo RAG |
+| Producto de clase con GPU | LoRA en =lora_tutor/= |
+
+*** C.2 Arquitectura combinada (la más potente en la práctica)
+
+#+begin_example
+Usuario pregunta
+    → Recuperación RAG (tus docs)
+    → Prompt = contexto + pregunta
+    → LLM fine-tuned con LoRA (buen estilo / formato)
+    → Respuesta
+#+end_example
+
+El LoRA hace que *obedezca* y *explique*; el RAG aporta *los hechos del campus*.
 
 
 

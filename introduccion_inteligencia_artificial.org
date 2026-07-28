@@ -6474,9 +6474,8 @@ El LoRA hace que *obedezca* y *explique*; el RAG aporta *los hechos del campus*.
 
 * Chatbot con RAG + Fine-Tuning — Tutorial paso a paso (Web y WhatsApp)
 
-** 0. Presentación y ruta de trabajo
 
-El presente documento constituye la guía de laboratorio para construir un *chatbot
+El presente apartado constituye la guía de laboratorio para construir un *chatbot
 de dominio* (atención institucional, soporte interno o FAQ especializada) mediante
 la combinación de dos técnicas complementarias:
 
@@ -7921,7 +7920,7 @@ Fotograma BGR (OpenCV)
 *** 3.1 Descargar los modelos oficiales
 Guarde como =descargar_modelos.py= dentro de =laboratorio_mediapipe/=:
 
-#+begin_src python
+#+begin_src python :results output
 #!/usr/bin/env python3
 """Descarga los bundles .task de MediaPipe (una sola vez)."""
 from pathlib import Path
@@ -7955,10 +7954,8 @@ if __name__ == "__main__":
 #+end_src
 
 #+RESULTS:
-: Descargando hand_landmarker.task ...
-: OK → modelos/hand_landmarker.task (7819105 bytes)
-: Descargando face_landmarker.task ...
-: OK → modelos/face_landmarker.task (3758596 bytes)
+: Ya existe: modelos/hand_landmarker.task
+: Ya existe: modelos/face_landmarker.task
 
 #+begin_src bash
 cd laboratorio_mediapipe
@@ -7969,7 +7966,7 @@ python descargar_modelos.py
 *** 3.2 Utilidad común de dibujo
 Guarde como =mp_dibujo.py=:
 
-#+begin_src python
+#+begin_src python :source output
 """Utilidades de dibujo para landmarks MediaPipe + OpenCV."""
 from __future__ import annotations
 
@@ -8036,6 +8033,8 @@ def bgr_a_mp_image(frame_bgr):
     rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
     return mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
 #+end_src
+
+#+RESULTS:
 
 *** 3.3 Imagen de prueba (si no tiene foto propia)
 Puede usar cualquier =.jpg=/=.png= con una mano o un rostro visibles.
@@ -10539,3 +10538,27 @@ Respuesta (15–25 líneas):
 
 
 
+
+* Misión Jaeger Evangelion
+
+Setup: laptop fija, EV3/NXT por USB, pista en un círculo de ~1–1.5 m. Cámara lista. Control solo con manos.
+
+** Misión 1 — “Pasillo estrecho”
+- Objetivo: Cruzar un pasillo de 1 m × 40 cm (cajas/libros) sin tumbar nada ni tensar el cable.
+- Controles: mano izq/der = girar · adelante = avanzar · puño = alto.
+- Éxito: Llegar al final y frenar con puño.
+- Fallo: Chocas, tiras “escombro” o jala el cable.
+
+** Misión 2 — “Rescate en zona caliente”
+- Objetivo: En un cuadro 1×1 m, llegar a la “víctima” (peluche/botella) entre obstáculos.
+- Controles: igual que la 1 · Victory = modo rescate (beep o brazo).
+- Éxito: Llegar + Victory + salir un poco hacia la base.
+- Fallo: No llegas o el cable se estira al máximo.
+
+** Misión 3 — “Estacionamiento táctico”
+- Objetivo: Meter el robot en la bahía que diga el instructor (A, B o C), todas a <1.5 m de la PC.
+- Controles: manos para mover · puño = “estacionado”.
+- Éxito: Queda dentro de la cinta y frena.
+- Fallo: Te sales de la bahía o enredas el cable.
+
+Regla de oro del Jaeger: la PC no se mueve; el cable es el “enlace neural”. Si se pone tenso → abortar con puño.

@@ -6472,6 +6472,2152 @@ El LoRA hace que *obedezca* y *explique*; el RAG aporta *los hechos del campus*.
 
 
 
+* Chatbot con RAG + Fine-Tuning — Tutorial paso a paso (Web y WhatsApp)
+
+** 0. Presentación y ruta de trabajo
+
+El presente documento constituye la guía de laboratorio para construir un *chatbot
+de dominio* (atención institucional, soporte interno o FAQ especializada) mediante
+la combinación de dos técnicas complementarias:
+
+1. *RAG* (*Retrieval-Augmented Generation*): recuperación de fragmentos documentales
+   e inyección de contexto en el prompt del modelo generativo.
+2. *Fine-tuning* con *LoRA*: adaptación del comportamiento (tono, formato, plantillas)
+   sin reentrenar el modelo completo.
+
+El mismo núcleo lógico se expone después por dos canales: *interfaz web* y *WhatsApp*.
+
+*** Objetivos de aprendizaje
+Al concluir los pasos, el estudiante deberá:
+
+- Explicar el papel de embeddings, chunking, índice vectorial, prompt y adaptadores LoRA.
+- Describir el *orquestador* como componente de control (no como el LLM propiamente dicho).
+- Ejecutar un pipeline completo: corpus → recuperación → generación → evaluación → canales.
+- Justificar cuándo basta RAG, cuándo conviene fine-tuning y cuándo se combinan ambos.
+- Distinguir el *canal* (transporte) del *cerebro* (orquestación + RAG + modelo).
+
+*** Itinerario de prácticas 
+Las prácticas siguientes forman el hilo conductor del proceso. El código completo
+está *incluido en este mismo documento*: el alumno lo copia a archivos locales
+de trabajo (por ejemplo, carpeta =laboratorio_chatbot/=).
+
+| Bloque | Actividad                     | Dónde está en este tutorial                   |
+|--------+-------------------------------+-----------------------------------------------|
+| A      | Embeddings y similitud coseno | Parte 2, práctica A                           |
+| B      | Corpus + RAG local con Ollama | Parte 5, Pasos 1–3 (código completo)          |
+| C      | Orquestador =responder()=       | Parte 5, Paso 5                               |
+| D      | Fine-tuning LoRA              | Parte 5, Paso 6 (dataset + train + inference) |
+| E      | Canal web                     | Parte 6                                       |
+| F      | Canal WhatsApp                | Parte 7                                       |
+
+*** Requisitos de entorno
+Cree una carpeta de trabajo en cualquier ubicación y active un entorno virtual:
+
+#+begin_src bash
+mkdir -p laboratorio_chatbot && cd laboratorio_chatbot
+python3 -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+
+pip install requests numpy scikit-learn pandas
+pip install fastapi uvicorn python-multipart httpx python-dotenv
+pip install sentence-transformers faiss-cpu
+
+# Práctica D (GPU recomendada):
+pip install torch transformers peft datasets accelerate bitsandbytes sentencepiece
+#+end_src
+
+*Servidor de modelos locales (prácticas B en adelante):* instalar [[https://ollama.com][Ollama]],
+luego:
+
+#+begin_src bash
+ollama serve          # en una terminal aparte
+ollama pull llama3.2
+ollama pull nomic-embed-text
+#+end_src
+
+** Parte 1 — Teoría: de qué hablamos cuando decimos “chatbot con IA”
+
+*** 1.1 Un chatbot no es solo un LLM
+Un *chatbot* es un *sistema*. El LLM es un componente. En producción aparecen además:
+
+| Pieza                   | Función                                                 |
+|-------------------------+---------------------------------------------------------|
+| Canal                   | Web, WhatsApp, Telegram… (cómo llega el mensaje)        |
+| Orquestador             | Recibe el texto, llama a RAG/LLM, formatea la respuesta |
+| Memoria de conversación | Historial corto (turnos previos)                        |
+| Base de conocimiento    | PDFs, reglamentos, FAQs, bases internas                 |
+| Políticas               | Qué puede / no puede responder; tono; citas             |
+
+#+begin_example
+Usuario (Web o WhatsApp)
+        │
+        ▼
+   API / Webhook  ←── mismo backend
+        │
+        ▼
+   Orquestador (RAG + LLM fine-tuned opcional)
+        │
+        ├──► Índice vectorial (documentos)
+        └──► Modelo generativo (base + LoRA)
+        │
+        ▼
+   Respuesta al canal
+#+end_example
+
+*** 1.2 El problema de las alucinaciones
+Los LLM predicen la *siguiente token* más probable dado el contexto. No “consultan
+una verdad externa” por defecto. Si la pregunta exige un hecho de *su* organización
+(horarios, reglamentos, precios), sin documentos el modelo puede *inventar* con tono seguro.
+
+*RAG* ataca ese problema *inyectando evidencia* en el prompt.
+*Fine-tuning* ataca otro problema: *cómo* debe hablar y estructurar la respuesta.
+
+*** 1.3 Analogía de arquitectura (una sola, clara)
+- *RAG* ≈ examen a *libro abierto*: busca las páginas y redacta.
+- *Fine-tuning* ≈ *entrenar al redactor* para que use el estilo de la institución
+  (plantillas, cortesía, formato de citas).
+- *Orquestador* ≈ el *director de escena*: decide el orden (¿busco documentos?
+  ¿uso historial? ¿rechazo la pregunta?), llama a cada actor y ensambla el resultado.
+- *Canal* (web/WhatsApp) ≈ el *mostrador* donde el ciudadano entrega la pregunta:
+  el mostrador no es el conocimiento; solo transporta mensajes.
+
+
+** Parte 2 — Teoría profunda de RAG
+
+*** 2.1 Definición formal
+*RAG* = *Retrieval* + *Augmented* + *Generation*:
+
+1. Recuperar los *k* fragmentos más relevantes de una colección.
+2. Aumentar el *prompt* con esos fragmentos (contexto).
+3. Generar la respuesta *condicionada* a ese contexto.
+
+*** 2.2 Embeddings (el corazón de la recuperación semántica)
+Un *embedding* es un vector \(\mathbf{v} \in \mathbb{R}^d\) que representa un texto.
+Modelos de sentence embeddings se entrenan para que textos *semejantes en significado*
+queden *cercanos* (similitud coseno alta).
+
+Flujo:
+
+#+begin_example
+chunk de documento  →  modelo de embedding  →  vector d-dimensional
+pregunta del usuario →  el *mismo* modelo   →  vector consulta
+similitud(consulta, chunks) → top-k
+#+end_example
+
+*Importante:* use el *mismo* modelo (y la misma normalización) para indexar documentos
+y para embeber la pregunta. Mezclar modelos rompe la geometría del espacio.
+
+**** Práctica A — Embeddings y similitud (obligatoria antes de RAG)
+Esta práctica aísla *solo* la pieza de representación semántica. Aún no hay LLM ni índice
+completo: el objetivo es verificar que frases afines obtienen similitud alta.
+
+#+begin_src python
+"""
+Práctica A. Instalación: pip install sentence-transformers torch numpy
+"""
+from sentence_transformers import SentenceTransformer
+import numpy as np
+
+model = SentenceTransformer(
+    "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+)
+
+a = "El agua hierve a cien grados Celsius al nivel del mar."
+b = "H₂O pasa a vapor a 100 °C en condiciones normales."
+c = "Los gatos suelen dormir muchas horas al día."
+
+emb_a = model.encode(a, normalize_embeddings=True)
+emb_b = model.encode(b, normalize_embeddings=True)
+emb_c = model.encode(c, normalize_embeddings=True)
+
+# Con vectores normalizados, el producto escalar ≈ similitud coseno
+print("sim(a,b) ≈", round(float(np.dot(emb_a, emb_b)), 3), "  (mismo tema)")
+print("sim(a,c) ≈", round(float(np.dot(emb_a, emb_c)), 3), "  (tema distinto)")
+#+end_src
+
+*Criterio de aceptación:* =sim(a,b)= debe ser claramente mayor que =sim(a,c)=.
+Si no ocurre, revise la instalación del modelo antes de continuar.
+
+*Nota de arquitectura:* los embeddings de frases suelen provenir de *encoders* (familia
+Transformer); la generación del chatbot, de un *decoder*. El patrón RAG conecta ambos:
+el encoder (o modelo de embedding) recupera; el decoder redacta.
+
+*** 2.3 Chunking
+Los documentos largos se parten en *chunks* (trozos). Decisiones de diseño:
+
+| Decisión          | Efecto                                            |
+|-------------------+---------------------------------------------------|
+| Chunk muy pequeño | Recuperación precisa pero contexto incompleto     |
+| Chunk muy grande  | Más contexto, más ruido y más tokens en el prompt |
+| Solape (*overlap*)  | Evita cortar una idea justo en el borde           |
+
+Valores didácticos típicos: 300–800 tokens (o ~500–1500 caracteres) con solape 10–20 %.
+
+*** 2.4 Índice vectorial
+Tras embeber, se almacenan vectores en:
+
+- memoria (prototipos),
+- *FAISS*, *Chroma*, *Qdrant*, *pgvector*, etc.
+
+La consulta hace *vecinos más cercanos* (ANN aproximado en colecciones grandes).
+
+*** 2.5 Construcción del prompt (teoría de “augment”)
+Plantilla conceptual:
+
+#+begin_example
+Sistema: Eres un asistente de [organización]. Responde SOLO con el contexto.
+         Si no está en el contexto, di que no tienes la información.
+         Cita la fuente cuando sea posible.
+
+Contexto:
+[chunk 1]
+[chunk 2]
+...
+
+Pregunta del usuario:
+{pregunta}
+
+Respuesta:
+#+end_example
+
+Sin instrucciones estrictas, el modelo tiende a “rellenar” huecos con conocimiento paramétrico
+(lo memorizado en el preentrenamiento), lo que puede contradecir sus documentos.
+
+*** 2.6 Fallos típicos de RAG (y mitigación)
+
+| Síntoma             | Causa frecuente                   | Mitigación                                            |
+|---------------------+-----------------------------------+-------------------------------------------------------|
+| Respuesta inventada | Recuperación pobre o prompt débil | Mejor chunking, subir/bajar *k*, forzar “solo contexto” |
+| Respuesta cortada   | Contexto a mitad de idea          | Solape; partir por secciones                          |
+| Ruido               | *k* demasiado alto                  | Bajar *k*; filtrar por metadata (fecha, facultad)       |
+| Docs viejos         | Índice desactualizado             | Reindexar; versionar corpus                           |
+
+*** 2.7 Qué RAG *no* arregla solo
+- Formato rígido de respuestas (JSON, plantillas legales).
+- Tono institucional consistente.
+- Habilidades de razonamiento que el modelo base no tiene.
+Ahí entra el fine-tuning (o un prompt muy elaborado, a veces insuficiente).
+
+
+** Parte 3 — Teoría de fine-tuning (y por qué LoRA)
+
+*** 3.1 Fine-tuning clásico
+Ajustar *todos* (o casi todos) los pesos \(W\) del modelo con ejemplos
+\((\text{instrucción}, \text{respuesta deseada})\).
+
+Coste: alto en memoria y cómputo; riesgo de *olvido catastrófico* si el dataset
+es estrecho y el entrenamiento agresivo.
+
+*** 3.2 LoRA (*Low-Rank Adaptation*) — idea
+En lugar de actualizar \(W\) completa, se congela \(W_0\) y se aprende una
+actualización de *bajo rango*:
+
+\[
+W \approx W_0 + BA
+\]
+
+donde \(B\) y \(A\) son matrices pequeñas. Solo se guardan/entrenan esos adaptadores.
+
+*Consecuencias prácticas:*
+- Menos VRAM.
+- Varios “especialistas” (adaptadores) sobre el mismo modelo base.
+- Más fácil de versionar y desplegar.
+
+*** 3.3 Datos de fine-tuning para un chatbot
+Formato habitual (chat / instrucción):
+
+#+begin_example
+{"messages": [
+  {"role": "system", "content": "Eres el asistente oficial de ..."},
+  {"role": "user", "content": "¿Cuál es el horario de ...?"},
+  {"role": "assistant", "content": "El horario oficial es ... (tono correcto)"}
+]}
+#+end_example
+
+Calidad > cantidad. 200–2000 ejemplos *buenos* suelen superar 20 000 mediocres.
+
+*** 3.4 RAG + LoRA juntos 
+
+#+begin_example
+Hechos que cambian cada semana  →  RAG (reindexar)
+Estilo, plantillas, “cómo responder” →  Fine-tuning LoRA
+#+end_example
+
+Orden prudente en un proyecto real:
+
+1. Baseline: modelo base + RAG + buen prompt.
+2. Medir fallos (alucinación, tono, formato).
+3. Fine-tuning solo si los fallos son de *comportamiento*, no de *falta de documento*.
+4. Evaluar otra vez con las mismas preguntas de prueba.
+
+
+** Parte 4 — Teoría del orquestador (el “cerebro” del sistema)
+
+*** 4.1 Qué es un orquestador (definición)
+El *orquestador* es el componente de software que *coordina* el ciclo de vida de una
+petición conversacional. No es el modelo de lenguaje ni el índice vectorial: es la
+*máquina de estados* (o el flujo de control) que:
+
+1. Recibe la entrada ya normalizada (texto del usuario, =session_id=, canal).
+2. Decide *qué herramientas* invocar y en qué orden.
+3. Ensambla el *prompt* (sistema + contexto RAG + historial + pregunta).
+4. Llama al LLM (base o fine-tuned).
+5. Post-procesa la salida (citas, longitud, filtros de seguridad).
+6. Devuelve un objeto estable (=respuesta=, =fuentes=, =metadatos=) al canal.
+
+En una frase: *el orquestador es la política de control; el LLM es la política de generación*.
+
+*** 4.2 Por qué hace falta (teoría de separación de responsabilidades)
+Sin orquestador, la lógica se *repite y diverge* en cada canal:
+
+| Sin orquestador | Con orquestador |
+|-----------------+-----------------|
+| Web arma el prompt a su modo | Un solo =responder()= |
+| WhatsApp arma otro prompt distinto | Mismos umbrales de *k*, mismas reglas |
+| Bugs de alucinación se “arreglan” solo en un canal | Un cambio beneficia a todos |
+| Difícil auditar “qué chunks vio el modelo” | Logs centralizados |
+
+Esto es el principio *DRY* aplicado a IA: *un solo cerebro, muchos adaptadores de transporte*.
+
+*** 4.3 Analogía extendida
+Imagine una *central de operaciones*:
+
+- El *usuario* llama (Web o WhatsApp).
+- El *operador de mesa* (canal) solo anota el mensaje y la identidad.
+- El *jefe de turno* (orquestador) decide: ¿consultamos el archivo?, ¿es pregunta
+  prohibida?, ¿necesitamos el historial de la llamada previa?
+- El *archivista* (retriever / RAG) trae carpetas.
+- El *redactor* (LLM ± LoRA) escribe la respuesta con esas carpetas abiertas.
+- El jefe revisa (post-proceso) y entrega el texto al operador de mesa.
+
+Si el redactor inventa, a veces el fallo es del archivista (mal retrieval);
+a veces del jefe (mal prompt o mal umbral); a veces del redactor (modelo débil).
+El orquestador es quien permite *diagnosticar* en qué eslabón falló.
+
+*** 4.4 Pipeline canónico (pasos lógicos)
+Un orquestador RAG típico ejecuta, en orden:
+
+#+begin_example
+1. Ingesta / normalización
+   - limpiar texto, limitar longitud, detectar idioma (opcional)
+2. Guardrails de entrada (pre-filtros)
+   - rechazar inyección obvia, datos sensibles, off-topic duro
+3. Gestión de memoria
+   - cargar historial de session_id; truncar a N turnos / M tokens
+4. (Opcional) Reescritura de consulta (query rewrite)
+   - “¿y el de mañana?” + historial → “¿horario de biblioteca mañana?”
+5. Recuperación (RAG)
+   - embeber consulta → top-k → (opcional) rerank
+6. Decisión de confianza
+   - si score < umbral → responder “no tengo información” sin forzar al LLM
+7. Construcción de prompt
+   - system + contexto + historial + pregunta
+8. Generación
+   - LLM base o base+LoRA; temperatura baja en bots factuales
+9. Guardrails de salida
+   - quitar PII filtrada; acortar para WhatsApp; anexar fuentes
+10. Persistencia y telemetría
+   - guardar turnos; log de chunks usados; latencia
+#+end_example
+
+No todos los proyectos necesitan los 10 pasos el primer día. Lo mínimo viable es
+*1 → 5 → 7 → 8 → 9*. Los demás se añaden cuando aparecen fallos reales.
+
+*** 4.5 Estados y decisiones (teoría de control)
+El orquestador implementa *políticas*, no solo “llamar al modelo”. Ejemplos:
+
+| Decisión | Pregunta de diseño | Efecto |
+|----------+--------------------+--------|
+| ¿Hacer RAG? | ¿La pregunta es chitchat (“hola”) o factual? | Ahorra latencia; evita ruido |
+| ¿Qué *k*? | ¿Corpus ruidoso o preciso? | Precisión vs cobertura |
+| ¿Rechazar sin LLM? | ¿Similitud máxima < τ? | Menos alucinaciones |
+| ¿Cuánto historial? | ¿Referencias anafóricas? | Contexto vs coste de tokens |
+| ¿Qué modelo? | ¿Tono crítico vs FAQ simple? | Calidad vs velocidad |
+| ¿Herramientas extra? | ¿Calendario, ticket, DB? | De chatbot a *agente* |
+
+Cuando el orquestador *elige herramientas* (buscar, calcular, abrir ticket), el sistema
+pasa de “RAG chatbot” a *agente* (agentic). La teoría es la misma: *control fuera del LLM*,
+capacidades *dentro o al lado* del LLM.
+
+*** 4.6 Memoria conversacional (qué orquesta y qué no)
+Hay varios tipos de “memoria”; el orquestador debe saber cuál usa:
+
+| Tipo | Qué guarda | Dónde suele vivir |
+|------+------------+-------------------|
+| Memoria de turno corto | Últimos N mensajes | Sesión / Redis / DB |
+| Memoria de trabajo RAG | Chunks de *esta* pregunta | Solo en el prompt actual |
+| Memoria de largo plazo | Preferencias del usuario | Perfil (con consentimiento) |
+| Memoria paramétrica | “Conocimiento” del LLM | Pesos del modelo (no editable al vuelo) |
+
+Error clásico: meter *todo* el historial + *todos* los chunks. El contexto se satura
+(*context stuffing*) y el modelo atiende mal. El orquestador debe *priorizar y truncar*.
+
+*** 4.7 Orquestador vs “solo un prompt largo”
+¿Por qué no pegar todo en un system prompt gigante?
+
+- Los documentos *cambian*; el prompt estático no se reindexa solo.
+- Las políticas (umbral τ, *k*, longitud WhatsApp) son *código*, no prosa.
+- La auditoría (“¿qué evidencia usó?”) exige estructuras de datos, no un string opaco.
+- Los canales tienen restricciones distintas (tokens, caracteres, plantillas Meta).
+
+El prompt es *una salida* del orquestador, no el orquestador mismo.
+
+*** 4.8 Patrones de orquestación (de simple a avanzado)
+
+**** Patrón A — Pipeline lineal (recomendado al inicio)
+#+begin_example
+mensaje → RAG → prompt → LLM → respuesta
+#+end_example
+Determinista, fácil de depurar, ideal para FAQs institucionales.
+
+**** Patrón B — Router + especialistas
+#+begin_example
+mensaje → clasificador (intención)
+              ├── saludo      → respuesta plantilla
+              ├── FAQ        → RAG + LLM
+              ├── trámite    → formulario / enlace
+              └── off-topic  → rechazo educado
+#+end_example
+El clasificador puede ser reglas, un modelo pequeño o el propio LLM con salida JSON.
+
+**** Patrón C — Agente con herramientas (avanzado)
+#+begin_example
+mensaje → LLM decide acción → tool (buscar / SQL / API) → observa → … → respuesta final
+#+end_example
+Más potente y más frágil: bucles, costes, necesidad de límites de pasos (*max_iterations*).
+
+Para este tutorial, el objetivo de laboratorio es *Patrón A*, con puerta abierta al *B*.
+
+*** 4.9 Contrato de interfaz del orquestador
+Defina una firma estable. Todo canal depende de ella:
+
+#+begin_example
+entrada:
+  mensaje: str
+  session_id: str
+  canal: "web" | "whatsapp" | ...
+  metadata: dict   # idioma, usuario autenticado, etc.
+
+salida:
+  respuesta: str
+  fuentes: list[str]
+  confianza: float | null
+  flags: dict      # rechazado, sin_contexto, truncado_wa, ...
+#+end_example
+
+Si mañana cambia Ollama por vLLM, *solo* cambia el adaptador de generación dentro
+del orquestador; Web y WhatsApp no se enteran.
+
+*** 4.10 Observabilidad (teoría de depuración)
+Un orquestador serio registra, por petición:
+
+- =session_id=, canal, latencia total
+- consulta original y (si aplica) consulta reescrita
+- ids/scores de chunks recuperados
+- modelo usado, temperatura, tokens aproximados
+- si se aplicó rechazo por umbral o por guardrail
+
+Sin eso, “el bot alucinó” es un diagnóstico inútil: no se sabe si falló el retrieval
+o la generación.
+
+*** 4.11 Relación con RAG y fine-tuning
+| Pieza | Rol respecto al orquestador |
+|-------+-----------------------------|
+| Índice / embeddings | *Servicio* que el orquestador llama en el paso de recuperación |
+| Prompt templates | *Artefacto* que el orquestador rellena |
+| LLM + LoRA | *Servicio de generación* seleccionado por el orquestador |
+| Canales | *Clientes* del orquestador; no contienen lógica de dominio |
+
+El fine-tuning *no reemplaza* al orquestador: un modelo afinado sigue necesitando
+quién le pase el contexto RAG y quién aplique políticas de canal.
+
+*** 4.12 Errores de diseño frecuentes
+
+| Error | Por qué duele | Corrección |
+|-------+---------------+------------|
+| Lógica RAG duplicada en Web y WA | Inconsistencia | Extraer =responder()= |
+| Historial infinito | Coste y confusión | Truncar por turnos/tokens |
+| Siempre generar aunque score≈0 | Alucinación | Umbral τ + respuesta segura |
+| Orquestador “inteligente” con 15 if anidados opacos | Impenetrable | Pipeline claro + logs |
+| Mezclar formato WhatsApp dentro del LLM | Acoplamiento | Post-proceso por =canal= |
+
+
+** Parte 5 — Laboratorio: del corpus al orquestador
+
+*** Paso 0 — Definir el producto 
+Responda por escrito en el cuaderno de laboratorio:
+
+1. ¿Quién es el usuario? (alumno, cliente, empleado)
+2. ¿Qué documentos son la fuente de verdad?
+3. ¿Qué *no* debe responder el bot?
+4. ¿Idioma y tono?
+5. ¿Web, WhatsApp o ambos?
+
+Sin esto, el sistema técnico no tiene criterio de éxito.
+
+*** Paso 1 — Crear el corpus dentro del laboratorio (práctica B, preparación)
+Dentro de =laboratorio_chatbot/= cree la carpeta =conocimiento/= y copie
+(o escriba) los siguientes archivos. El contenido forma parte de este tutorial.
+
+**** =conocimiento/01_regla_voto.txt=
+#+begin_example
+No todos pueden votar en la encuesta del campus.
+La plataforma solo permite el voto a cuentas verificadas.
+Las cuentas nuevas quedan bloqueadas por seguridad.
+El mensaje de error indica que no tienes permiso para votar.
+Esta regla busca evitar que bots manipulen el resultado.
+#+end_example
+
+**** =conocimiento/02_quejas_alumnos.txt=
+#+begin_example
+Varios alumnos se quejan porque no pueden emitir su voto.
+Dicen que pagan inscripción y aun así el botón aparece gris.
+Los de nuevo ingreso sienten que la encuesta los excluye.
+Piden abrir el voto a todos los estudiantes activos.
+Sin participación amplia, dudan de la legitimidad del resultado.
+#+end_example
+
+**** =conocimiento/03_intro_ia.txt=
+#+begin_example
+La inteligencia artificial estudia sistemas que razonan y aprenden.
+Un agente racional elige acciones para el mejor resultado esperado.
+La IA débil resuelve tareas específicas; la AGI sigue siendo hipótesis.
+El Test de Turing propuso un criterio operativo de conducta inteligente.
+Dartmouth 1956 acuñó el término Artificial Intelligence.
+#+end_example
+
+**** =conocimiento/04_ml_clasico.txt=
+#+begin_example
+El aprendizaje supervisado usa ejemplos etiquetados para aprender a predecir.
+k-NN clasifica por similitud; los árboles particionan el espacio de atributos.
+La regresión logística estima probabilidades de clase binaria.
+Un buen EDA precede al entrenamiento: limpia, describe y detecta desbalance.
+#+end_example
+
+*Tarea:* redactar cinco preguntas cuya respuesta *sí* esté en estos textos y dos
+cuya respuesta *no* esté (para probar el rechazo).
+
+*** Paso 2 — Programa RAG completo (práctica B)
+Guarde el siguiente código como =rag_demo.py= en =laboratorio_chatbot/=.
+Implementa chunking, embeddings vía Ollama (o TF-IDF de respaldo), top-k y generación.
+
+#+begin_src python
+#!/usr/bin/env python3
+"""RAG local con Ollama. Guardar como rag_demo.py"""
+from __future__ import annotations
+
+import argparse
+import re
+from pathlib import Path
+
+import numpy as np
+import requests
+
+OLLAMA = "http://127.0.0.1:11434"
+DEFAULT_CHAT = "llama3.2"
+DEFAULT_EMBED = "nomic-embed-text"
+
+
+def ollama_ok() -> bool:
+    try:
+        r = requests.get(f"{OLLAMA}/api/tags", timeout=3)
+        return r.status_code == 200
+    except Exception:
+        return False
+
+
+def embed_ollama(texts: list[str], model: str) -> np.ndarray:
+    vecs = []
+    for t in texts:
+        r = requests.post(
+            f"{OLLAMA}/api/embeddings",
+            json={"model": model, "prompt": t},
+            timeout=120,
+        )
+        r.raise_for_status()
+        vecs.append(r.json()["embedding"])
+    X = np.array(vecs, dtype=float)
+    X /= np.linalg.norm(X, axis=1, keepdims=True) + 1e-12
+    return X
+
+
+def chat_ollama(model: str, system: str, user: str) -> str:
+    r = requests.post(
+        f"{OLLAMA}/api/chat",
+        json={
+            "model": model,
+            "stream": False,
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+        },
+        timeout=300,
+    )
+    r.raise_for_status()
+    return r.json()["message"]["content"]
+
+
+def chunk_text(text: str, size: int = 400, overlap: int = 80) -> list[str]:
+    text = re.sub(r"\s+", " ", text).strip()
+    if not text:
+        return []
+    chunks, i = [], 0
+    while i < len(text):
+        chunks.append(text[i : i + size])
+        i += max(1, size - overlap)
+    return chunks
+
+
+def load_docs(path: Path) -> list[dict]:
+    docs: list[dict] = []
+    if path.is_dir():
+        for p in sorted(path.rglob("*.txt")):
+            raw = p.read_text(encoding="utf-8", errors="ignore")
+            for j, ch in enumerate(chunk_text(raw)):
+                docs.append({"id": f"{p.name}#{j}", "fuente": p.name, "texto": ch})
+    else:
+        raw = path.read_text(encoding="utf-8", errors="ignore")
+        for j, ch in enumerate(chunk_text(raw)):
+            docs.append({"id": f"{path.name}#{j}", "fuente": path.name, "texto": ch})
+    return docs
+
+
+def retrieve(query: str, docs: list[dict], emb_model: str, k: int = 4):
+    q = embed_ollama([query], emb_model)[0]
+    M = embed_ollama([d["texto"] for d in docs], emb_model)
+    sims = M @ q
+    idx = np.argsort(-sims)[:k]
+    return [(float(sims[i]), docs[i]) for i in idx]
+
+
+def retrieve_tfidf(query: str, docs: list[dict], k: int = 4):
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.metrics.pairwise import cosine_similarity
+
+    corpus = [d["texto"] for d in docs]
+    vec = TfidfVectorizer(min_df=1, ngram_range=(1, 2))
+    X = vec.fit_transform(corpus)
+    q = vec.transform([query])
+    sims = cosine_similarity(q, X).ravel()
+    idx = np.argsort(-sims)[:k]
+    return [(float(sims[i]), docs[i]) for i in idx]
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description="RAG con Ollama")
+    ap.add_argument("--docs", default="conocimiento")
+    ap.add_argument("--pregunta", required=True)
+    ap.add_argument("--chat-model", default=DEFAULT_CHAT)
+    ap.add_argument("--embed-model", default=DEFAULT_EMBED)
+    ap.add_argument("--k", type=int, default=4)
+    ap.add_argument("--tfidf", action="store_true")
+    args = ap.parse_args()
+
+    if not ollama_ok():
+        raise SystemExit(
+            "Ollama no responde en :11434. Ejecuta: ollama serve\n"
+            f"Luego: ollama pull {args.chat_model} && ollama pull {args.embed_model}"
+        )
+
+    docs = load_docs(Path(args.docs))
+    if not docs:
+        raise SystemExit("No se cargaron documentos. ¿Creó la carpeta conocimiento/?")
+    print(f"Documentos/chunks indexados: {len(docs)}")
+
+    if args.tfidf:
+        hits = retrieve_tfidf(args.pregunta, docs, k=args.k)
+    else:
+        try:
+            hits = retrieve(args.pregunta, docs, args.embed_model, k=args.k)
+        except Exception as e:
+            print("Embeddings Ollama fallaron, uso TF-IDF. Motivo:", e)
+            hits = retrieve_tfidf(args.pregunta, docs, k=args.k)
+
+    print("\n--- Trozos recuperados ---")
+    for score, d in hits:
+        print(f"[{score:.3f}] ({d['fuente']}) {d['texto'][:120]}...")
+
+    contexto = "\n\n".join(
+        f"[{i+1}] (fuente={d['fuente']})\n{d['texto']}" for i, (_, d) in enumerate(hits)
+    )
+    system = (
+        "Eres un asistente preciso. Responde SOLO con la información del contexto. "
+        "Si no está en el contexto, di que no aparece en los documentos. "
+        "Cita el número de fragmento cuando puedas."
+    )
+    user = f"Contexto:\n{contexto}\n\nPregunta: {args.pregunta}\n\nRespuesta:"
+    print("\n--- Generación ---")
+    print(chat_ollama(args.chat_model, system, user))
+
+
+if __name__ == "__main__":
+    main()
+#+end_src
+
+Ejecución (desde =laboratorio_chatbot/=, con el entorno activado y Ollama en marcha):
+
+#+begin_src bash
+python rag_demo.py --docs conocimiento --pregunta "¿Quién puede votar en la encuesta?" --k 4
+
+python rag_demo.py --docs conocimiento --pregunta "¿Qué quejas tienen los alumnos?" --tfidf
+
+python rag_demo.py --docs conocimiento \
+  --pregunta "¿Qué es un agente racional según el material?" \
+  --chat-model llama3.2 --embed-model nomic-embed-text --k 3
+#+end_src
+
+*Criterio de aceptación:*
+- Se imprimen trozos con puntuación.
+- La respuesta se apoya en esos trozos.
+- Ante una pregunta fuera de corpus, el modelo indica que no aparece (o el alumno
+  documenta el fallo y propone ajuste de prompt / *k*).
+
+*** Paso 3 — Mapa de funciones (lectura del código anterior)
+| Función | Rol teórico |
+|---------+-------------|
+| =chunk_text= | Segmentación con solape |
+| =load_docs= | Ingesta → lista de chunks |
+| =embed_ollama= / =retrieve= | Embedding + top-k por coseno |
+| =retrieve_tfidf= | Respaldo léxico |
+| =chat_ollama= | Generación condicionada al contexto |
+
+El Paso 5 (orquestador) reutiliza esta misma secuencia como API para Web y WhatsApp.
+
+*** Paso 4 — Extensión opcional (FAISS + sentence-transformers)
+#+begin_src python
+"""Opcional. La práctica B ya valida el pipeline con rag_demo.py."""
+from pathlib import Path
+import numpy as np
+
+def cargar_textos(carpeta: str) -> list[dict]:
+    docs = []
+    for p in Path(carpeta).rglob("*.txt"):
+        docs.append({
+            "texto": p.read_text(encoding="utf-8", errors="ignore"),
+            "fuente": p.name,
+        })
+    return docs
+
+def chunk_texto(texto: str, tam=800, solape=120) -> list[str]:
+    chunks, i = [], 0
+    while i < len(texto):
+        chunks.append(texto[i : i + tam])
+        i += max(tam - solape, 1)
+    return chunks
+
+# from sentence_transformers import SentenceTransformer
+# import faiss
+# model = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+# docs = cargar_textos("conocimiento")
+# corpus, metas = [], []
+# for d in docs:
+#     for c in chunk_texto(d["texto"]):
+#         corpus.append(c); metas.append(d["fuente"])
+# emb = model.encode(corpus, normalize_embeddings=True)
+# index = faiss.IndexFlatIP(emb.shape[1])
+# index.add(np.asarray(emb, dtype="float32"))
+print("Extensión FAISS opcional.")
+#+end_src
+
+*** Paso 5 — Orquestador único (práctica C)
+Web y WhatsApp solo llaman a =responder()=. Guarde como =orquestador.py=
+(puede importar funciones de =rag_demo.py=).
+
+#+begin_src python
+"""Orquestador didáctico. Guardar como orquestador.py"""
+from dataclasses import dataclass, field
+from pathlib import Path
+
+# from rag_demo import load_docs, retrieve, retrieve_tfidf, chat_ollama, ollama_ok
+
+UMBRAL_SIMILITUD = 0.35
+MAX_TURNOS_HIST = 6
+MAX_CHARS_WA = 900
+
+
+@dataclass
+class OrquestacionResultado:
+    respuesta: str
+    fuentes: list[str] = field(default_factory=list)
+    confianza: float | None = None
+    flags: dict = field(default_factory=dict)
+
+
+def normalizar(texto: str) -> str:
+    return " ".join(texto.strip().split())[:2000]
+
+
+def truncar_historial(historial: list[dict], n=MAX_TURNOS_HIST) -> list[dict]:
+    return (historial or [])[-n:]
+
+
+def postproceso(texto: str, canal: str) -> tuple[str, dict]:
+    flags = {}
+    if canal == "whatsapp" and len(texto) > MAX_CHARS_WA:
+        texto = texto[: MAX_CHARS_WA - 20].rstrip() + "…"
+        flags["truncado_wa"] = True
+    return texto, flags
+
+
+def armar_prompt(pregunta: str, hits: list[dict]) -> tuple[str, str]:
+    ctx = "\n\n".join(
+        f"[{i+1}] (fuente={h['fuente']})\n{h['texto']}" for i, h in enumerate(hits)
+    )
+    system = (
+        "Eres un asistente institucional. Responde SOLO con el contexto. "
+        "Si no está, di que no tienes esa información. Cita el fragmento."
+    )
+    user = f"Contexto:\n{ctx}\n\nPregunta: {pregunta}\n\nRespuesta:"
+    return system, user
+
+
+def responder(
+    pregunta: str,
+    historial: list[dict] | None = None,
+    session_id: str = "anon",
+    canal: str = "web",
+    docs: list[dict] | None = None,
+) -> OrquestacionResultado:
+    q = normalizar(pregunta)
+    if not q:
+        return OrquestacionResultado(
+            respuesta="Envía un mensaje con tu duda.",
+            flags={"vacio": True},
+        )
+    if q.lower() in {"hola", "buenas", "buen día", "buenas tardes"}:
+        return OrquestacionResultado(
+            respuesta="Hola. ¿En qué tema de los documentos te ayudo?",
+            flags={"chitchat": True},
+        )
+
+    hist = truncar_historial(historial)
+
+    # --- conectar con rag_demo (descomentar en laboratorio) ---
+    # hits_raw = retrieve(q, docs, "nomic-embed-text", k=4)
+    # hits = [{"texto": d["texto"], "fuente": d["fuente"], "score": s} for s, d in hits_raw]
+    hits = []
+    top_score = hits[0]["score"] if hits else 0.0
+
+    if not hits or top_score < UMBRAL_SIMILITUD:
+        return OrquestacionResultado(
+            respuesta=(
+                "No encontré información suficiente en los documentos disponibles. "
+                "¿Puedes reformular o indicar el tema con más detalle?"
+            ),
+            fuentes=[],
+            confianza=top_score,
+            flags={"sin_contexto": True},
+        )
+
+    system, user = armar_prompt(q, hits)
+    # texto = chat_ollama("llama3.2", system, user)
+    texto = "(conectar chat_ollama aquí)"
+    texto, flags_out = postproceso(texto, canal)
+
+    return OrquestacionResultado(
+        respuesta=texto,
+        fuentes=[h["fuente"] for h in hits],
+        confianza=top_score,
+        flags=flags_out,
+    )
+
+
+if __name__ == "__main__":
+    # docs = load_docs(Path("conocimiento"))
+    print(responder("hola", canal="web"))
+#+end_src
+
+*Principio:* el parámetro =canal= solo afecta el post-proceso (longitud), no la
+verdad de negocio. El orquestador *ordena* =load_docs= / =retrieve= / =chat_ollama=;
+no duplica la semántica del retrieval.
+
+*** Paso 6 — Fine-tuning LoRA (práctica D)
+Objetivo: adaptar *comportamiento* (tono, formato), no sustituir el corpus.
+Todo el material necesario está abajo: créelo dentro de =laboratorio_chatbot/lora/=.
+
+**** 6.1 Dependencias
+#+begin_src bash
+cd laboratorio_chatbot
+source .venv/bin/activate
+pip install torch transformers peft datasets accelerate bitsandbytes sentencepiece
+mkdir -p lora && cd lora
+#+end_src
+
+**** 6.2 Dataset (=datos_chatbot.jsonl=)
+Cada línea es un JSON. Ejemplo mínimo (amplíe a ≥20 ejemplos de *su* tono):
+
+#+begin_src text
+{"instruction": "Explica qué es una variable en Python", "response": "Una variable es un nombre que apunta a un valor en memoria. En Python no declaras el tipo de forma explícita: x = 3 asigna el entero 3 a x."}
+{"instruction": "No sé la respuesta y no está en los documentos", "response": "No cuento con información suficiente en la base documental para responder con certeza. ¿Puedes reformular la pregunta o indicar el documento de referencia?"}
+{"instruction": "Saluda de forma institucional", "response": "Buen día. Soy el asistente del laboratorio. ¿En qué tema de los materiales puedo ayudarte?"}
+#+end_src
+
+**** 6.3 Entrenamiento (=train_lora.py=)
+#+begin_src python
+#!/usr/bin/env python3
+"""Fine-tuning LoRA. Guardar como lora/train_lora.py"""
+import argparse
+import torch
+from datasets import load_dataset
+from transformers import (
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    BitsAndBytesConfig,
+    DataCollatorForLanguageModeling,
+    TrainingArguments,
+    Trainer,
+)
+from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+
+
+def parse_args():
+    p = argparse.ArgumentParser()
+    p.add_argument("--model_name", default="meta-llama/Llama-3.2-3B-Instruct")
+    p.add_argument("--dataset", default="datos_chatbot.jsonl")
+    p.add_argument("--output_dir", default="./lora-adaptador")
+    p.add_argument("--epochs", type=int, default=3)
+    p.add_argument("--max_length", type=int, default=512)
+    p.add_argument("--batch_size", type=int, default=1)
+    p.add_argument("--gradient_accumulation", type=int, default=16)
+    p.add_argument("--learning_rate", type=float, default=2e-4)
+    p.add_argument("--lora_r", type=int, default=16)
+    p.add_argument("--lora_alpha", type=int, default=32)
+    p.add_argument("--no_quantize", action="store_true")
+    return p.parse_args()
+
+
+def load_model_and_tokenizer(model_name, use_quantization):
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+        tokenizer.pad_token_id = tokenizer.eos_token_id
+    has_cuda = torch.cuda.is_available()
+    if use_quantization and has_cuda:
+        qcfg = BitsAndBytesConfig(load_in_8bit=True)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_name, quantization_config=qcfg, device_map="auto"
+        )
+        model = prepare_model_for_kbit_training(model)
+    else:
+        model = AutoModelForCausalLM.from_pretrained(
+            model_name,
+            torch_dtype=torch.float32 if not has_cuda else torch.float16,
+            device_map="auto" if has_cuda else None,
+        )
+    model.config.use_cache = False
+    return model, tokenizer
+
+
+def apply_lora(model, lora_r, lora_alpha):
+    cfg = LoraConfig(
+        r=lora_r,
+        lora_alpha=lora_alpha,
+        target_modules=["q_proj", "k_proj", "v_proj", "o_proj"],
+        lora_dropout=0.1,
+        bias="none",
+        task_type="CAUSAL_LM",
+    )
+    model = get_peft_model(model, cfg)
+    model.print_trainable_parameters()
+    return model
+
+
+def prepare_dataset(dataset_path, tokenizer, max_length):
+    dataset = load_dataset("json", data_files=dataset_path)
+
+    def tokenize(example):
+        text = (
+            f"Instrucción: {example['instruction']}\n"
+            f"Respuesta: {example['response']}{tokenizer.eos_token}"
+        )
+        tok = tokenizer(text, truncation=True, max_length=max_length, padding="max_length")
+        tok["labels"] = tok["input_ids"].copy()
+        return tok
+
+    return dataset.map(tokenize, remove_columns=dataset["train"].column_names)
+
+
+def main():
+    args = parse_args()
+    model, tokenizer = load_model_and_tokenizer(
+        args.model_name, use_quantization=not args.no_quantize
+    )
+    model = apply_lora(model, args.lora_r, args.lora_alpha)
+    tokenized = prepare_dataset(args.dataset, tokenizer, args.max_length)
+    has_cuda = torch.cuda.is_available()
+    training_args = TrainingArguments(
+        output_dir=args.output_dir,
+        per_device_train_batch_size=args.batch_size,
+        gradient_accumulation_steps=args.gradient_accumulation,
+        learning_rate=args.learning_rate,
+        num_train_epochs=args.epochs,
+        logging_steps=10,
+        save_steps=500,
+        save_total_limit=2,
+        fp16=has_cuda,
+        warmup_ratio=0.05,
+        lr_scheduler_type="cosine",
+        report_to="none",
+        remove_unused_columns=False,
+    )
+    trainer = Trainer(
+        model=model,
+        args=training_args,
+        train_dataset=tokenized["train"],
+        data_collator=DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False),
+    )
+    trainer.train()
+    model.save_pretrained(args.output_dir)
+    tokenizer.save_pretrained(args.output_dir)
+    print("Adaptadores guardados en", args.output_dir)
+
+
+if __name__ == "__main__":
+    main()
+#+end_src
+
+#+begin_src bash
+# Desde laboratorio_chatbot/lora/
+python train_lora.py --dataset datos_chatbot.jsonl --output_dir ./lora-adaptador
+# Sin GPU:
+python train_lora.py --no_quantize --dataset datos_chatbot.jsonl
+#+end_src
+
+**** 6.4 Inferencia (=inference_lora.py=)
+#+begin_src python
+#!/usr/bin/env python3
+"""Probar el adaptador LoRA. Guardar como lora/inference_lora.py"""
+import argparse
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from peft import PeftModel
+
+
+def parse_args():
+    p = argparse.ArgumentParser()
+    p.add_argument("--model_name", default="meta-llama/Llama-3.2-3B-Instruct")
+    p.add_argument("--lora_path", default="./lora-adaptador")
+    p.add_argument("--max_length", type=int, default=512)
+    p.add_argument("--prompt", default=None)
+    return p.parse_args()
+
+
+def load_model(model_name, lora_path):
+    has_cuda = torch.cuda.is_available()
+    device = "cuda" if has_cuda else "cpu"
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    base = AutoModelForCausalLM.from_pretrained(
+        model_name,
+        torch_dtype=torch.float16 if has_cuda else torch.float32,
+        device_map="auto" if has_cuda else None,
+    )
+    model = PeftModel.from_pretrained(base, lora_path)
+    model.eval()
+    return model, tokenizer, device
+
+
+def generate_response(model, tokenizer, prompt_text, device, max_length):
+    formatted = f"Instrucción: {prompt_text}\nRespuesta:"
+    inputs = tokenizer(formatted, return_tensors="pt")
+    if device == "cuda":
+        inputs = {k: v.to(device) for k, v in inputs.items()}
+    with torch.no_grad():
+        outputs = model.generate(
+            **inputs,
+            max_new_tokens=max_length,
+            temperature=0.7,
+            top_p=0.9,
+            do_sample=True,
+            repetition_penalty=1.2,
+            pad_token_id=tokenizer.pad_token_id,
+        )
+    generated = outputs[0][inputs["input_ids"].shape[1] :]
+    return tokenizer.decode(generated, skip_special_tokens=True).strip()
+
+
+def main():
+    args = parse_args()
+    model, tokenizer, device = load_model(args.model_name, args.lora_path)
+    if args.prompt:
+        print(generate_response(model, tokenizer, args.prompt, device, args.max_length))
+        return
+    print("Escribe 'salir' para terminar.")
+    while True:
+        pregunta = input("Tu pregunta: ").strip()
+        if not pregunta or pregunta.lower() in ("salir", "exit", "quit"):
+            break
+        print(generate_response(model, tokenizer, pregunta, device, args.max_length))
+
+
+if __name__ == "__main__":
+    main()
+#+end_src
+
+#+begin_src bash
+python inference_lora.py --prompt "Saluda de forma institucional"
+#+end_src
+
+**** 6.5 Conectar al orquestador (sin abandonar RAG)
+1. Sustituya la generación de =responder()= por el modelo base+LoRA (o sírvalo y llámelo por HTTP).
+2. *Conserve* la recuperación sobre =conocimiento/=: LoRA no reemplaza hechos que cambian.
+
+Afine *comportamiento*; recupere *hechos*.
+
+*** Paso 7 — Evaluación mínima (obligatoria)
+| Tipo | Ejemplo |
+|------|---------|
+| Factual en corpus | Pregunta cubierta por =conocimiento/= |
+| Fuera de corpus | Debe activar =sin_contexto= o negativa explícita |
+| Tono | Cortés / institucional (tras práctica D) |
+| Seguridad | No solicitar datos sensibles |
+
+Registre pregunta, trozos, respuesta y si fue correcta. Métricas: % con fuente
+correcta; % de negativas correctas.
+
+** Parte 6 — Canal Web 
+
+*** 6.1 Arquitectura web mínima
+
+#+begin_example
+Navegador (HTML/JS o React)
+        │  POST /chat  {mensaje, session_id}
+        ▼
+   FastAPI / Flask
+        │
+        ▼
+   responder()  →  JSON {respuesta, fuentes}
+#+end_example
+
+*** 6.2 API con FastAPI (esqueleto)
+
+#+begin_src python
+# app_web.py — esqueleto
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+app = FastAPI(title="Chatbot RAG")
+
+class ChatIn(BaseModel):
+    mensaje: str
+    session_id: str = "anon"
+
+class ChatOut(BaseModel):
+    respuesta: str
+    fuentes: list[str]
+
+# sessions: dict[str, list] = {}  # historial en memoria (solo demo)
+
+@app.post("/chat", response_model=ChatOut)
+def chat(body: ChatIn):
+    # hist = sessions.setdefault(body.session_id, [])
+    # out = responder(body.mensaje, hist)
+    # hist.append({"role": "user", "content": body.mensaje})
+    # hist.append({"role": "assistant", "content": out["respuesta"]})
+    # return ChatOut(respuesta=out["respuesta"], fuentes=out["fuentes"])
+    return ChatOut(respuesta="Conecte responder() aquí", fuentes=[])
+
+# Ejecutar: uvicorn app_web:app --reload --port 8000
+print("API web: POST /chat")
+#+end_src
+
+*** 6.3 Página mínima de chat
+Un =index.html= con caja de texto que haga =fetch('/chat')= basta para un MVP.
+En producción: HTTPS, autenticación, límites de tasa, logs, almacenamiento de
+historial en base de datos (no solo memoria del proceso).
+
+*** 6.4 Seguridad web (teoría aplicada)
+- No exponga claves de API en el frontend.
+- Valide longitud del mensaje.
+- Rate limiting por IP / usuario.
+- No registre secretos ni datos personales innecesarios.
+
+
+** Parte 7 — Canal WhatsApp 
+
+*** 7.1 Idea central
+WhatsApp *Business* no ejecuta su modelo dentro de Meta. Usted monta un *webhook*:
+
+#+begin_example
+Usuario WhatsApp
+      │
+      ▼
+Meta Cloud API  ──POST──►  su servidor /webhook
+                              │
+                              ▼
+                         responder()
+                              │
+                              ▼
+                    API de envío de mensaje
+#+end_example
+
+El *mismo* =responder()= de la web.
+
+*** 7.2 Componentes que necesitará
+1. Cuenta Meta for Developers + WhatsApp Business / número de prueba.
+2. App con producto WhatsApp.
+3. URL pública HTTPS para el webhook (en lab: *ngrok*, *cloudflared*, o un VPS).
+4. Tokens de acceso y *verify token* para validar el webhook.
+
+*** 7.3 Flujo de verificación del webhook
+Meta envía un GET con =hub.challenge=. Su servidor debe devolver ese challenge
+si el =hub.verify_token= coincide con el que configuró.
+
+*** 7.4 Recepción de mensajes (POST)
+Al llegar un mensaje de texto:
+
+1. Parsear el JSON de Meta (número, texto, id de mensaje).
+2. Llamar =responder(texto)=.
+3. Enviar la respuesta con la API de mensajes de WhatsApp.
+4. (Opcional) marcar mensaje como leído; manejar media (imagen/PDF) con OCR/extracción
+   si su caso lo requiere — eso es un proyecto aparte.
+
+*** 7.5 Esqueleto conceptual de webhook
+
+#+begin_src python
+# webhook_wa.py — conceptual (adapte a la API actual de Meta)
+from fastapi import FastAPI, Request, Response
+
+app = FastAPI()
+VERIFY_TOKEN = "defina_un_secreto"
+
+@app.get("/webhook")
+async def verify(request: Request):
+    params = request.query_params
+    if params.get("hub.verify_token") == VERIFY_TOKEN:
+        return Response(content=params.get("hub.challenge", ""), media_type="text/plain")
+    return Response(content="Forbidden", status_code=403)
+
+@app.post("/webhook")
+async def incoming(request: Request):
+    data = await request.json()
+    # 1) extraer texto y wa_id del payload
+    # 2) out = responder(texto)
+    # 3) enviar_whatsapp(wa_id, out["respuesta"])
+    return {"status": "ok"}
+
+print("WhatsApp: GET verify + POST mensajes → responder()")
+#+end_src
+
+*** 7.6 Límites y buena práctica en WhatsApp
+- Plantillas (*message templates*) para iniciar conversaciones fuera de la ventana
+  de servicio (políticas de Meta; revise la documentación vigente).
+- Respuestas *cortas*; WhatsApp no es un PDF.
+- Si la respuesta RAG es larga, divida en varios mensajes o resuma.
+- Idempotencia: Meta puede reintentar webhooks; evite procesar dos veces el mismo =message_id=.
+
+*** 7.7 Proveedores alternativos
+Servicios como Twilio u otros agregan una capa sobre WhatsApp. La arquitectura
+sigue siendo: webhook → orquestador → LLM/RAG → respuesta.
+
+
+** Parte 8 — Arquitectura unificada 
+
+#+begin_example
+                 ┌─────────────┐
+                 │  Corpus +   │
+                 │  índice RAG │
+                 └──────┬──────┘
+                        │
+┌──────────┐     ┌──────▼───────┐     ┌──────────────────┐
+│   Web    │────►│ Orquestador  │◄───►│ LLM base (+LoRA) │
+└──────────┘     │  responder() │     └──────────────────┘
+┌──────────┐     └──────▲───────┘
+│ WhatsApp │────────────┘
+└──────────┘
+#+end_example
+
+*Una sola verdad de negocio* (documentos + política de prompt + modelo).
+*Dos adaptadores de transporte* (HTTP JSON y webhook WhatsApp).
+
+
+** Parte 9 — Checklist de proyecto 
+
+1. Definir usuario, tono y documentos fuente (Paso 0).
+2. *Práctica A:* embeddings y similitud coseno.
+3. *Práctica B:* crear =conocimiento/= y ejecutar =rag_demo.py= (código de la Parte 5).
+4. *Práctica C:* =orquestador.py= reutilizando funciones de =rag_demo.py=.
+5. Evaluación con preguntas dentro y fuera de corpus.
+6. *Práctica E:* =POST /chat= llamando solo al orquestador.
+7. *Práctica F:* webhook WhatsApp → =responder(..., canal="whatsapp")=.
+8. *Práctica D (si el tono falla):* código LoRA del Paso 6 + conectar generación *sin* quitar RAG.
+9. Monitoreo: pregunta, chunks, score, respuesta, feedback.
+
+
+** Parte 10 — Glosario breve
+
+| Término       | Definición corta                                             |
+|---------------+--------------------------------------------------------------|
+| Embedding     | Vector que representa significado de un texto                |
+| Chunk         | Fragmento indexable de un documento                          |
+| Top-k         | Los k fragmentos más similares a la consulta                 |
+| Prompt        | Instrucciones + contexto + pregunta enviados al LLM          |
+| Alucinación   | Contenido plausible pero no fundamentado                     |
+| LoRA          | Adaptación de bajo rango sobre un modelo congelado           |
+| Webhook       | HTTP endpoint que recibe eventos (p. ej. mensajes WA)        |
+| Orquestador   | Componente que coordina recuperación, políticas y generación |
+| Guardrail     | Filtro de entrada/salida (seguridad, tono, longitud)         |
+| Umbral τ      | Score mínimo de similitud para aceptar evidencia RAG         |
+| Query rewrite | Reescribir la pregunta con ayuda del historial               |
+| Router        | Clasificador de intención antes del pipeline RAG             |
+| Agente        | Orquestación donde el LLM elige herramientas en bucle        |
+
+
+Un chatbot serio con documentos propios se construye como *sistema*:
+
+#+begin_example
+hechos vivos     → RAG
+comportamiento   → fine-tuning (LoRA) si hace falta
+control / política → orquestador (un solo cerebro)
+canales          → adaptadores (Web, WhatsApp) sobre ese cerebro
+#+end_example
+
+Empiece simple (RAG + orquestador con buen prompt + API), mida fallos, y solo entonces
+invierta en entrenamiento. Esa disciplina evita el error más caro del laboratorio:
+fine-tunear demasiado pronto sobre un corpus mal indexado o un flujo sin control.
+
+
+
+* Landmarks con MediaPipe — Detección de manos y rostros
+
+
+El presente apartado es una guía de laboratorio para detectar y visualizar
+*landmarks* (puntos clave anatómicos) de *manos* y *rostros* mediante
+*MediaPipe* (Google AI Edge / MediaPipe Tasks).
+
+Al terminar, el estudiante deberá:
+
+- Explicar qué es un landmark y por qué se normaliza en coordenadas \([0,1]\).
+- Distinguir detección de objetos, landmarks y seguimiento (*tracking*).
+- Ejecutar Hand Landmarker y Face Landmarker en imagen estática y webcam.
+- Dibujar conexiones (esqueleto de mano / malla facial) con OpenCV.
+- Proponer un uso sencillo (conteo de dedos, presencia de rostro, etc.).
+
+** Itinerario de prácticas
+
+| Bloque | Actividad | Dónde está |
+|--------+-----------+------------|
+| A | Teoría de landmarks y MediaPipe | Partes 1–2 |
+| B | Entorno + descarga de modelos =.task= | Parte 3 |
+| C | Manos en imagen estática | Parte 4 |
+| D | Manos en webcam (tiempo real) | Parte 5 |
+| E | Rostros en imagen y webcam | Parte 6 |
+| F | Ejemplo combinado + gestos | Parte 7 |
+
+Todo el código está *incluido en este documento*. Se recomienda crear:
+
+#+begin_src bash
+mkdir -p laboratorio_mediapipe/modelos laboratorio_mediapipe/imagenes
+cd laboratorio_mediapipe
+python3 -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+#+end_src
+
+** Requisitos de software
+
+#+begin_src bash
+pip install mediapipe opencv-python numpy pillow requests
+#+end_src
+
+*Hardware:* webcam (prácticas D–F). Sin cámara, use solo imágenes (prácticas C y E).
+
+** Parte 1 — Teoría: qué son los landmarks
+
+*** 1.1 Definición
+Un *landmark* es un punto de referencia sobre una estructura (mano, cara, cuerpo)
+que el modelo estima en cada fotograma. Suele entregarse como:
+
+- coordenadas normalizadas \((x, y)\) en \([0,1]\) respecto al ancho y alto de la imagen;
+- a veces \(z\) (profundidad relativa);
+- índice del punto (por ejemplo, punta del índice = 8).
+
+Para dibujar en píxeles:
+
+\[
+X_{\text{px}} = x \cdot W,\qquad Y_{\text{px}} = y \cdot H
+\]
+
+donde \(W\) y \(H\) son el ancho y alto del fotograma.
+
+*** 1.2 Por qué sirven
+| Aplicación | Uso de landmarks |
+|------------+------------------|
+| Interfaces gestuales | Contar dedos, “pinch”, swipe |
+| Filtros / realidad aumentada | Anclar gafas, máscaras, maquillaje |
+| Ergonomía / rehabilitación | Ángulos articulares aproximados |
+| Accesibilidad | Control sin teclado/ratón |
+| Análisis de atención | Orientación de la cara, apertura de ojos (con modelos más ricos) |
+
+*** 1.3 Landmarks frente a otras tareas
+
+| Tarea | Qué entrega |
+|-------+-------------|
+| Clasificación de imagen | Etiqueta (“hay una mano”) |
+| Detección (bounding box) | Caja alrededor de la región |
+| *Landmarks* | Conjunto de puntos internos con semántica |
+| Segmentación | Máscara píxel a píxel |
+
+MediaPipe Hand/Face Landmarker combina, internamente, *detección* de la región
+y *regresión* de los puntos clave.
+
+*** 1.4 Coordenadas imagen vs mundo
+MediaPipe puede reportar:
+
+- *Image landmarks:* relativos a la imagen (útiles para dibujar).
+- *World landmarks:* en un sistema métrico aproximado centrado en la mano/cara
+  (útiles para geometría 3D relativa, no son un escáner preciso).
+
+En este laboratorio usaremos sobre todo *image landmarks*.
+
+** Parte 2 — MediaPipe Tasks: arquitectura práctica
+
+*** 2.1 Qué es MediaPipe
+*MediaPipe* es un conjunto de soluciones de visión y percepción de Google.
+La API actual recomendada en Python es *MediaPipe Tasks*
+(=mediapipe.tasks.vision=), no la API “solutions” clásica (=mp.solutions.hands=),
+aunque esta última aún aparece en tutoriales antiguos.
+
+*** 2.2 Modos de ejecución
+
+| Modo | Método típico | Cuándo usarlo |
+|------+---------------+---------------|
+| =IMAGE= | =detect(...)= | Una foto |
+| =VIDEO= | =detect_for_video(..., timestamp_ms)= | Webcam o vídeo con timestamps crecientes |
+| =LIVE_STREAM= | =detect_async(...)= + callback | Flujo asíncrono (más complejo) |
+
+Para el laboratorio, *VIDEO* con webcam es el equilibrio más simple y estable.
+
+*** 2.3 Modelos =.task=
+Cada tarea necesita un *model bundle* (archivo =.task=):
+
+- manos: =hand_landmarker.task=
+- rostros: =face_landmarker.task=
+
+Se descargan una vez (Parte 3) y se reutilizan.
+
+*** 2.4 Pipeline conceptual
+
+#+begin_example
+Fotograma BGR (OpenCV)
+        │
+        ▼
+  conversión a RGB → mp.Image
+        │
+        ▼
+  HandLandmarker / FaceLandmarker
+        │
+        ├── lista de landmarks (x, y, z)
+        ├── handedness (Left/Right)  [manos]
+        └── (opcional) blendshapes   [rostro]
+        │
+        ▼
+  dibujar en el fotograma → mostrar / guardar
+#+end_example
+
+** Parte 3 — Preparación: modelos y utilidades (práctica B)
+
+*** 3.1 Descargar los modelos oficiales
+Guarde como =descargar_modelos.py= dentro de =laboratorio_mediapipe/=:
+
+#+begin_src python
+#!/usr/bin/env python3
+"""Descarga los bundles .task de MediaPipe (una sola vez)."""
+from pathlib import Path
+import urllib.request
+
+MODELOS = {
+    "hand_landmarker.task": (
+        "https://storage.googleapis.com/mediapipe-models/"
+        "hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task"
+    ),
+    "face_landmarker.task": (
+        "https://storage.googleapis.com/mediapipe-models/"
+        "face_landmarker/face_landmarker/float16/1/face_landmarker.task"
+    ),
+}
+
+def main():
+    out = Path("modelos")
+    out.mkdir(parents=True, exist_ok=True)
+    for nombre, url in MODELOS.items():
+        destino = out / nombre
+        if destino.exists() and destino.stat().st_size > 1000:
+            print("Ya existe:", destino)
+            continue
+        print("Descargando", nombre, "...")
+        urllib.request.urlretrieve(url, destino)
+        print("OK →", destino, f"({destino.stat().st_size} bytes)")
+
+if __name__ == "__main__":
+    main()
+#+end_src
+
+#+RESULTS:
+: Descargando hand_landmarker.task ...
+: OK → modelos/hand_landmarker.task (7819105 bytes)
+: Descargando face_landmarker.task ...
+: OK → modelos/face_landmarker.task (3758596 bytes)
+
+#+begin_src bash
+cd laboratorio_mediapipe
+source .venv/bin/activate
+python descargar_modelos.py
+#+end_src
+
+*** 3.2 Utilidad común de dibujo
+Guarde como =mp_dibujo.py=:
+
+#+begin_src python
+"""Utilidades de dibujo para landmarks MediaPipe + OpenCV."""
+from __future__ import annotations
+
+import cv2
+import numpy as np
+
+# Conexiones oficiales de la mano (21 puntos): pares (inicio, fin)
+HAND_CONNECTIONS = [
+    (0, 1), (1, 2), (2, 3), (3, 4),       # pulgar
+    (0, 5), (5, 6), (6, 7), (7, 8),       # índice
+    (0, 9), (9, 10), (10, 11), (11, 12),  # medio
+    (0, 13), (13, 14), (14, 15), (15, 16),# anular
+    (0, 17), (17, 18), (18, 19), (19, 20),# meñique
+    (5, 9), (9, 13), (13, 17),            # palma
+]
+
+# Nombres didácticos de algunos índices de mano
+HAND_NOMBRES = {
+    0: "muñeca",
+    4: "pulgar_punta",
+    8: "indice_punta",
+    12: "medio_punta",
+    16: "anular_punta",
+    20: "menique_punta",
+}
+
+
+def landmarks_a_pixeles(landmarks, w: int, h: int) -> list[tuple[int, int]]:
+    pts = []
+    for lm in landmarks:
+        pts.append((int(lm.x * w), int(lm.y * h)))
+    return pts
+
+
+def dibujar_mano(frame, landmarks, color=(0, 255, 0), radio=3):
+    h, w = frame.shape[:2]
+    pts = landmarks_a_pixeles(landmarks, w, h)
+    for a, b in HAND_CONNECTIONS:
+        if a < len(pts) and b < len(pts):
+            cv2.line(frame, pts[a], pts[b], color, 2)
+    for i, p in enumerate(pts):
+        cv2.circle(frame, p, radio, (0, 0, 255), -1)
+        if i in HAND_NOMBRES:
+            cv2.putText(
+                frame, str(i), (p[0] + 4, p[1] - 4),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.35, (255, 255, 255), 1,
+            )
+    return frame
+
+
+def dibujar_rostro_puntos(frame, landmarks, paso=1, color=(255, 200, 0), radio=1):
+    """Dibuja una submuestra de puntos faciales (478 en el modelo completo)."""
+    h, w = frame.shape[:2]
+    for i, lm in enumerate(landmarks):
+        if i % paso != 0:
+            continue
+        x, y = int(lm.x * w), int(lm.y * h)
+        cv2.circle(frame, (x, y), radio, color, -1)
+    return frame
+
+
+def bgr_a_mp_image(frame_bgr):
+    import mediapipe as mp
+    rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+    return mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+#+end_src
+
+*** 3.3 Imagen de prueba (si no tiene foto propia)
+Puede usar cualquier =.jpg=/=.png= con una mano o un rostro visibles.
+Colóquela en =imagenes/prueba.jpg=. Si no tiene una a mano, capture un
+fotograma con la webcam (véase el script breve al final de la Parte 4).
+
+** Parte 4 — Manos: 21 landmarks (teoría + práctica C)
+
+*** 4.1 Topología de la mano
+El modelo estima *21 puntos* por mano:
+
+#+begin_example
+        8   12  16  20
+        |    |   |   |
+        7   11  15  19
+        |    |   |   |
+        6   10  14  18
+        |    |   |   |
+        5----9--13--17
+         \   |  /
+          \  | /
+           \ |/
+            0   ← muñeca
+           / \
+          1   ...
+          |
+          2
+          |
+          3
+          |
+          4   ← punta del pulgar
+#+end_example
+
+| Índice | Región |
+|--------+--------|
+| 0 | Muñeca |
+| 1–4 | Pulgar (base → punta) |
+| 5–8 | Índice |
+| 9–12 | Medio |
+| 13–16 | Anular |
+| 17–20 | Meñique |
+
+Además se obtiene *handedness*: =Left= o =Right= (desde el punto de vista
+de la persona en la imagen; conviene verificarlo frente a un espejo virtual).
+
+*** 4.2 Ejemplo: manos en una imagen estática
+Guarde como =manos_imagen.py=:
+
+#+begin_src python
+#!/usr/bin/env python3
+"""Práctica C: Hand Landmarker en una imagen. Uso:
+   python manos_imagen.py --imagen imagenes/prueba.jpg
+"""
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+
+import cv2
+import mediapipe as mp
+from mediapipe.tasks import python as mp_python
+from mediapipe.tasks.python import vision
+
+from mp_dibujo import dibujar_mano, bgr_a_mp_image
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--imagen", required=True)
+    ap.add_argument("--modelo", default="modelos/hand_landmarker.task")
+    ap.add_argument("--max-manos", type=int, default=2)
+    ap.add_argument("--salida", default="imagenes/salida_manos.jpg")
+    args = ap.parse_args()
+
+    frame = cv2.imread(args.imagen)
+    if frame is None:
+        raise SystemExit(f"No se pudo leer: {args.imagen}")
+
+    base = mp_python.BaseOptions(model_asset_path=args.modelo)
+    options = vision.HandLandmarkerOptions(
+        base_options=base,
+        running_mode=vision.RunningMode.IMAGE,
+        num_hands=args.max_manos,
+        min_hand_detection_confidence=0.5,
+        min_hand_presence_confidence=0.5,
+    )
+
+    with vision.HandLandmarker.create_from_options(options) as landmarker:
+        mp_image = bgr_a_mp_image(frame)
+        result = landmarker.detect(mp_image)
+
+    print(f"Manos detectadas: {len(result.hand_landmarks)}")
+    for i, (lms, handed) in enumerate(
+        zip(result.hand_landmarks, result.handedness)
+    ):
+        etiqueta = handed[0].category_name
+        score = handed[0].score
+        print(f"  Mano {i}: {etiqueta} (score={score:.2f}), puntos={len(lms)}")
+        # Ejemplo: coordenadas normalizadas de la punta del índice (8)
+        idx = lms[8]
+        print(f"    índice punta → x={idx.x:.3f}, y={idx.y:.3f}, z={idx.z:.3f}")
+        dibujar_mano(frame, lms)
+
+    Path(args.salida).parent.mkdir(parents=True, exist_ok=True)
+    cv2.imwrite(args.salida, frame)
+    print("Guardado:", args.salida)
+
+    cv2.imshow("Manos (IMAGE)", frame)
+    print("Pulse una tecla para cerrar...")
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+
+if __name__ == "__main__":
+    main()
+#+end_src
+
+#+begin_src bash
+# Captura rápida de una foto con la webcam (opcional):
+python -c "
+import cv2
+cap=cv2.VideoCapture(0)
+ok,f=cap.read(); cap.release()
+assert ok
+cv2.imwrite('imagenes/prueba.jpg', f)
+print('OK imagenes/prueba.jpg')
+"
+
+python manos_imagen.py --imagen imagenes/prueba.jpg
+#+end_src
+
+*Qué observar:* esqueleto verde, puntos rojos, índices numéricos en puntas
+y muñeca; en consola, =Left=/=Right= y coordenadas del índice.
+
+** Parte 5 — Manos en webcam (práctica D)
+
+Guarde como =manos_webcam.py=:
+
+#+begin_src python
+#!/usr/bin/env python3
+"""Práctica D: Hand Landmarker en tiempo real (modo VIDEO).
+   Controles: q = salir
+"""
+from __future__ import annotations
+
+import time
+import cv2
+from mediapipe.tasks import python as mp_python
+from mediapipe.tasks.python import vision
+
+from mp_dibujo import dibujar_mano, bgr_a_mp_image, HAND_NOMBRES
+
+
+def main():
+    modelo = "modelos/hand_landmarker.task"
+    base = mp_python.BaseOptions(model_asset_path=modelo)
+    options = vision.HandLandmarkerOptions(
+        base_options=base,
+        running_mode=vision.RunningMode.VIDEO,
+        num_hands=2,
+        min_hand_detection_confidence=0.5,
+        min_tracking_confidence=0.5,
+    )
+
+    cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        raise SystemExit("No se abrió la webcam (pruebe otro índice: 1, 2…).")
+
+    t0 = time.time()
+    with vision.HandLandmarker.create_from_options(options) as landmarker:
+        while True:
+            ok, frame = cap.read()
+            if not ok:
+                break
+            frame = cv2.flip(frame, 1)  # espejo: más intuitivo
+            ts = int((time.time() - t0) * 1000)
+            result = landmarker.detect_for_video(bgr_a_mp_image(frame), ts)
+
+            info = []
+            for lms, handed in zip(result.hand_landmarks, result.handedness):
+                dibujar_mano(frame, lms)
+                info.append(f"{handed[0].category_name}:{handed[0].score:.2f}")
+            texto = " | ".join(info) if info else "Sin manos"
+            cv2.putText(
+                frame, texto, (10, 30),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2,
+            )
+            cv2.putText(
+                frame, "q = salir", (10, frame.shape[0] - 15),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1,
+            )
+            cv2.imshow("MediaPipe Hands (VIDEO)", frame)
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+
+if __name__ == "__main__":
+    main()
+#+end_src
+
+#+begin_src bash
+python manos_webcam.py
+#+end_src
+
+*Pruebas sugeridas:*
+1. Una mano abierta frente a la cámara.
+2. Dos manos a la vez.
+3. Acercar / alejar: ¿se mantiene el seguimiento?
+4. Ocultar la mano un segundo y volver a mostrarla.
+
+** Parte 6 — Rostros (práctica E)
+
+*** 6.1 Qué entrega Face Landmarker
+El modelo de rostro estima una *malla densa* (del orden de *478* puntos en la
+versión completa), útil para:
+
+- anclar efectos (gafas, máscaras);
+- analizar expresiones vía *blendshapes* (coeficientes de unidades de acción
+  facial: sonrisa, parpadeo, etc., si se activan en las opciones).
+
+No es necesario memorizar los 478 índices: para el laboratorio basta dibujar
+una submuestra y, si se desea, inspeccionar puntos de ojos/labios con la
+documentación de índices de MediaPipe Face Mesh.
+
+*** 6.2 Rostro en imagen
+Guarde como =rostro_imagen.py=:
+
+#+begin_src python
+#!/usr/bin/env python3
+"""Práctica E (imagen): Face Landmarker.
+   python rostro_imagen.py --imagen imagenes/prueba.jpg
+"""
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+
+import cv2
+from mediapipe.tasks import python as mp_python
+from mediapipe.tasks.python import vision
+
+from mp_dibujo import dibujar_rostro_puntos, bgr_a_mp_image
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--imagen", required=True)
+    ap.add_argument("--modelo", default="modelos/face_landmarker.task")
+    ap.add_argument("--max-rostros", type=int, default=2)
+    ap.add_argument("--paso", type=int, default=2, help="Dibujar 1 de cada N puntos")
+    ap.add_argument("--salida", default="imagenes/salida_rostro.jpg")
+    args = ap.parse_args()
+
+    frame = cv2.imread(args.imagen)
+    if frame is None:
+        raise SystemExit(f"No se pudo leer: {args.imagen}")
+
+    options = vision.FaceLandmarkerOptions(
+        base_options=mp_python.BaseOptions(model_asset_path=args.modelo),
+        running_mode=vision.RunningMode.IMAGE,
+        num_faces=args.max_rostros,
+        min_face_detection_confidence=0.5,
+        min_face_presence_confidence=0.5,
+        output_face_blendshapes=True,
+        output_facial_transformation_matrixes=False,
+    )
+
+    with vision.FaceLandmarker.create_from_options(options) as landmarker:
+        result = landmarker.detect(bgr_a_mp_image(frame))
+
+    print(f"Rostros: {len(result.face_landmarks)}")
+    for i, lms in enumerate(result.face_landmarks):
+        print(f"  Rostro {i}: {len(lms)} landmarks")
+        dibujar_rostro_puntos(frame, lms, paso=args.paso)
+
+        if result.face_blendshapes:
+            # Mostrar las 5 blendshapes con mayor score
+            cats = result.face_blendshapes[i]
+            top = sorted(cats, key=lambda c: c.score, reverse=True)[:5]
+            print("  Top blendshapes:")
+            for c in top:
+                print(f"    {c.category_name}: {c.score:.3f}")
+
+    Path(args.salida).parent.mkdir(parents=True, exist_ok=True)
+    cv2.imwrite(args.salida, frame)
+    print("Guardado:", args.salida)
+    cv2.imshow("Rostro (IMAGE)", frame)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+
+if __name__ == "__main__":
+    main()
+#+end_src
+
+*** 6.3 Rostro en webcam
+Guarde como =rostro_webcam.py=:
+
+#+begin_src python
+#!/usr/bin/env python3
+"""Práctica E (webcam): Face Landmarker en modo VIDEO. q = salir."""
+from __future__ import annotations
+
+import time
+import cv2
+from mediapipe.tasks import python as mp_python
+from mediapipe.tasks.python import vision
+
+from mp_dibujo import dibujar_rostro_puntos, bgr_a_mp_image
+
+
+def main():
+    options = vision.FaceLandmarkerOptions(
+        base_options=mp_python.BaseOptions(
+            model_asset_path="modelos/face_landmarker.task"
+        ),
+        running_mode=vision.RunningMode.VIDEO,
+        num_faces=2,
+        min_face_detection_confidence=0.5,
+        min_tracking_confidence=0.5,
+        output_face_blendshapes=False,
+    )
+
+    cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        raise SystemExit("No se abrió la webcam.")
+
+    t0 = time.time()
+    with vision.FaceLandmarker.create_from_options(options) as landmarker:
+        while True:
+            ok, frame = cap.read()
+            if not ok:
+                break
+            frame = cv2.flip(frame, 1)
+            ts = int((time.time() - t0) * 1000)
+            result = landmarker.detect_for_video(bgr_a_mp_image(frame), ts)
+            for lms in result.face_landmarks:
+                dibujar_rostro_puntos(frame, lms, paso=3)
+            cv2.putText(
+                frame,
+                f"Rostros: {len(result.face_landmarks)}  |  q=salir",
+                (10, 30),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.7,
+                (0, 255, 255),
+                2,
+            )
+            cv2.imshow("MediaPipe Face (VIDEO)", frame)
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+
+if __name__ == "__main__":
+    main()
+#+end_src
+
+#+begin_src bash
+python rostro_imagen.py --imagen imagenes/prueba.jpg
+python rostro_webcam.py
+#+end_src
+
+*Pruebas sugeridas:* sonreír, fruncir el ceño, girar la cabeza, acercarse;
+con blendshapes activos en imagen, compare los nombres de mayor score.
+
+** Parte 7 — Ejemplos para probar (práctica F)
+
+*** 7.1 Conteo simple de dedos (heurística geométrica)
+Idea: un dedo está “extendido” si la punta está *más lejos de la muñeca*
+que la articulación intermedia (aproximación robusta en vista frontal).
+
+Guarde como =gestos_contar_dedos.py=:
+
+#+begin_src python
+#!/usr/bin/env python3
+"""Cuenta dedos extendidos (heurística). Webcam. q = salir."""
+from __future__ import annotations
+
+import time
+import cv2
+from mediapipe.tasks import python as mp_python
+from mediapipe.tasks.python import vision
+
+from mp_dibujo import dibujar_mano, bgr_a_mp_image
+
+
+# (punta, articulación PIP) por dedo; pulgar usa (4, 2) con eje distinto
+DEDOS = [
+    (8, 6),    # índice
+    (12, 10),  # medio
+    (16, 14),  # anular
+    (20, 18),  # meñique
+]
+
+
+def dist2(a, b):
+    return (a.x - b.x) ** 2 + (a.y - b.y) ** 2
+
+
+def contar_dedos(lms) -> int:
+    muneca = lms[0]
+    n = 0
+    # Pulgar: punta más lejos de la muñeca que el punto 2 (aprox. en espejo)
+    if dist2(lms[4], muneca) > dist2(lms[2], muneca):
+        n += 1
+    for punta, pip in DEDOS:
+        if dist2(lms[punta], muneca) > dist2(lms[pip], muneca):
+            n += 1
+    return n
+
+
+def main():
+    options = vision.HandLandmarkerOptions(
+        base_options=mp_python.BaseOptions(
+            model_asset_path="modelos/hand_landmarker.task"
+        ),
+        running_mode=vision.RunningMode.VIDEO,
+        num_hands=1,
+    )
+    cap = cv2.VideoCapture(0)
+    t0 = time.time()
+    with vision.HandLandmarker.create_from_options(options) as landmarker:
+        while True:
+            ok, frame = cap.read()
+            if not ok:
+                break
+            frame = cv2.flip(frame, 1)
+            ts = int((time.time() - t0) * 1000)
+            result = landmarker.detect_for_video(bgr_a_mp_image(frame), ts)
+            msg = "Muestra una mano"
+            if result.hand_landmarks:
+                lms = result.hand_landmarks[0]
+                dibujar_mano(frame, lms)
+                msg = f"Dedos ≈ {contar_dedos(lms)}"
+            cv2.putText(
+                frame, msg, (10, 40),
+                cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 0), 2,
+            )
+            cv2.imshow("Conteo de dedos", frame)
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                break
+    cap.release()
+    cv2.destroyAllWindows()
+
+
+if __name__ == "__main__":
+    main()
+#+end_src
+
+*Cómo probarlo:* puño cerrado (≈0), un dedo, paz/victoria (≈2), mano abierta (≈5).
+La heurística falla de lado o con oclusiones: documente cuándo se equivoca.
+
+*** 7.2 Manos + rostro a la vez
+Guarde como =manos_y_rostro_webcam.py=:
+
+#+begin_src python
+#!/usr/bin/env python3
+"""Detecta manos y rostros en el mismo fotograma. q = salir."""
+from __future__ import annotations
+
+import time
+import cv2
+from mediapipe.tasks import python as mp_python
+from mediapipe.tasks.python import vision
+
+from mp_dibujo import dibujar_mano, dibujar_rostro_puntos, bgr_a_mp_image
+
+
+def main():
+    hand_opts = vision.HandLandmarkerOptions(
+        base_options=mp_python.BaseOptions(
+            model_asset_path="modelos/hand_landmarker.task"
+        ),
+        running_mode=vision.RunningMode.VIDEO,
+        num_hands=2,
+    )
+    face_opts = vision.FaceLandmarkerOptions(
+        base_options=mp_python.BaseOptions(
+            model_asset_path="modelos/face_landmarker.task"
+        ),
+        running_mode=vision.RunningMode.VIDEO,
+        num_faces=1,
+    )
+
+    cap = cv2.VideoCapture(0)
+    t0 = time.time()
+    with vision.HandLandmarker.create_from_options(hand_opts) as hands, \
+         vision.FaceLandmarker.create_from_options(face_opts) as faces:
+        while True:
+            ok, frame = cap.read()
+            if not ok:
+                break
+            frame = cv2.flip(frame, 1)
+            ts = int((time.time() - t0) * 1000)
+            img = bgr_a_mp_image(frame)
+            hr = hands.detect_for_video(img, ts)
+            fr = faces.detect_for_video(img, ts)
+            for lms in hr.hand_landmarks:
+                dibujar_mano(frame, lms)
+            for lms in fr.face_landmarks:
+                dibujar_rostro_puntos(frame, lms, paso=4)
+            cv2.putText(
+                frame,
+                f"Manos={len(hr.hand_landmarks)}  Rostros={len(fr.face_landmarks)}",
+                (10, 30),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.7,
+                (255, 255, 0),
+                2,
+            )
+            cv2.imshow("Manos + Rostro", frame)
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                break
+    cap.release()
+    cv2.destroyAllWindows()
+
+
+if __name__ == "__main__":
+    main()
+#+end_src
+
+*** 7.3 Mini batería de pruebas (checklist del alumno)
+
+| # | Acción | Script | Resultado esperado |
+|---+--------+--------+--------------------|
+| 1 | Descargar modelos | =descargar_modelos.py= | Archivos en =modelos/= |
+| 2 | Foto con mano | =manos_imagen.py= | Esqueleto + consola Left/Right |
+| 3 | Webcam manos | =manos_webcam.py= | Seguimiento fluido; =q= sale |
+| 4 | Foto con cara | =rostro_imagen.py= | Nube de puntos + blendshapes |
+| 5 | Webcam cara | =rostro_webcam.py= | Malla al mover la cabeza |
+| 6 | Contar 0–5 dedos | =gestos_contar_dedos.py= | Número en pantalla |
+| 7 | Ambos a la vez | =manos_y_rostro_webcam.py= | Contadores coherentes |
+
+** Parte 8 — Buenas prácticas y fallos frecuentes
+
+| Problema | Causa probable | Mitigación |
+|----------+----------------+------------|
+| No detecta nada | Poca luz / mano cortada | Mejor iluminación; encuadre completo |
+| Temblor del esqueleto | Confianza baja / movimiento rápido | Subir =min_tracking_confidence=; estabilizar |
+| Izquierda/derecha al revés | Espejo (=flip=) vs convención del modelo | Probar con y sin =cv2.flip= |
+| =detect_for_video= falla | Timestamp no monótono | Usar reloj desde =t0= como en los ejemplos |
+| Modelo no encontrado | Ruta relativa incorrecta | Ejecutar desde =laboratorio_mediapipe/= |
+| FPS bajos | Dos landmarkers + resolución alta | Bajar resolución de captura; =paso= mayor al dibujar cara |
+
+*** Privacidad
+Los fotogramas de webcam pueden contener datos personales. No suba vídeos del
+laboratorio a repositorios públicos sin consentimiento.
+
+** Parte 9 — Glosario
+
+| Término | Definición breve |
+|---------+------------------|
+| Landmark | Punto clave estimado sobre la anatomía |
+| Handedness | Clasificación mano izquierda / derecha |
+| Blendshape | Coeficiente de expresión facial |
+| Running mode | IMAGE / VIDEO / LIVE_STREAM |
+| Model bundle (=.task=) | Paquete de modelos listo para Tasks |
+| Tracking | Reutilizar la región del frame anterior |
+| Coordenadas normalizadas | \(x,y \in [0,1]\) relativos al fotograma |
+
+** Cierre
+
+MediaPipe Tasks separa *modelo*, *modo de ejecución* y *post-proceso* (dibujar,
+gestos). Domine primero IMAGE → VIDEO → heurísticas geométricas sobre landmarks;
+solo entonces combine varias tareas o pase a LIVE_STREAM asíncrono.
+
+Orden recomendado en una sesión de laboratorio:
+
+#+begin_example
+descargar_modelos.py
+ → manos_imagen.py / manos_webcam.py
+ → rostro_imagen.py / rostro_webcam.py
+ → gestos_contar_dedos.py
+ → manos_y_rostro_webcam.py
+#+end_example
+
+
 * Reconocimiento de rostros con OpenCV — Eigenfaces, Fisherfaces y LBPH
 
 El *reconocimiento de personas* por vision artificial responde a: *¿quién

@@ -7779,150 +7779,291 @@ fine-tunear demasiado pronto sobre un corpus mal indexado o un flujo sin control
 
 
 
-* Landmarks con MediaPipe — Detección de manos y rostros
 
 
-El presente apartado es una guía de laboratorio para detectar y visualizar
-*landmarks* (puntos clave anatómicos) de *manos* y *rostros* mediante
-*MediaPipe* (Google AI Edge / MediaPipe Tasks).
 
-Al terminar, el estudiante deberá:
 
-- Explicar qué es un landmark y por qué se normaliza en coordenadas \([0,1]\).
-- Distinguir detección de objetos, landmarks y seguimiento (*tracking*).
-- Ejecutar Hand Landmarker y Face Landmarker en imagen estática y webcam.
-- Dibujar conexiones (esqueleto de mano / malla facial) con OpenCV.
-- Proponer un uso sencillo (conteo de dedos, presencia de rostro, etc.).
 
-** Itinerario de prácticas
+* Landmarks con MediaPipe — Manos y rostros con cámara (OpenCV)
 
-| Bloque | Actividad | Dónde está |
-|--------+-----------+------------|
-| A | Teoría de landmarks y MediaPipe | Partes 1–2 |
-| B | Entorno + descarga de modelos =.task= | Parte 3 |
-| C | Manos en imagen estática | Parte 4 |
-| D | Manos en webcam (tiempo real) | Parte 5 |
-| E | Rostros en imagen y webcam | Parte 6 |
-| F | Ejemplo combinado + gestos | Parte 7 |
 
-Todo el código está *incluido en este documento*. Se recomienda crear:
+Apartado para detectar *landmarks* de *manos* y *rostros* con
+*MediaPipe Tasks* (Google), usando la *cámara web mediante OpenCV*
+(=cv2.VideoCapture=).
+
+Cada ejemplo es un *script completo*. Puede *tanglearlo* (=C-c C-v t=) o
+copiarlo a un =.py=; luego ejecútelo en terminal. Pulse =q= para salir.
+
+*Importante (Emacs):*
+- *Tangle:* con el cursor en este =.org=, ejecute =C-c C-v t=
+  (=org-babel-tangle=). Eso genera los =.py= listados abajo en el mismo
+  directorio del documento (o en la ruta del =:tangle=).
+- *No use =C-c C-c=* para los ejemplos de cámara: a veces la ventana sale negra.
+  Tras el tangle, ejecute en *terminal*: =python ejemplo01_manos_camara.py=.
+
+
+** Objetivos
+- Abrir la cámara con OpenCV y leer fotogramas en un bucle.
+- Explicar el mapa de *21 landmarks* de la mano y cómo se pasan a píxeles.
+- Entender qué hace MediaPipe (detectar) frente a OpenCV (dibujar).
+- Pasar cada fotograma al Hand/Face Landmarker en modo =VIDEO=.
+- Dibujar el esqueleto (=cv2.line= / =cv2.circle=) y mostrar con =imshow=.
+- Probar un gesto simple (conteo de dedos) usando distancias entre puntos.
+
+** Itinerario
+
+| # | Ejemplo | Archivo |
+|---+---------+---------|
+| 0 | Entorno + modelos | =descargar_modelos.py= |
+| 1 | Probar que la cámara funciona (solo OpenCV) | =ejemplo00_probar_camara.py= |
+| 2 | Manos en vivo | =ejemplo01_manos_camara.py= |
+| 3 | Rostros en vivo | =ejemplo02_rostros_camara.py= |
+| 4 | Manos + rostros | =ejemplo03_manos_y_rostros_camara.py= |
+| 5 | Contar dedos | =ejemplo04_contar_dedos_camara.py= |
+
+** Carpeta de trabajo
 
 #+begin_src bash
-mkdir -p laboratorio_mediapipe/modelos laboratorio_mediapipe/imagenes
+mkdir -p laboratorio_mediapipe/modelos
 cd laboratorio_mediapipe
 python3 -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install mediapipe opencv-python numpy
 #+end_src
 
-** Requisitos de software
+** 1. Teoría: cámara, landmarks y cómo se dibujan
 
-#+begin_src bash
-pip install mediapipe opencv-python numpy pillow requests
-#+end_src
+*** 1.1 La cámara con OpenCV
+OpenCV abre la webcam y entrega fotogramas BGR en un bucle:
 
-*Hardware:* webcam (prácticas D–F). Sin cámara, use solo imágenes (prácticas C y E).
+#+begin_example
+cap = cv2.VideoCapture(0)     # 0 = primera cámara; pruebe 1, 2… si falla
+ok, frame = cap.read()        # ok=False si no hay imagen
+cv2.imshow("ventana", frame)  # mostrar
+cv2.waitKey(1)                # necesario para refrescar la ventana
+cap.release()                 # liberar al terminar
+cv2.destroyAllWindows()
+#+end_example
 
-** Parte 1 — Teoría: qué son los landmarks
+| Pieza | Rol |
+|-------+-----|
+| =VideoCapture(0)= | Conecta con la cámara |
+| =cap.read()= | Un fotograma (numpy array HxWx3, BGR) |
+| =cv2.flip(frame, 1)= | Espejo horizontal (más natural al verse) |
+| =cv2.imshow= / =waitKey= | Ventana en vivo |
+| =cap.release()= | Cierra el dispositivo |
 
-*** 1.1 Definición
-Un *landmark* es un punto de referencia sobre una estructura (mano, cara, cuerpo)
-que el modelo estima en cada fotograma. Suele entregarse como:
+MediaPipe *no* abre la cámara: *OpenCV captura*, MediaPipe *analiza* cada frame,
+y otra vez OpenCV *pinta* los puntos encima.
 
-- coordenadas normalizadas \((x, y)\) en \([0,1]\) respecto al ancho y alto de la imagen;
-- a veces \(z\) (profundidad relativa);
-- índice del punto (por ejemplo, punta del índice = 8).
+*** 1.2 Qué es un landmark
+Un *landmark* es un punto anatómico que el modelo estima en cada fotograma.
+No es un “clic” del usuario: es una *regresión* (el modelo predice coordenadas).
 
-Para dibujar en píxeles:
+Cada landmark trae al menos:
+
+| Campo | Significado |
+|-------+-------------|
+| =x= | Horizontal normalizada en \([0,1]\) (0 = izquierda de la imagen, 1 = derecha) |
+| =y= | Vertical normalizada en \([0,1]\) (0 = arriba, 1 = abajo) |
+| =z= | Profundidad *relativa* (aprox.; no es un sensor ToF preciso) |
+
+Para dibujar en la imagen de OpenCV (que usa *píxeles*), hay que desnormalizar:
 
 \[
 X_{\text{px}} = x \cdot W,\qquad Y_{\text{px}} = y \cdot H
 \]
 
-donde \(W\) y \(H\) son el ancho y alto del fotograma.
+donde \(W\) = ancho del frame (=frame.shape[1]=) y \(H\) = alto (=frame.shape[0]=).
 
-*** 1.2 Por qué sirven
-| Aplicación | Uso de landmarks |
-|------------+------------------|
-| Interfaces gestuales | Contar dedos, “pinch”, swipe |
-| Filtros / realidad aumentada | Anclar gafas, máscaras, maquillaje |
-| Ergonomía / rehabilitación | Ángulos articulares aproximados |
-| Accesibilidad | Control sin teclado/ratón |
-| Análisis de atención | Orientación de la cara, apertura de ojos (con modelos más ricos) |
+Ejemplo: si =x=0.5=, =y=0.25= y el frame es 640×480,
 
-*** 1.3 Landmarks frente a otras tareas
+\[
+X = 0.5\cdot 640 = 320,\qquad Y = 0.25\cdot 480 = 120
+\]
 
-| Tarea | Qué entrega |
-|-------+-------------|
-| Clasificación de imagen | Etiqueta (“hay una mano”) |
-| Detección (bounding box) | Caja alrededor de la región |
-| *Landmarks* | Conjunto de puntos internos con semántica |
-| Segmentación | Máscara píxel a píxel |
+ese punto se pinta cerca del centro, un poco arriba.
 
-MediaPipe Hand/Face Landmarker combina, internamente, *detección* de la región
-y *regresión* de los puntos clave.
+*** 1.3 Los 21 landmarks de la mano (mapa oficial)
+MediaPipe Hand Landmarker estima *siempre* 21 puntos, con la misma numeración.
+La figura siguiente es el “esqueleto” que verá en pantalla (puntos rojos + huesos verdes):
 
-*** 1.4 Coordenadas imagen vs mundo
-MediaPipe puede reportar:
-
-- *Image landmarks:* relativos a la imagen (útiles para dibujar).
-- *World landmarks:* en un sistema métrico aproximado centrado en la mano/cara
-  (útiles para geometría 3D relativa, no son un escáner preciso).
-
-En este laboratorio usaremos sobre todo *image landmarks*.
-
-** Parte 2 — MediaPipe Tasks: arquitectura práctica
-
-*** 2.1 Qué es MediaPipe
-*MediaPipe* es un conjunto de soluciones de visión y percepción de Google.
-La API actual recomendada en Python es *MediaPipe Tasks*
-(=mediapipe.tasks.vision=), no la API “solutions” clásica (=mp.solutions.hands=),
-aunque esta última aún aparece en tutoriales antiguos.
-
-*** 2.2 Modos de ejecución
-
-| Modo | Método típico | Cuándo usarlo |
-|------+---------------+---------------|
-| =IMAGE= | =detect(...)= | Una foto |
-| =VIDEO= | =detect_for_video(..., timestamp_ms)= | Webcam o vídeo con timestamps crecientes |
-| =LIVE_STREAM= | =detect_async(...)= + callback | Flujo asíncrono (más complejo) |
-
-Para el laboratorio, *VIDEO* con webcam es el equilibrio más simple y estable.
-
-*** 2.3 Modelos =.task=
-Cada tarea necesita un *model bundle* (archivo =.task=):
-
-- manos: =hand_landmarker.task=
-- rostros: =face_landmarker.task=
-
-Se descargan una vez (Parte 3) y se reutilizan.
-
-*** 2.4 Pipeline conceptual
+[[file:mediapipe_hand_landmarks_21.png]]
 
 #+begin_example
-Fotograma BGR (OpenCV)
-        │
-        ▼
-  conversión a RGB → mp.Image
-        │
-        ▼
-  HandLandmarker / FaceLandmarker
-        │
-        ├── lista de landmarks (x, y, z)
-        ├── handedness (Left/Right)  [manos]
-        └── (opcional) blendshapes   [rostro]
-        │
-        ▼
-  dibujar en el fotograma → mostrar / guardar
+        8   12   16   20     ← puntas (TIP)
+        |    |    |    |
+        7   11   15   19     ← DIP
+        |    |    |    |
+        6   10   14   18     ← PIP
+        |    |    |    |
+        5----9---13---17     ← MCP (nudillos) + conexiones de palma
+       /    |    |
+      1     |    |
+      |     |    |
+      2     |    |
+      |     |    |
+      3     |    |
+      |     |    |
+      4     |    |           ← THUMB_TIP
+       \    |   /
+         \  |  /
+          \ | /
+           \|/
+            0                ← WRIST (muñeca)
 #+end_example
 
-** Parte 3 — Preparación: modelos y utilidades (práctica B)
+Tabla completa (nombre anatómico = índice):
 
-*** 3.1 Descargar los modelos oficiales
-Guarde como =descargar_modelos.py= dentro de =laboratorio_mediapipe/=:
+| Índice | Nombre MediaPipe | Dedo / región |
+|--------+------------------+---------------|
+| 0 | =WRIST= | Muñeca |
+| 1 | =THUMB_CMC= | Pulgar (base / carpo-metacarpiano) |
+| 2 | =THUMB_MCP= | Pulgar (metacarpofalángico) |
+| 3 | =THUMB_IP= | Pulgar (interfalángico) |
+| 4 | =THUMB_TIP= | *Punta* del pulgar |
+| 5 | =INDEX_FINGER_MCP= | Índice (nudillo) |
+| 6 | =INDEX_FINGER_PIP= | Índice |
+| 7 | =INDEX_FINGER_DIP= | Índice |
+| 8 | =INDEX_FINGER_TIP= | *Punta* del índice |
+| 9 | =MIDDLE_FINGER_MCP= | Medio (nudillo) |
+| 10 | =MIDDLE_FINGER_PIP= | Medio |
+| 11 | =MIDDLE_FINGER_DIP= | Medio |
+| 12 | =MIDDLE_FINGER_TIP= | *Punta* del medio |
+| 13 | =RING_FINGER_MCP= | Anular (nudillo) |
+| 14 | =RING_FINGER_PIP= | Anular |
+| 15 | =RING_FINGER_DIP= | Anular |
+| 16 | =RING_FINGER_TIP= | *Punta* del anular |
+| 17 | =PINKY_MCP= | Meñique (nudillo) |
+| 18 | =PINKY_PIP= | Meñique |
+| 19 | =PINKY_DIP= | Meñique |
+| 20 | =PINKY_TIP= | *Punta* del meñique |
 
-#+begin_src python :results output
+*Abreviaturas útiles:* MCP ≈ nudillo, PIP/DIP ≈ articulaciones intermedias, TIP ≈ punta.
+
+Además del esqueleto, el modelo indica *handedness*: =Left= o =Right= (mano
+izquierda o derecha) con un score de confianza.
+
+*** 1.4 ¿Dónde “detecta” los puntos? (pipeline interno)
+No busca “manchas de color piel” con reglas fijas. El bundle =hand_landmarker.task=
+encadena, de forma simplificada:
+
+#+begin_example
+1) Palm detection
+   Localiza la región de la(s) mano(s) en la imagen (caja aproximada).
+
+2) Hand landmarks
+   Recorta / enfoca esa región y *regresiona* las 21 coordenadas (x,y,z).
+
+3) Tracking (modo VIDEO)
+   En el frame siguiente reutiliza la región previa si el seguimiento es bueno;
+   solo vuelve a disparar la detección de palma cuando pierde la mano.
+   Por eso hace falta timestamp_ms creciente en detect_for_video(...).
+#+end_example
+
+Salida típica en Python (=result=):
+
+| Atributo | Contenido |
+|----------+-----------|
+| =result.hand_landmarks= | Lista de manos; cada mano es lista de 21 landmarks |
+| =result.handedness= | =Left=/=Right= + score por mano |
+| =result.hand_world_landmarks= | Versión “mundo” (métrica relativa; opcional) |
+
+Acceso en código:
+
+#+begin_example
+result.hand_landmarks[0][8]   → landmark de la punta del índice de la 1.ª mano
+result.hand_landmarks[0][8].x → coordenada x normalizada
+result.handedness[0][0].category_name → "Left" o "Right"
+#+end_example
+
+*** 1.5 Cómo el código *dibuja* el esqueleto
+Detectar ≠ dibujar. MediaPipe solo da números; *usted* pinta con OpenCV.
+
+**** Paso A — Lista de conexiones (los “huesos” verdes)
+=HAND_CONNECTIONS= es una lista de pares =(i, j)=: “dibuja una línea del
+landmark =i= al landmark =j=”. Coincide con los segmentos de la figura:
+
+#+begin_example
+Pulgar:     (0,1) (1,2) (2,3) (3,4)
+Índice:     (0,5) (5,6) (6,7) (7,8)
+Medio:      (0,9) (9,10) (10,11) (11,12)
+Anular:     (0,13) (13,14) (14,15) (15,16)
+Meñique:    (0,17) (17,18) (18,19) (19,20)
+Palma:      (5,9) (9,13) (13,17)
+#+end_example
+
+Si cambia esos pares, cambia el dibujo (aunque los 21 puntos sigan existiendo).
+
+**** Paso B — De normalizado a píxel
+#+begin_example
+pts = [(int(lm.x * w), int(lm.y * h)) for lm in landmarks]
+#+end_example
+
+Aquí =landmarks= es la lista de 21 puntos de *una* mano; =w,h= salen de
+=frame.shape=.
+
+**** Paso C — OpenCV pinta
+#+begin_example
+cv2.line(frame, pts[a], pts[b], color_verde, grosor)   # hueso
+cv2.circle(frame, pts[i], radio, color_rojo, -1)       # articulación
+#+end_example
+
+El =frame= es el mismo array de la cámara: se modifica *in place* y luego
+=cv2.imshow= lo muestra.
+
+**** Paso D — Dónde encaja en el bucle del ejemplo 1
+#+begin_example
+ok, frame = cap.read()                    # 1. OpenCV: captura
+frame = cv2.flip(frame, 1)                # 2. espejo (opcional)
+mp_img = bgr_a_mp(frame)                  # 3. BGR → RGB para MediaPipe
+result = landmarker.detect_for_video(...) # 4. estima los 21 puntos
+for lms, handed in zip(...):
+    dibujar_mano(frame, lms)              # 5. líneas + círculos sobre el frame
+cv2.imshow("manos", frame)                # 6. muestra
+#+end_example
+
+=bgr_a_mp= solo convierte color y envuelve el array en =mp.Image=. No dibuja nada.
+=dibujar_mano= es quien “traduce” índices 0–20 a geometría visible.
+
+*** 1.6 Gestos a partir de landmarks (idea)
+Una vez tiene los índices, puede inventar reglas *geométricas* sin otro modelo:
+
+| Idea | Landmarks típicos |
+|------+-------------------|
+| Dedo extendido | Punta (p. ej. 8) más lejos de la muñeca (0) que el PIP (6) |
+| “Pinch” | Distancia pequeña entre punta pulgar (4) e índice (8) |
+| Mano abierta | Varias puntas lejos de la muñeca |
+
+Eso es lo que hace el ejemplo de conteo de dedos: *no* clasifica con una red
+aparte; mide distancias entre puntos del mapa de arriba.
+
+*** 1.7 Rostros (resumen)
+Face Landmarker estima una *malla densa* (~478 puntos) sobre la cara. La idea
+es la misma: coordenadas normalizadas → píxeles → =cv2.circle= (u otras
+conexiones). Opcionalmente entrega *blendshapes* (coeficientes de expresión:
+sonrisa, parpadeo, etc.).
+
+*** 1.8 Modo VIDEO
+=detect_for_video(imagen, timestamp_ms)= exige un timestamp *monótono creciente*
+(ms). Así el seguimiento temporal funciona. En los ejemplos se usa un reloj:
+
+#+begin_example
+t0 = time.time()
+...
+ts = int((time.time() - t0) * 1000)
+#+end_example
+
+#+begin_example
+cámara (OpenCV) → frame BGR → RGB → Landmarker → dibujar → imshow
+#+end_example
+
+** 2. Descargar modelos (una sola vez)
+
+Guarde como =descargar_modelos.py=:
+
+#+begin_src python :eval no :tangle descargar_modelos.py :mkdirp yes
 #!/usr/bin/env python3
-"""Descarga los bundles .task de MediaPipe (una sola vez)."""
 from pathlib import Path
 import urllib.request
 
@@ -7947,150 +8088,118 @@ def main():
             continue
         print("Descargando", nombre, "...")
         urllib.request.urlretrieve(url, destino)
-        print("OK →", destino, f"({destino.stat().st_size} bytes)")
+        print("OK →", destino)
 
 if __name__ == "__main__":
     main()
 #+end_src
 
-#+RESULTS:
-: Ya existe: modelos/hand_landmarker.task
-: Ya existe: modelos/face_landmarker.task
+#+begin_src bash
+python descargar_modelos.py
+#+end_src
+
+** 3. Ejemplo 0 — Probar la cámara con OpenCV (sin MediaPipe)
+
+Antes de landmarks, confirme que OpenCV ve la webcam.
+Guarde como =ejemplo00_probar_camara.py= y ejecútelo en una *terminal externa*.
+Si usa =C-c C-c= en Org y ve *ventana negra*, es un problema típico de
+OpenCV lanzado desde Emacs: el código puede estar bien y aun así no mostrar imagen.
+
+#+begin_src python :eval no :tangle ejemplo00_probar_camara.py :mkdirp yes
+#!/usr/bin/env python3
+"""Abre la cámara con OpenCV. q = salir."""
+import sys
+import time
+import cv2
+
+CAMARA = 0  # pruebe 1 o 2 si falla
+
+
+def abrir_camara(indice):
+    if sys.platform.startswith("linux"):
+        cap = cv2.VideoCapture(indice, cv2.CAP_V4L2)
+    elif sys.platform == "win32":
+        cap = cv2.VideoCapture(indice, cv2.CAP_DSHOW)
+    else:
+        cap = cv2.VideoCapture(indice)
+    if not cap.isOpened():
+        cap = cv2.VideoCapture(indice)
+    if not cap.isOpened():
+        return None, None
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    frame = None
+    for _ in range(20):
+        ok, frame = cap.read()
+        if ok and frame is not None and float(frame.mean()) > 5:
+            break
+        time.sleep(0.05)
+    return cap, frame
+
+
+cap, primer = abrir_camara(CAMARA)
+if cap is None:
+    raise SystemExit(f"No se abrió la cámara {CAMARA}.")
+
+print("shape:", None if primer is None else primer.shape,
+      "brillo medio:", None if primer is None else round(float(primer.mean()), 1))
+if primer is not None and float(primer.mean()) < 5:
+    print("AVISO: frames casi negros → otra cámara, luz o permisos.")
+
+print("Pulse q para salir.")
+while True:
+    ok, frame = cap.read()
+    if not ok:
+        break
+    frame = cv2.flip(frame, 1)
+    cv2.putText(frame, f"OpenCV camara {CAMARA} — q salir",
+                (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+    cv2.imshow("Probar camara", frame)
+    if cv2.waitKey(1) & 0xFF == ord("q"):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
+print("Listo.")
+#+end_src
 
 #+begin_src bash
 cd laboratorio_mediapipe
 source .venv/bin/activate
-python descargar_modelos.py
+python ejemplo00_probar_camara.py
 #+end_src
 
-*** 3.2 Utilidad común de dibujo
-Guarde como =mp_dibujo.py=:
+Checklist si hay ventana negra:
+1. Ejecutar en *terminal*, no Babel.
+2. =CAMARA = 1= (u otro índice).
+3. Cerrar Zoom/Meet/Teams.
+4. Permisos de cámara del sistema.
+5. Brillo medio ≈ 0 → falla la captura, *no* MediaPipe.
 
-#+begin_src python :source output
-"""Utilidades de dibujo para landmarks MediaPipe + OpenCV."""
-from __future__ import annotations
+** 4. Ejemplo 1 — Manos en vivo (OpenCV + MediaPipe)
 
-import cv2
-import numpy as np
+*Importante:* no use =C-c C-c= (Babel) para este ejemplo. Guarde el archivo y
+ejecútelo en una *terminal*. Además, el modelo tarda en cargar: hay que
+*abrir la cámara después* de crear el landmarker; si no, en Linux el buffer
+de V4L2 a menudo entrega frames negros.
 
-# Conexiones oficiales de la mano (21 puntos): pares (inicio, fin)
-HAND_CONNECTIONS = [
-    (0, 1), (1, 2), (2, 3), (3, 4),       # pulgar
-    (0, 5), (5, 6), (6, 7), (7, 8),       # índice
-    (0, 9), (9, 10), (10, 11), (11, 12),  # medio
-    (0, 13), (13, 14), (14, 15), (15, 16),# anular
-    (0, 17), (17, 18), (18, 19), (19, 20),# meñique
-    (5, 9), (9, 13), (13, 17),            # palma
-]
+Guarde como =ejemplo01_manos_camara.py=:
 
-# Nombres didácticos de algunos índices de mano
-HAND_NOMBRES = {
-    0: "muñeca",
-    4: "pulgar_punta",
-    8: "indice_punta",
-    12: "medio_punta",
-    16: "anular_punta",
-    20: "menique_punta",
-}
-
-
-def landmarks_a_pixeles(landmarks, w: int, h: int) -> list[tuple[int, int]]:
-    pts = []
-    for lm in landmarks:
-        pts.append((int(lm.x * w), int(lm.y * h)))
-    return pts
-
-
-def dibujar_mano(frame, landmarks, color=(0, 255, 0), radio=3):
-    h, w = frame.shape[:2]
-    pts = landmarks_a_pixeles(landmarks, w, h)
-    for a, b in HAND_CONNECTIONS:
-        if a < len(pts) and b < len(pts):
-            cv2.line(frame, pts[a], pts[b], color, 2)
-    for i, p in enumerate(pts):
-        cv2.circle(frame, p, radio, (0, 0, 255), -1)
-        if i in HAND_NOMBRES:
-            cv2.putText(
-                frame, str(i), (p[0] + 4, p[1] - 4),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.35, (255, 255, 255), 1,
-            )
-    return frame
-
-
-def dibujar_rostro_puntos(frame, landmarks, paso=1, color=(255, 200, 0), radio=1):
-    """Dibuja una submuestra de puntos faciales (478 en el modelo completo)."""
-    h, w = frame.shape[:2]
-    for i, lm in enumerate(landmarks):
-        if i % paso != 0:
-            continue
-        x, y = int(lm.x * w), int(lm.y * h)
-        cv2.circle(frame, (x, y), radio, color, -1)
-    return frame
-
-
-def bgr_a_mp_image(frame_bgr):
-    import mediapipe as mp
-    rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
-    return mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+#+begin_src bash
+cd /home/likcos/Scripts   # o su carpeta laboratorio_mediapipe
+source .venv/bin/activate 2>/dev/null || true
+python ejemplo01_manos_camara.py --camara 0
 #+end_src
 
-#+RESULTS:
-
-*** 3.3 Imagen de prueba (si no tiene foto propia)
-Puede usar cualquier =.jpg=/=.png= con una mano o un rostro visibles.
-Colóquela en =imagenes/prueba.jpg=. Si no tiene una a mano, capture un
-fotograma con la webcam (véase el script breve al final de la Parte 4).
-
-** Parte 4 — Manos: 21 landmarks (teoría + práctica C)
-
-*** 4.1 Topología de la mano
-El modelo estima *21 puntos* por mano:
-
-#+begin_example
-        8   12  16  20
-        |    |   |   |
-        7   11  15  19
-        |    |   |   |
-        6   10  14  18
-        |    |   |   |
-        5----9--13--17
-         \   |  /
-          \  | /
-           \ |/
-            0   ← muñeca
-           / \
-          1   ...
-          |
-          2
-          |
-          3
-          |
-          4   ← punta del pulgar
-#+end_example
-
-| Índice | Región |
-|--------+--------|
-| 0 | Muñeca |
-| 1–4 | Pulgar (base → punta) |
-| 5–8 | Índice |
-| 9–12 | Medio |
-| 13–16 | Anular |
-| 17–20 | Meñique |
-
-Además se obtiene *handedness*: =Left= o =Right= (desde el punto de vista
-de la persona en la imagen; conviene verificarlo frente a un espejo virtual).
-
-*** 4.2 Ejemplo: manos en una imagen estática
-Guarde como =manos_imagen.py=:
-
-#+begin_src python
+#+begin_src python :eval no :tangle ejemplo01_manos_camara.py :mkdirp yes
 #!/usr/bin/env python3
-"""Práctica C: Hand Landmarker en una imagen. Uso:
-   python manos_imagen.py --imagen imagenes/prueba.jpg
 """
-from __future__ import annotations
-
+Ejemplo 1 — Manos en vivo (OpenCV + MediaPipe).
+Ejecutar en TERMINAL, no con Babel/C-c C-c.
+"""
 import argparse
+import sys
+import time
 from pathlib import Path
 
 import cv2
@@ -8098,272 +8207,211 @@ import mediapipe as mp
 from mediapipe.tasks import python as mp_python
 from mediapipe.tasks.python import vision
 
-from mp_dibujo import dibujar_mano, bgr_a_mp_image
+HAND_CONNECTIONS = [
+    (0, 1), (1, 2), (2, 3), (3, 4),
+    (0, 5), (5, 6), (6, 7), (7, 8),
+    (0, 9), (9, 10), (10, 11), (11, 12),
+    (0, 13), (13, 14), (14, 15), (15, 16),
+    (0, 17), (17, 18), (18, 19), (19, 20),
+    (5, 9), (9, 13), (13, 17),
+]
+
+
+def bgr_a_mp(frame_bgr):
+    rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+    return mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+
+
+def dibujar_mano(frame, landmarks):
+    h, w = frame.shape[:2]
+    pts = [(int(lm.x * w), int(lm.y * h)) for lm in landmarks]
+    for a, b in HAND_CONNECTIONS:
+        cv2.line(frame, pts[a], pts[b], (0, 255, 0), 2)
+    for p in pts:
+        cv2.circle(frame, p, 3, (0, 0, 255), -1)
+
+
+def abrir_camara(indice):
+    if sys.platform.startswith("linux"):
+        cap = cv2.VideoCapture(indice, cv2.CAP_V4L2)
+    elif sys.platform == "win32":
+        cap = cv2.VideoCapture(indice, cv2.CAP_DSHOW)
+    else:
+        cap = cv2.VideoCapture(indice)
+    if not cap.isOpened():
+        cap = cv2.VideoCapture(indice)
+    if not cap.isOpened():
+        return None
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    try:
+        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+    except Exception:
+        pass
+    # Vaciar buffer / calentar
+    for _ in range(20):
+        ok, frame = cap.read()
+        if ok and frame is not None and float(frame.mean()) > 5:
+            break
+        time.sleep(0.03)
+    return cap
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--imagen", required=True)
-    ap.add_argument("--modelo", default="modelos/hand_landmarker.task")
+    ap.add_argument("--camara", type=int, default=0)
+    ap.add_argument(
+        "--modelo",
+        default=str(Path(__file__).resolve().parent / "modelos" / "hand_landmarker.task"),
+    )
     ap.add_argument("--max-manos", type=int, default=2)
-    ap.add_argument("--salida", default="imagenes/salida_manos.jpg")
     args = ap.parse_args()
 
-    frame = cv2.imread(args.imagen)
-    if frame is None:
-        raise SystemExit(f"No se pudo leer: {args.imagen}")
+    modelo = Path(args.modelo)
+    if not modelo.exists():
+        # rutas frecuentes del laboratorio
+        candidatos = [
+            Path("modelos/hand_landmarker.task"),
+            Path("/home/likcos/Scripts/modelos/hand_landmarker.task"),
+        ]
+        for c in candidatos:
+            if c.exists():
+                modelo = c
+                break
+        else:
+            raise SystemExit(
+                f"No esta el modelo en {args.modelo}. Ejecute descargar_modelos.py"
+            )
 
-    base = mp_python.BaseOptions(model_asset_path=args.modelo)
+    print("Cargando modelo (puede tardar unos segundos)...", modelo)
     options = vision.HandLandmarkerOptions(
-        base_options=base,
-        running_mode=vision.RunningMode.IMAGE,
-        num_hands=args.max_manos,
-        min_hand_detection_confidence=0.5,
-        min_hand_presence_confidence=0.5,
-    )
-
-    with vision.HandLandmarker.create_from_options(options) as landmarker:
-        mp_image = bgr_a_mp_image(frame)
-        result = landmarker.detect(mp_image)
-
-    print(f"Manos detectadas: {len(result.hand_landmarks)}")
-    for i, (lms, handed) in enumerate(
-        zip(result.hand_landmarks, result.handedness)
-    ):
-        etiqueta = handed[0].category_name
-        score = handed[0].score
-        print(f"  Mano {i}: {etiqueta} (score={score:.2f}), puntos={len(lms)}")
-        # Ejemplo: coordenadas normalizadas de la punta del índice (8)
-        idx = lms[8]
-        print(f"    índice punta → x={idx.x:.3f}, y={idx.y:.3f}, z={idx.z:.3f}")
-        dibujar_mano(frame, lms)
-
-    Path(args.salida).parent.mkdir(parents=True, exist_ok=True)
-    cv2.imwrite(args.salida, frame)
-    print("Guardado:", args.salida)
-
-    cv2.imshow("Manos (IMAGE)", frame)
-    print("Pulse una tecla para cerrar...")
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
-
-if __name__ == "__main__":
-    main()
-#+end_src
-
-#+begin_src bash
-# Captura rápida de una foto con la webcam (opcional):
-python -c "
-import cv2
-cap=cv2.VideoCapture(0)
-ok,f=cap.read(); cap.release()
-assert ok
-cv2.imwrite('imagenes/prueba.jpg', f)
-print('OK imagenes/prueba.jpg')
-"
-
-python manos_imagen.py --imagen imagenes/prueba.jpg
-#+end_src
-
-*Qué observar:* esqueleto verde, puntos rojos, índices numéricos en puntas
-y muñeca; en consola, =Left=/=Right= y coordenadas del índice.
-
-** Parte 5 — Manos en webcam (práctica D)
-
-Guarde como =manos_webcam.py=:
-
-#+begin_src python
-#!/usr/bin/env python3
-"""Práctica D: Hand Landmarker en tiempo real (modo VIDEO).
-   Controles: q = salir
-"""
-from __future__ import annotations
-
-import time
-import cv2
-from mediapipe.tasks import python as mp_python
-from mediapipe.tasks.python import vision
-
-from mp_dibujo import dibujar_mano, bgr_a_mp_image, HAND_NOMBRES
-
-
-def main():
-    modelo = "modelos/hand_landmarker.task"
-    base = mp_python.BaseOptions(model_asset_path=modelo)
-    options = vision.HandLandmarkerOptions(
-        base_options=base,
+        base_options=mp_python.BaseOptions(model_asset_path=str(modelo)),
         running_mode=vision.RunningMode.VIDEO,
-        num_hands=2,
+        num_hands=args.max_manos,
         min_hand_detection_confidence=0.5,
         min_tracking_confidence=0.5,
     )
 
-    cap = cv2.VideoCapture(0)
-    if not cap.isOpened():
-        raise SystemExit("No se abrió la webcam (pruebe otro índice: 1, 2…).")
-
-    t0 = time.time()
+    # IMPORTANTE: crear el landmarker ANTES de abrir la camara
     with vision.HandLandmarker.create_from_options(options) as landmarker:
+        print("Modelo listo. Abriendo camara", args.camara, "...")
+        cap = abrir_camara(args.camara)
+        if cap is None:
+            raise SystemExit(f"No se abrio la camara {args.camara}")
+
+        cv2.namedWindow("manos", cv2.WINDOW_NORMAL)
+        t0 = time.time()
+        n = 0
+        print("Ventana abierta. Pulse q para salir.")
+
         while True:
             ok, frame = cap.read()
             if not ok:
+                print("cap.read() fallo")
                 break
-            frame = cv2.flip(frame, 1)  # espejo: más intuitivo
-            ts = int((time.time() - t0) * 1000)
-            result = landmarker.detect_for_video(bgr_a_mp_image(frame), ts)
 
-            info = []
+            brillo = float(frame.mean())
+            frame = cv2.flip(frame, 1)
+            ts = int((time.time() - t0) * 1000)
+            result = landmarker.detect_for_video(bgr_a_mp(frame), ts)
+
+            etiquetas = []
             for lms, handed in zip(result.hand_landmarks, result.handedness):
                 dibujar_mano(frame, lms)
-                info.append(f"{handed[0].category_name}:{handed[0].score:.2f}")
-            texto = " | ".join(info) if info else "Sin manos"
-            cv2.putText(
-                frame, texto, (10, 30),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2,
-            )
-            cv2.putText(
-                frame, "q = salir", (10, frame.shape[0] - 15),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1,
-            )
-            cv2.imshow("MediaPipe Hands (VIDEO)", frame)
+                etiquetas.append(
+                    f"{handed[0].category_name}:{handed[0].score:.2f}"
+                )
+
+            texto = " | ".join(etiquetas) if etiquetas else "Sin manos"
+            cv2.putText(frame, texto, (10, 30),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+            cv2.putText(frame, f"brillo={brillo:.0f}  q=salir", (10, 60),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
+
+            # Cada ~30 frames guarda una foto de diagnostico
+            if n % 30 == 0:
+                cv2.imwrite("debug_mano.jpg", frame)
+                print(f"frame {n} brillo={brillo:.1f} manos={len(result.hand_landmarks)}")
+
+            cv2.imshow("manos", frame)
+            n += 1
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
 
-    cap.release()
-    cv2.destroyAllWindows()
+        cap.release()
+        cv2.destroyAllWindows()
+        print("Fin. Revise debug_mano.jpg si la ventana se veia negra.")
 
 
 if __name__ == "__main__":
     main()
 #+end_src
 
+Si la ventana sigue negra pero =debug_mano.jpg= se ve bien: es solo el preview
+de OpenCV bajo Emacs. Use siempre la terminal.
+
+Si =debug_mano.jpg= tambien esta negro: problema de captura (indice, permisos).
+
+*Qué probar:* una mano, dos manos, acercar/alejar.
+
+** 5. Ejemplo 2 — Rostros en vivo
+
+Guarde como =ejemplo02_rostros_camara.py=:
+
 #+begin_src bash
-python manos_webcam.py
+python ejemplo02_rostros_camara.py
 #+end_src
 
-*Pruebas sugeridas:*
-1. Una mano abierta frente a la cámara.
-2. Dos manos a la vez.
-3. Acercar / alejar: ¿se mantiene el seguimiento?
-4. Ocultar la mano un segundo y volver a mostrarla.
-
-** Parte 6 — Rostros (práctica E)
-
-*** 6.1 Qué entrega Face Landmarker
-El modelo de rostro estima una *malla densa* (del orden de *478* puntos en la
-versión completa), útil para:
-
-- anclar efectos (gafas, máscaras);
-- analizar expresiones vía *blendshapes* (coeficientes de unidades de acción
-  facial: sonrisa, parpadeo, etc., si se activan en las opciones).
-
-No es necesario memorizar los 478 índices: para el laboratorio basta dibujar
-una submuestra y, si se desea, inspeccionar puntos de ojos/labios con la
-documentación de índices de MediaPipe Face Mesh.
-
-*** 6.2 Rostro en imagen
-Guarde como =rostro_imagen.py=:
-
-#+begin_src python
+#+begin_src python :eval no :tangle ejemplo02_rostros_camara.py :mkdirp yes
 #!/usr/bin/env python3
-"""Práctica E (imagen): Face Landmarker.
-   python rostro_imagen.py --imagen imagenes/prueba.jpg
 """
-from __future__ import annotations
-
+Ejemplo 2 — Landmarks de rostro en vivo (cámara OpenCV + MediaPipe).
+q = salir
+"""
 import argparse
+import time
 from pathlib import Path
 
 import cv2
+import mediapipe as mp
 from mediapipe.tasks import python as mp_python
 from mediapipe.tasks.python import vision
 
-from mp_dibujo import dibujar_rostro_puntos, bgr_a_mp_image
+
+def bgr_a_mp(frame_bgr):
+    rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+    return mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+
+
+def dibujar_rostro(frame, landmarks, paso=3):
+    h, w = frame.shape[:2]
+    for i, lm in enumerate(landmarks):
+        if i % paso != 0:
+            continue
+        cv2.circle(frame, (int(lm.x * w), int(lm.y * h)), 1, (255, 200, 0), -1)
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--imagen", required=True)
+    ap.add_argument("--camara", type=int, default=0)
     ap.add_argument("--modelo", default="modelos/face_landmarker.task")
     ap.add_argument("--max-rostros", type=int, default=2)
-    ap.add_argument("--paso", type=int, default=2, help="Dibujar 1 de cada N puntos")
-    ap.add_argument("--salida", default="imagenes/salida_rostro.jpg")
     args = ap.parse_args()
 
-    frame = cv2.imread(args.imagen)
-    if frame is None:
-        raise SystemExit(f"No se pudo leer: {args.imagen}")
+    if not Path(args.modelo).exists():
+        raise SystemExit("Ejecute: python descargar_modelos.py")
+
+    cap = cv2.VideoCapture(args.camara)
+    if not cap.isOpened():
+        raise SystemExit(f"No se abrió la cámara {args.camara}")
 
     options = vision.FaceLandmarkerOptions(
         base_options=mp_python.BaseOptions(model_asset_path=args.modelo),
-        running_mode=vision.RunningMode.IMAGE,
+        running_mode=vision.RunningMode.VIDEO,
         num_faces=args.max_rostros,
         min_face_detection_confidence=0.5,
-        min_face_presence_confidence=0.5,
-        output_face_blendshapes=True,
-        output_facial_transformation_matrixes=False,
-    )
-
-    with vision.FaceLandmarker.create_from_options(options) as landmarker:
-        result = landmarker.detect(bgr_a_mp_image(frame))
-
-    print(f"Rostros: {len(result.face_landmarks)}")
-    for i, lms in enumerate(result.face_landmarks):
-        print(f"  Rostro {i}: {len(lms)} landmarks")
-        dibujar_rostro_puntos(frame, lms, paso=args.paso)
-
-        if result.face_blendshapes:
-            # Mostrar las 5 blendshapes con mayor score
-            cats = result.face_blendshapes[i]
-            top = sorted(cats, key=lambda c: c.score, reverse=True)[:5]
-            print("  Top blendshapes:")
-            for c in top:
-                print(f"    {c.category_name}: {c.score:.3f}")
-
-    Path(args.salida).parent.mkdir(parents=True, exist_ok=True)
-    cv2.imwrite(args.salida, frame)
-    print("Guardado:", args.salida)
-    cv2.imshow("Rostro (IMAGE)", frame)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
-
-if __name__ == "__main__":
-    main()
-#+end_src
-
-*** 6.3 Rostro en webcam
-Guarde como =rostro_webcam.py=:
-
-#+begin_src python
-#!/usr/bin/env python3
-"""Práctica E (webcam): Face Landmarker en modo VIDEO. q = salir."""
-from __future__ import annotations
-
-import time
-import cv2
-from mediapipe.tasks import python as mp_python
-from mediapipe.tasks.python import vision
-
-from mp_dibujo import dibujar_rostro_puntos, bgr_a_mp_image
-
-
-def main():
-    options = vision.FaceLandmarkerOptions(
-        base_options=mp_python.BaseOptions(
-            model_asset_path="modelos/face_landmarker.task"
-        ),
-        running_mode=vision.RunningMode.VIDEO,
-        num_faces=2,
-        min_face_detection_confidence=0.5,
         min_tracking_confidence=0.5,
-        output_face_blendshapes=False,
     )
-
-    cap = cv2.VideoCapture(0)
-    if not cap.isOpened():
-        raise SystemExit("No se abrió la webcam.")
 
     t0 = time.time()
     with vision.FaceLandmarker.create_from_options(options) as landmarker:
@@ -8373,9 +8421,11 @@ def main():
                 break
             frame = cv2.flip(frame, 1)
             ts = int((time.time() - t0) * 1000)
-            result = landmarker.detect_for_video(bgr_a_mp_image(frame), ts)
+            result = landmarker.detect_for_video(bgr_a_mp(frame), ts)
+
             for lms in result.face_landmarks:
-                dibujar_rostro_puntos(frame, lms, paso=3)
+                dibujar_rostro(frame, lms)
+
             cv2.putText(
                 frame,
                 f"Rostros: {len(result.face_landmarks)}  |  q=salir",
@@ -8385,7 +8435,7 @@ def main():
                 (0, 255, 255),
                 2,
             )
-            cv2.imshow("MediaPipe Face (VIDEO)", frame)
+            cv2.imshow("Rostros — OpenCV + MediaPipe", frame)
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
 
@@ -8397,118 +8447,75 @@ if __name__ == "__main__":
     main()
 #+end_src
 
+*Qué probar:* sonreír, girar la cabeza, acercarse, dos personas si =--max-rostros 2=.
+
+** 6. Ejemplo 3 — Manos y rostros a la vez
+
+Guarde como =ejemplo03_manos_y_rostros_camara.py=:
+
 #+begin_src bash
-python rostro_imagen.py --imagen imagenes/prueba.jpg
-python rostro_webcam.py
+python ejemplo03_manos_y_rostros_camara.py
 #+end_src
 
-*Pruebas sugeridas:* sonreír, fruncir el ceño, girar la cabeza, acercarse;
-con blendshapes activos en imagen, compare los nombres de mayor score.
-
-** Parte 7 — Ejemplos para probar (práctica F)
-
-*** 7.1 Conteo simple de dedos (heurística geométrica)
-Idea: un dedo está “extendido” si la punta está *más lejos de la muñeca*
-que la articulación intermedia (aproximación robusta en vista frontal).
-
-Guarde como =gestos_contar_dedos.py=:
-
-#+begin_src python
+#+begin_src python :eval no :tangle ejemplo03_manos_y_rostros_camara.py :mkdirp yes
 #!/usr/bin/env python3
-"""Cuenta dedos extendidos (heurística). Webcam. q = salir."""
-from __future__ import annotations
-
+"""
+Ejemplo 3 — Cámara OpenCV + manos + rostros (dos landmarkers).
+q = salir
+"""
+import argparse
 import time
+from pathlib import Path
+
 import cv2
+import mediapipe as mp
 from mediapipe.tasks import python as mp_python
 from mediapipe.tasks.python import vision
 
-from mp_dibujo import dibujar_mano, bgr_a_mp_image
-
-
-# (punta, articulación PIP) por dedo; pulgar usa (4, 2) con eje distinto
-DEDOS = [
-    (8, 6),    # índice
-    (12, 10),  # medio
-    (16, 14),  # anular
-    (20, 18),  # meñique
+HAND_CONNECTIONS = [
+    (0, 1), (1, 2), (2, 3), (3, 4),
+    (0, 5), (5, 6), (6, 7), (7, 8),
+    (0, 9), (9, 10), (10, 11), (11, 12),
+    (0, 13), (13, 14), (14, 15), (15, 16),
+    (0, 17), (17, 18), (18, 19), (19, 20),
+    (5, 9), (9, 13), (13, 17),
 ]
 
 
-def dist2(a, b):
-    return (a.x - b.x) ** 2 + (a.y - b.y) ** 2
+def bgr_a_mp(frame_bgr):
+    rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+    return mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
 
 
-def contar_dedos(lms) -> int:
-    muneca = lms[0]
-    n = 0
-    # Pulgar: punta más lejos de la muñeca que el punto 2 (aprox. en espejo)
-    if dist2(lms[4], muneca) > dist2(lms[2], muneca):
-        n += 1
-    for punta, pip in DEDOS:
-        if dist2(lms[punta], muneca) > dist2(lms[pip], muneca):
-            n += 1
-    return n
+def dibujar_mano(frame, landmarks):
+    h, w = frame.shape[:2]
+    pts = [(int(lm.x * w), int(lm.y * h)) for lm in landmarks]
+    for a, b in HAND_CONNECTIONS:
+        cv2.line(frame, pts[a], pts[b], (0, 255, 0), 2)
+    for p in pts:
+        cv2.circle(frame, p, 3, (0, 0, 255), -1)
 
 
-def main():
-    options = vision.HandLandmarkerOptions(
-        base_options=mp_python.BaseOptions(
-            model_asset_path="modelos/hand_landmarker.task"
-        ),
-        running_mode=vision.RunningMode.VIDEO,
-        num_hands=1,
-    )
-    cap = cv2.VideoCapture(0)
-    t0 = time.time()
-    with vision.HandLandmarker.create_from_options(options) as landmarker:
-        while True:
-            ok, frame = cap.read()
-            if not ok:
-                break
-            frame = cv2.flip(frame, 1)
-            ts = int((time.time() - t0) * 1000)
-            result = landmarker.detect_for_video(bgr_a_mp_image(frame), ts)
-            msg = "Muestra una mano"
-            if result.hand_landmarks:
-                lms = result.hand_landmarks[0]
-                dibujar_mano(frame, lms)
-                msg = f"Dedos ≈ {contar_dedos(lms)}"
-            cv2.putText(
-                frame, msg, (10, 40),
-                cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 0), 2,
-            )
-            cv2.imshow("Conteo de dedos", frame)
-            if cv2.waitKey(1) & 0xFF == ord("q"):
-                break
-    cap.release()
-    cv2.destroyAllWindows()
-
-
-if __name__ == "__main__":
-    main()
-#+end_src
-
-*Cómo probarlo:* puño cerrado (≈0), un dedo, paz/victoria (≈2), mano abierta (≈5).
-La heurística falla de lado o con oclusiones: documente cuándo se equivoca.
-
-*** 7.2 Manos + rostro a la vez
-Guarde como =manos_y_rostro_webcam.py=:
-
-#+begin_src python
-#!/usr/bin/env python3
-"""Detecta manos y rostros en el mismo fotograma. q = salir."""
-from __future__ import annotations
-
-import time
-import cv2
-from mediapipe.tasks import python as mp_python
-from mediapipe.tasks.python import vision
-
-from mp_dibujo import dibujar_mano, dibujar_rostro_puntos, bgr_a_mp_image
+def dibujar_rostro(frame, landmarks, paso=4):
+    h, w = frame.shape[:2]
+    for i, lm in enumerate(landmarks):
+        if i % paso == 0:
+            cv2.circle(frame, (int(lm.x * w), int(lm.y * h)), 1, (255, 200, 0), -1)
 
 
 def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--camara", type=int, default=0)
+    args = ap.parse_args()
+
+    for m in ("modelos/hand_landmarker.task", "modelos/face_landmarker.task"):
+        if not Path(m).exists():
+            raise SystemExit("Ejecute: python descargar_modelos.py")
+
+    cap = cv2.VideoCapture(args.camara)
+    if not cap.isOpened():
+        raise SystemExit(f"No se abrió la cámara {args.camara}")
+
     hand_opts = vision.HandLandmarkerOptions(
         base_options=mp_python.BaseOptions(
             model_asset_path="modelos/hand_landmarker.task"
@@ -8524,7 +8531,6 @@ def main():
         num_faces=1,
     )
 
-    cap = cv2.VideoCapture(0)
     t0 = time.time()
     with vision.HandLandmarker.create_from_options(hand_opts) as hands, \
          vision.FaceLandmarker.create_from_options(face_opts) as faces:
@@ -8534,25 +8540,29 @@ def main():
                 break
             frame = cv2.flip(frame, 1)
             ts = int((time.time() - t0) * 1000)
-            img = bgr_a_mp_image(frame)
+            img = bgr_a_mp(frame)
+
             hr = hands.detect_for_video(img, ts)
             fr = faces.detect_for_video(img, ts)
+
             for lms in hr.hand_landmarks:
                 dibujar_mano(frame, lms)
             for lms in fr.face_landmarks:
-                dibujar_rostro_puntos(frame, lms, paso=4)
+                dibujar_rostro(frame, lms)
+
             cv2.putText(
                 frame,
-                f"Manos={len(hr.hand_landmarks)}  Rostros={len(fr.face_landmarks)}",
+                f"Manos={len(hr.hand_landmarks)}  Rostros={len(fr.face_landmarks)}  | q=salir",
                 (10, 30),
                 cv2.FONT_HERSHEY_SIMPLEX,
-                0.7,
+                0.65,
                 (255, 255, 0),
                 2,
             )
-            cv2.imshow("Manos + Rostro", frame)
+            cv2.imshow("Manos + Rostro — camara", frame)
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
+
     cap.release()
     cv2.destroyAllWindows()
 
@@ -8561,60 +8571,1530 @@ if __name__ == "__main__":
     main()
 #+end_src
 
-*** 7.3 Mini batería de pruebas (checklist del alumno)
+** 7. Ejemplo 4 — Contar dedos con la cámara
 
-| # | Acción | Script | Resultado esperado |
-|---+--------+--------+--------------------|
-| 1 | Descargar modelos | =descargar_modelos.py= | Archivos en =modelos/= |
-| 2 | Foto con mano | =manos_imagen.py= | Esqueleto + consola Left/Right |
-| 3 | Webcam manos | =manos_webcam.py= | Seguimiento fluido; =q= sale |
-| 4 | Foto con cara | =rostro_imagen.py= | Nube de puntos + blendshapes |
-| 5 | Webcam cara | =rostro_webcam.py= | Malla al mover la cabeza |
-| 6 | Contar 0–5 dedos | =gestos_contar_dedos.py= | Número en pantalla |
-| 7 | Ambos a la vez | =manos_y_rostro_webcam.py= | Contadores coherentes |
+Guarde como =ejemplo04_contar_dedos_camara.py=:
 
-** Parte 8 — Buenas prácticas y fallos frecuentes
+#+begin_src bash
+python ejemplo04_contar_dedos_camara.py
+#+end_src
 
-| Problema | Causa probable | Mitigación |
-|----------+----------------+------------|
-| No detecta nada | Poca luz / mano cortada | Mejor iluminación; encuadre completo |
-| Temblor del esqueleto | Confianza baja / movimiento rápido | Subir =min_tracking_confidence=; estabilizar |
-| Izquierda/derecha al revés | Espejo (=flip=) vs convención del modelo | Probar con y sin =cv2.flip= |
-| =detect_for_video= falla | Timestamp no monótono | Usar reloj desde =t0= como en los ejemplos |
-| Modelo no encontrado | Ruta relativa incorrecta | Ejecutar desde =laboratorio_mediapipe/= |
-| FPS bajos | Dos landmarkers + resolución alta | Bajar resolución de captura; =paso= mayor al dibujar cara |
+#+begin_src python :eval no :tangle ejemplo04_contar_dedos_camara.py :mkdirp yes
+#!/usr/bin/env python3
+"""
+Ejemplo 4 — Conteo aproximado de dedos con cámara OpenCV + MediaPipe.
+q = salir
+"""
+import argparse
+import time
+from pathlib import Path
 
-*** Privacidad
-Los fotogramas de webcam pueden contener datos personales. No suba vídeos del
-laboratorio a repositorios públicos sin consentimiento.
+import cv2
+import mediapipe as mp
+from mediapipe.tasks import python as mp_python
+from mediapipe.tasks.python import vision
 
-** Parte 9 — Glosario
+HAND_CONNECTIONS = [
+    (0, 1), (1, 2), (2, 3), (3, 4),
+    (0, 5), (5, 6), (6, 7), (7, 8),
+    (0, 9), (9, 10), (10, 11), (11, 12),
+    (0, 13), (13, 14), (14, 15), (15, 16),
+    (0, 17), (17, 18), (18, 19), (19, 20),
+    (5, 9), (9, 13), (13, 17),
+]
+DEDOS = [(8, 6), (12, 10), (16, 14), (20, 18)]
 
-| Término | Definición breve |
-|---------+------------------|
-| Landmark | Punto clave estimado sobre la anatomía |
-| Handedness | Clasificación mano izquierda / derecha |
-| Blendshape | Coeficiente de expresión facial |
-| Running mode | IMAGE / VIDEO / LIVE_STREAM |
-| Model bundle (=.task=) | Paquete de modelos listo para Tasks |
-| Tracking | Reutilizar la región del frame anterior |
-| Coordenadas normalizadas | \(x,y \in [0,1]\) relativos al fotograma |
+
+def bgr_a_mp(frame_bgr):
+    rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+    return mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+
+
+def dist2(a, b):
+    return (a.x - b.x) ** 2 + (a.y - b.y) ** 2
+
+
+def contar_dedos(lms):
+    muneca = lms[0]
+    n = 1 if dist2(lms[4], muneca) > dist2(lms[2], muneca) else 0
+    for punta, pip in DEDOS:
+        if dist2(lms[punta], muneca) > dist2(lms[pip], muneca):
+            n += 1
+    return n
+
+
+def dibujar_mano(frame, landmarks):
+    h, w = frame.shape[:2]
+    pts = [(int(lm.x * w), int(lm.y * h)) for lm in landmarks]
+    for a, b in HAND_CONNECTIONS:
+        cv2.line(frame, pts[a], pts[b], (0, 255, 0), 2)
+    for p in pts:
+        cv2.circle(frame, p, 3, (0, 0, 255), -1)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--camara", type=int, default=0)
+    args = ap.parse_args()
+
+    modelo = "modelos/hand_landmarker.task"
+    if not Path(modelo).exists():
+        raise SystemExit("Ejecute: python descargar_modelos.py")
+
+    cap = cv2.VideoCapture(args.camara)
+    if not cap.isOpened():
+        raise SystemExit(f"No se abrió la cámara {args.camara}")
+
+    options = vision.HandLandmarkerOptions(
+        base_options=mp_python.BaseOptions(model_asset_path=modelo),
+        running_mode=vision.RunningMode.VIDEO,
+        num_hands=1,
+    )
+
+    t0 = time.time()
+    with vision.HandLandmarker.create_from_options(options) as landmarker:
+        while True:
+            ok, frame = cap.read()
+            if not ok:
+                break
+            frame = cv2.flip(frame, 1)
+            ts = int((time.time() - t0) * 1000)
+            result = landmarker.detect_for_video(bgr_a_mp(frame), ts)
+
+            msg = "Muestre una mano"
+            if result.hand_landmarks:
+                lms = result.hand_landmarks[0]
+                dibujar_mano(frame, lms)
+                msg = f"Dedos ≈ {contar_dedos(lms)}"
+
+            cv2.putText(
+                frame, msg, (10, 40),
+                cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 0), 2,
+            )
+            cv2.putText(
+                frame, "q = salir", (10, frame.shape[0] - 15),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1,
+            )
+            cv2.imshow("Contar dedos — camara", frame)
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+
+if __name__ == "__main__":
+    main()
+#+end_src
+
+*Qué probar:* puño (≈0), un dedo, victoria (≈2), mano abierta (≈5).
+
+** 8. Orden de la sesión
+
+#+begin_src bash
+# Desde Emacs, con este .org abierto: C-c C-v t  (genera los .py)
+
+cd /ruta/donde/quedo/el/org   # p. ej. ~/Scripts
+source .venv/bin/activate
+
+python descargar_modelos.py
+python ejemplo00_probar_camara.py      # solo OpenCV
+python ejemplo01_manos_camara.py       # manos
+python ejemplo02_rostros_camara.py     # rostros
+python ejemplo03_manos_y_rostros_camara.py
+python ejemplo04_contar_dedos_camara.py
+#+end_src
+
+** 9. Fallos frecuentes (cámara)
+
+| Problema | Qué hacer |
+|----------+-----------|
+| =No se abrió la cámara= | Probar =--camara 1=; cerrar Zoom/Meet; revisar permisos |
+| Ventana negra | Cable / otra cámara; reiniciar el script |
+| No detecta manos/cara | Más luz; encuadre completo; acercarse |
+| Falta el modelo =.task= | =python descargar_modelos.py= |
+| Espejo raro Left/Right | Es normal con =cv2.flip=; pruebe sin el flip si lo necesita |
+
+
+
+* Programar LEGO NXT y EV3 con Python
+
+1. Prepara el entorno (*Linux* o *Windows* — ver sección Preparación).
+2. Conecta el ladrillo por *USB* (recomendado) o *Bluetooth* (plan B).
+3. Copia un ejemplo completo del org *o* ejecuta un =.py= de =~/Scripts/ejemplos_nxt_ev3/=.
+4. Ejecuta: =python nombre_del_archivo.py=.
+
+Documentación oficial:
+- NXT (=nxt-python=): https://ni.schottelius.org/software/nxt-python/ (y docs del paquete en PyPI)
+- EV3 (=ev3-dc=): https://ev3-dc.readthedocs.io/
+
+** Idea clave 
+
+#+begin_quote
+La *PC* manda órdenes. El *NXT* o *EV3* solo mueve motores y lee sensores.
+#+end_quote
+
+| Ladrillo | Librería Python | Import típico |
+|----------|-----------------|---------------|
+| NXT | =nxt-python= | =import nxt.locator= / =from nxt.motor import Motor, Port= |
+| EV3 | =ev3-dc= | =import ev3_dc as ev3= |
+
+** Preparación 
+
+*** Qué conexión usar (regla para alumnos)
+
+| Conexión    | NXT             | EV3                                   | Recomendado en clase           |
+|-------------+-----------------+---------------------------------------+--------------------------------|
+| *USB (cable)* | Muy estable     | Muy estable                           | *Sí — úsalo primero*             |
+| *Bluetooth*   | Suele funcionar | En Linux a veces falla el canal serie | Solo si USB no está disponible |
+
+Regla de oro: *si la demo es mañana, ve por cable.* Bluetooth es plan B.
+
+*** Instalar librerías (Linux y Windows igual)
+
+#+begin_src shell
+pip install nxt-python ev3-dc pyusb
+python -c "import nxt, ev3_dc; print('Librerías OK')"
+#+end_src
+
+*** Linux — entorno y permisos USB
+
+#+begin_src shell
+source ~/entornos/programacion/bin/activate   # o la ruta de tu venv
+cd ~/Scripts
+#+end_src
+
+Si sale =Access denied= al usar USB:
+
+#+begin_src shell
+sudo tee /etc/udev/rules.d/70-lego-mindstorms.rules << 'EOF'
+# LEGO NXT
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0694", ATTRS{idProduct}=="0002", MODE="0666", GROUP="plugdev"
+# LEGO EV3
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0694", ATTRS{idProduct}=="0005", MODE="0666", GROUP="plugdev"
+EOF
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+sudo usermod -aG plugdev $USER
+#+end_src
+
+Desconecta y vuelve a conectar el cable. Si acabas de añadir el grupo =plugdev=, cierra sesión y entra de nuevo.
+
+*** Windows — entorno
+
+1. Instala Python 3.10+ desde https://www.python.org (marca *Add Python to PATH*).
+2. Abre *PowerShell* o *CMD*:
+
+#+begin_src powershell
+python -m venv venv_lego
+.\venv_lego\Scripts\activate
+pip install nxt-python ev3-dc pyusb
+python -c "import nxt, ev3_dc; print('Librerías OK')"
+#+end_src
+
+3. *USB en Windows:* a veces =pyusb= no ve el ladrillo hasta instalar WinUSB con *Zadig* (https://zadig.akeo.ie/):
+   - Conecta NXT o EV3 por USB y enciéndelo.
+   - Zadig → Options → List All Devices.
+   - Elige el dispositivo LEGO (NXT / EV3).
+   - Driver: *WinUSB* → Install / Replace Driver.
+   - Cierra EV3 Classroom / LabVIEW si están abiertos (pueden bloquear el USB).
+
+4. Ejecutar ejemplos:
+
+#+begin_src powershell
+cd C:\ruta\a\ejemplos_nxt_ev3
+python nxt_01_un_motor.py
+python ev3_01_beep.py
+#+end_src
+
+*** Windows — Bluetooth (emparejar)
+
+1. En el ladrillo: Bluetooth *ON* y visible.
+2. Windows: Configuración → Bluetooth → agregar dispositivo → empareja EV3 o NXT.
+3. Anota la MAC del EV3 (=00:16:53:XX:XX:XX=, en Settings → Bluetooth del brick).
+4. No dejes otra app conectada al mismo ladrillo.
+5. Usa los ejemplos de la sección *USB vs Bluetooth* más abajo.
+6. =ev3-dc= en Windows con BT necesita *Python ≥ 3.9*.
+
+*** Linux — Bluetooth (emparejar)
+
+1. Bluetooth ON y visible en el ladrillo.
+2. Empareja con Blueman o =bluetoothctl=.
+3. Déjalo *emparejado pero desconectado* (si Blueman deja =/dev/rfcomm0= ocupado, Python falla con =No EV3= o *busy*).
+4. Libera el puerto si hace falta: =sudo rfcomm release 0=
+5. Si EV3 da =No EV3 device found= o =TimeoutError=: *usa USB*. Es muy común en Linux.
+
+*** Mapa de puertos (no te confundas)
+
+|                      | NXT        | EV3        |
+|----------------------+------------+------------|
+| Motores              | A, B, C    | A, B, C, *D* |
+| Sensores             | 1, 2, 3, 4 | 1, 2, 3, 4 |
+| En código (motores)  | =Port.A=     | =ev3.PORT_A= |
+| En código (sensores) | =SPort.S1=   | =ev3.PORT_1= |
+
+*Importante:* el motor va en la *letra* (A/B/C/D), no en el número del sensor.
+
+** Parte A — LEGO NXT (=nxt-python= 3.x)
+
+*** A0. Checklist NXT
+
+- [ ] NXT encendido
+- [ ] Cable USB a la PC
+- [ ] Motor bien enchufado en el puerto que dice el ejemplo
+- [ ] Entorno =programacion= activado
+
+*** A1. Un motor — girar 2 segundos (el “hola mundo”)
+
+Qué hace: busca el NXT, mueve el motor del *puerto A* a potencia 75 durante 2 s y frena.
+
+Archivo sugerido: =ejemplos_nxt_ev3/nxt_01_un_motor.py=
+
+#+begin_src python
+"""
+NXT — Ejemplo 1: un motor en el puerto A
+Requisito: NXT encendido + USB + motor en A
+"""
+import time
+import nxt.locator
+from nxt.motor import Motor, Port
+
+# 1) Encontrar el ladrillo (USB o Bluetooth)
+brick = nxt.locator.find()
+
+# 2) Crear el objeto del motor en el puerto A
+#    Cambia Port.A por Port.B o Port.C si tu motor está en otro puerto
+motor = Motor(brick, Port.A)
+
+# 3) Encender: power va de -100 a 100
+#    Positivo = un sentido, negativo = el contrario
+motor.run(power=75)
+
+# 4) Esperar mientras gira
+time.sleep(2)
+
+# 5) Frenar (brake = freno activo; idle = suelta el motor)
+motor.brake()
+
+# 6) Cerrar la conexión (¡siempre!)
+brick.close()
+print("Listo: motor A detuvo.")
+#+end_src
+
+Cómo ejecutarlo:
+
+#+begin_src shell
+cd ~/Scripts/ejemplos_nxt_ev3
+python nxt_01_un_motor.py
+#+end_src
+
+*** A2. Un motor — girar un ángulo (vueltas)
+
+Qué hace: gira aproximadamente *1 vuelta* (360 “tacho units”) y se detiene solo.
+
+#+begin_src python
+"""
+NXT — Ejemplo 2: girar ~1 vuelta (360 grados del motor)
+"""
+import nxt.locator
+from nxt.motor import Motor, Port
+
+brick = nxt.locator.find()
+motor = Motor(brick, Port.A)
+
+# turn(power, tacho_units): espera a terminar el giro
+# 360 ≈ 1 vuelta del eje del motor
+motor.turn(power=70, tacho_units=360)
+
+# Media vuelta al revés
+motor.turn(power=70, tacho_units=-180)
+
+brick.close()
+print("Listo: ángulos completados.")
+#+end_src
+
+*** A3. Un motor — adelante y atrás
+
+#+begin_src python
+"""
+NXT — Ejemplo 3: adelante 1.5 s y atrás 1.5 s
+"""
+import time
+import nxt.locator
+from nxt.motor import Motor, Port
+
+brick = nxt.locator.find()
+motor = Motor(brick, Port.A)
+
+print("Adelante...")
+motor.run(power=60)
+time.sleep(1.5)
+
+print("Atrás...")
+motor.run(power=-60)
+time.sleep(1.5)
+
+motor.brake()
+brick.close()
+print("Listo.")
+#+end_src
+
+*** A4. Dos motores — robot que avanza (base diferencial)
+
+Montaje típico: rueda izquierda en *B*, rueda derecha en *C*.
+
+#+begin_src python
+"""
+NXT — Ejemplo 4: dos motores (B y C) avanzan juntos
+"""
+import time
+import nxt.locator
+from nxt.motor import Motor, Port
+
+brick = nxt.locator.find()
+izq = Motor(brick, Port.B)   # rueda izquierda
+der = Motor(brick, Port.C)   # rueda derecha
+
+print("Avanzar 2 segundos...")
+izq.run(power=55)
+der.run(power=55)
+time.sleep(2)
+
+izq.brake()
+der.brake()
+brick.close()
+print("Listo.")
+#+end_src
+
+*** A5. Dos motores — girar en el sitio
+
+#+begin_src python
+"""
+NXT — Ejemplo 5: giro en el sitio (un motor adelante, el otro atrás)
+"""
+import time
+import nxt.locator
+from nxt.motor import Motor, Port
+
+brick = nxt.locator.find()
+izq = Motor(brick, Port.B)
+der = Motor(brick, Port.C)
+
+print("Girar derecha ~1 s...")
+izq.run(power=50)
+der.run(power=-50)
+time.sleep(1.0)
+
+izq.brake()
+der.brake()
+brick.close()
+print("Listo.")
+#+end_src
+
+*** A6. Dos motores — secuencia completa (avanzar, girar, avanzar)
+
+#+begin_src python
+"""
+NXT — Ejemplo 6: mini recorrido
+"""
+import time
+import nxt.locator
+from nxt.motor import Motor, Port
+
+brick = nxt.locator.find()
+izq = Motor(brick, Port.B)
+der = Motor(brick, Port.C)
+
+
+def avanzar(segundos, potencia=50):
+    izq.run(power=potencia)
+    der.run(power=potencia)
+    time.sleep(segundos)
+    izq.brake()
+    der.brake()
+
+
+def girar_derecha(segundos, potencia=45):
+    izq.run(power=potencia)
+    der.run(power=-potencia)
+    time.sleep(segundos)
+    izq.brake()
+    der.brake()
+
+
+avanzar(1.5)
+girar_derecha(0.8)
+avanzar(1.0)
+
+brick.close()
+print("Recorrido terminado.")
+#+end_src
+
+*** A7. Tres motores — ruedas + brazo
+
+#+begin_src python
+"""
+NXT — Ejemplo 7: B+C ruedas, A brazo
+"""
+import time
+import nxt.locator
+from nxt.motor import Motor, Port
+
+brick = nxt.locator.find()
+brazo = Motor(brick, Port.A)
+izq = Motor(brick, Port.B)
+der = Motor(brick, Port.C)
+
+# Avanzar
+izq.run(power=50)
+der.run(power=50)
+time.sleep(1.2)
+izq.brake()
+der.brake()
+
+# Mover brazo
+brazo.turn(power=60, tacho_units=90)
+time.sleep(0.3)
+brazo.turn(power=60, tacho_units=-90)
+
+brick.close()
+print("Listo.")
+#+end_src
+
+*** A8. Sensor de tacto (puerto 1)
+
+#+begin_src python
+"""
+NXT — Ejemplo 8: leer sensor de tacto en el puerto 1
+Presiona el botón; Ctrl+C para salir.
+"""
+import time
+import nxt.locator
+from nxt.sensor import Port as SPort
+from nxt.sensor.generic import Touch
+
+brick = nxt.locator.find()
+tacto = Touch(brick, SPort.S1)
+
+print("Esperando pulsaciones (Ctrl+C para salir)...")
+try:
+    while True:
+        if tacto.is_pressed():
+            print("¡Presionado!")
+        time.sleep(0.1)
+except KeyboardInterrupt:
+    print("\nFin.")
+finally:
+    brick.close()
+#+end_src
+
+*** A9. Ultrasonido + freno automático
+
+#+begin_src python
+"""
+NXT — Ejemplo 9: avanza hasta que el ultrasonido vea algo cerca
+Ultrasonido en puerto 4, motores B y C.
+"""
+import time
+import nxt.locator
+from nxt.motor import Motor, Port
+from nxt.sensor import Port as SPort
+from nxt.sensor.generic import Ultrasonic
+
+brick = nxt.locator.find()
+izq = Motor(brick, Port.B)
+der = Motor(brick, Port.C)
+us = Ultrasonic(brick, SPort.S4)
+
+LIMITE_CM = 25
+izq.run(power=40)
+der.run(power=40)
+
+try:
+    while True:
+        d = us.get_distance()
+        print(f"Distancia: {d} cm")
+        if d < LIMITE_CM:
+            print("¡Obstáculo! Frenando.")
+            break
+        time.sleep(0.15)
+finally:
+    izq.brake()
+    der.brake()
+    brick.close()
+#+end_src
+
+*** A10. Trucos y errores típicos (NXT)
+
+| Error / síntoma | Qué hacer |
+|-----------------|-----------|
+| =cannot import name 'PORT_A'= | Usa =Port.A= (API v3), no =PORT_A= |
+| =Access denied= USB | Regla udev o =sudo= |
+| No encuentra brick | Encender NXT, otro puerto USB, cable bien metido |
+| Motor no gira | ¿Está en A/B/C correcto? Prueba potencia 80 |
+| Olvidaste =brick.close()= | La próxima conexión puede fallar; desconecta USB |
+
+Diferencia =brake= vs =idle=:
+- =brake()=: sujeta el motor (mejor para robots).
+- =idle()=: lo suelta (rueda libre).
+
+** Parte B — LEGO EV3 (=ev3-dc=) por USB
+
+*** B0. Checklist EV3
+
+- [ ] EV3 encendido, en *pantalla de inicio* (sin programa corriendo)
+- [ ] Cable *USB* PC ↔ EV3 (recomendado; BT a veces no abre el canal serie)
+- [ ] Motor en el puerto *letra* (A/B/C/D)
+- [ ] Volumen del EV3 subido (para oír beeps)
+
+Docs: https://ev3-dc.readthedocs.io/
+
+*** B1. Conectar + beep (comprobar enlace)
+
+#+begin_src python
+"""
+EV3 — Ejemplo 1: conectar por USB y hacer beep
+Si oyes el tono, la PC ya habla con el ladrillo.
+"""
+import time
+import ev3_dc as ev3
+
+with ev3.EV3(protocol=ev3.USB) as brick:
+    print("Conectado:", brick)
+    juke = ev3.Jukebox(ev3_obj=brick)
+    juke.play_tone("c'", duration=0.4)
+    time.sleep(0.5)
+    juke.play_tone("e'", duration=0.3)
+
+print("Si oíste 2 tonos → USB OK.")
+#+end_src
+
+*** B2. Un motor — 2 segundos (API alta nivel)
+
+#+begin_src python
+"""
+EV3 — Ejemplo 2: un motor en PORT_A durante 2 segundos
+"""
+import time
+import ev3_dc as ev3
+
+with ev3.EV3(protocol=ev3.USB) as brick:
+    juke = ev3.Jukebox(ev3_obj=brick)
+    juke.play_tone("c'", duration=0.2)
+
+    # Motor grande o mediano en el puerto A
+    motor = ev3.Motor(ev3.PORT_A, ev3_obj=brick, speed=50)
+    print("Motor:", motor)
+
+    # Opción A: start + sleep + stop
+    motor.start_move(speed=50, direction=1)  # direction: 1 o -1
+    time.sleep(2)
+    motor.stop(brake=True)
+
+    juke.play_tone("g'", duration=0.2)
+
+print("Listo.")
+#+end_src
+
+*** B3. Un motor — =move_for= (más cómodo)
+
+Ojo: =move_for(...)= *devuelve una Task*; hay que llamar con =()= al final.
+
+#+begin_src python
+"""
+EV3 — Ejemplo 3: move_for (bloquea hasta terminar)
+"""
+import ev3_dc as ev3
+
+with ev3.EV3(protocol=ev3.USB) as brick:
+    motor = ev3.Motor(ev3.PORT_A, ev3_obj=brick, speed=55)
+
+    print("Girando 2 s adelante...")
+    motor.move_for(2.0, speed=55, direction=1, brake=True)()
+
+    print("Girando 1 s atrás...")
+    motor.move_for(1.0, speed=55, direction=-1, brake=True)()
+
+print("Listo.")
+#+end_src
+
+*** B4. Un motor — probar los 4 puertos (por si no es A)
+
+#+begin_src python
+"""
+EV3 — Ejemplo 4: prueba A, B, C y D (2 s cada uno)
+Mira cuál motor se mueve y usa ese puerto en tus scripts.
+"""
+import time
+import ev3_dc as ev3
+
+PUERTOS = [
+    ("A", ev3.PORT_A),
+    ("B", ev3.PORT_B),
+    ("C", ev3.PORT_C),
+    ("D", ev3.PORT_D),
+]
+
+with ev3.EV3(protocol=ev3.USB) as brick:
+    juke = ev3.Jukebox(ev3_obj=brick)
+    for nombre, puerto in PUERTOS:
+        print(f">>> Puerto {nombre}")
+        juke.play_tone("c'", duration=0.15)
+        try:
+            with ev3.Motor(puerto, ev3_obj=brick, speed=60) as motor:
+                motor.move_for(2.0, speed=60, brake=True)()
+        except Exception as e:
+            print(f"   (sin motor o error en {nombre}: {e})")
+        time.sleep(0.3)
+
+print("Fin de la prueba de puertos.")
+#+end_src
+
+*** B5. Dos motores — avanzar
+
+Montaje típico: izquierda = B, derecha = C.
+
+#+begin_src python
+"""
+EV3 — Ejemplo 5: dos motores avanzan (B y C)
+"""
+import time
+import ev3_dc as ev3
+
+with ev3.EV3(protocol=ev3.USB) as brick:
+    izq = ev3.Motor(ev3.PORT_B, ev3_obj=brick, speed=45)
+    der = ev3.Motor(ev3.PORT_C, ev3_obj=brick, speed=45)
+
+    print("Avanzar...")
+    izq.start_move(speed=45, direction=1)
+    der.start_move(speed=45, direction=1)
+    time.sleep(2.0)
+
+    izq.stop(brake=True)
+    der.stop(brake=True)
+
+print("Listo.")
+#+end_src
+
+*** B6. Dos motores — girar y secuencia
+
+#+begin_src python
+"""
+EV3 — Ejemplo 6: avanzar, girar, avanzar
+"""
+import time
+import ev3_dc as ev3
+
+with ev3.EV3(protocol=ev3.USB) as brick:
+    izq = ev3.Motor(ev3.PORT_B, ev3_obj=brick, speed=40)
+    der = ev3.Motor(ev3.PORT_C, ev3_obj=brick, speed=40)
+
+    def ambos(dir_izq, dir_der, segundos, speed=40):
+        izq.start_move(speed=speed, direction=dir_izq)
+        der.start_move(speed=speed, direction=dir_der)
+        time.sleep(segundos)
+        izq.stop(brake=True)
+        der.stop(brake=True)
+
+    ambos(1, 1, 1.5)    # recto
+    ambos(1, -1, 0.8)   # giro
+    ambos(1, 1, 1.0)    # recto otra vez
+
+print("Recorrido EV3 terminado.")
+#+end_src
+
+*** B7. Tres motores — base + brazo
+
+#+begin_src python
+"""
+EV3 — Ejemplo 7: B+C base, A brazo
+"""
+import time
+import ev3_dc as ev3
+
+with ev3.EV3(protocol=ev3.USB) as brick:
+    brazo = ev3.Motor(ev3.PORT_A, ev3_obj=brick, speed=40)
+    izq = ev3.Motor(ev3.PORT_B, ev3_obj=brick, speed=40)
+    der = ev3.Motor(ev3.PORT_C, ev3_obj=brick, speed=40)
+
+    izq.start_move(speed=40, direction=1)
+    der.start_move(speed=40, direction=1)
+    time.sleep(1.2)
+    izq.stop(brake=True)
+    der.stop(brake=True)
+
+    brazo.move_for(0.8, speed=50, direction=1, brake=True)()
+    brazo.move_for(0.8, speed=50, direction=-1, brake=True)()
+
+print("Listo.")
+#+end_src
+
+*** B8. Sensor de tacto EV3
+
+#+begin_src python
+"""
+EV3 — Ejemplo 8: tacto en PORT_1
+"""
+import time
+import ev3_dc as ev3
+
+with ev3.EV3(protocol=ev3.USB) as brick:
+    tacto = ev3.Touch(ev3.PORT_1, ev3_obj=brick)
+    print("Presiona el sensor (Ctrl+C sale)...")
+    try:
+        while True:
+            if tacto.touched:
+                print("¡Tocaste!")
+            time.sleep(0.1)
+    except KeyboardInterrupt:
+        print("\nFin.")
+#+end_src
+
+*** B9. Ultrasonido EV3 — no chocar
+
+#+begin_src python
+"""
+EV3 — Ejemplo 9: avanza con B+C hasta distancia < 20 cm
+Ultrasonido en PORT_4
+"""
+import time
+import ev3_dc as ev3
+
+LIMITE = 20.0
+
+with ev3.EV3(protocol=ev3.USB) as brick:
+    izq = ev3.Motor(ev3.PORT_B, ev3_obj=brick, speed=35)
+    der = ev3.Motor(ev3.PORT_C, ev3_obj=brick, speed=35)
+    us = ev3.Ultrasonic(ev3.PORT_4, ev3_obj=brick)
+
+    izq.start_move(speed=35, direction=1)
+    der.start_move(speed=35, direction=1)
+    try:
+        while True:
+            d = us.distance
+            print(f"Distancia: {d:.1f}")
+            if d < LIMITE:
+                print("Obstáculo → freno")
+                break
+            time.sleep(0.15)
+    finally:
+        izq.stop(brake=True)
+        der.stop(brake=True)
+
+print("Listo.")
+#+end_src
+
+*** B10. Ejemplos COMPLETOS por Bluetooth (copiar y pegar)
+
+Antes de cualquiera de estos:
+
+1. EV3: Bluetooth ON + visible, pantalla de inicio.
+2. Emparejado en Windows o Linux.
+3. Linux: Blueman *desconectado* + =sudo rfcomm release 0=
+4. Cambia =MAC= por la de *tu* ladrillo.
+5. Si falla → usa los ejemplos USB (B1–B7).
+
+Scripts en disco: =ejemplos_nxt_ev3/ev3_bt_*.py=
+
+**** BT-1. Solo beep (probar el enlace)
+
+#+begin_src python
+"""
+EV3 Bluetooth — solo beep (prueba de conexión)
+Archivo: ev3_bt_01_beep.py
+"""
+import time
+import ev3_dc as ev3
+
+MAC = "00:16:53:41:6A:1C"  # ← tu MAC
+
+with ev3.EV3(protocol=ev3.BLUETOOTH, host=MAC) as brick:
+    juke = ev3.Jukebox(ev3_obj=brick)
+    juke.play_tone("c'", duration=0.4)
+    time.sleep(0.4)
+    juke.play_tone("e'", duration=0.3)
+
+print("Si oíste 2 tonos → Bluetooth OK.")
+#+end_src
+
+**** BT-2. Un motor (puerto A)
+
+#+begin_src python
+"""
+EV3 Bluetooth — un motor en A, 2 segundos
+Archivo: ev3_bt_02_un_motor.py
+"""
+import time
+import ev3_dc as ev3
+
+MAC = "00:16:53:41:6A:1C"
+
+with ev3.EV3(protocol=ev3.BLUETOOTH, host=MAC) as brick:
+    juke = ev3.Jukebox(ev3_obj=brick)
+    juke.play_tone("c'", duration=0.2)
+
+    motor = ev3.Motor(ev3.PORT_A, ev3_obj=brick, speed=50)
+    print("Motor:", motor)
+
+    motor.start_move(speed=50, direction=1)
+    time.sleep(2)
+    motor.stop(brake=True)
+
+    juke.play_tone("g'", duration=0.2)
+
+print("Listo (BT, un motor).")
+#+end_src
+
+**** BT-3. Un motor con move_for
+
+#+begin_src python
+"""
+EV3 Bluetooth — move_for adelante y atrás
+Archivo: ev3_bt_03_move_for.py
+Ojo: los () finales son obligatorios.
+"""
+import ev3_dc as ev3
+
+MAC = "00:16:53:41:6A:1C"
+
+with ev3.EV3(protocol=ev3.BLUETOOTH, host=MAC) as brick:
+    motor = ev3.Motor(ev3.PORT_A, ev3_obj=brick, speed=55)
+
+    print("2 s adelante...")
+    motor.move_for(2.0, speed=55, direction=1, brake=True)()
+
+    print("1 s atrás...")
+    motor.move_for(1.0, speed=55, direction=-1, brake=True)()
+
+print("Listo (BT, move_for).")
+#+end_src
+
+**** BT-4. Dos motores avanzar (B y C)
+
+#+begin_src python
+"""
+EV3 Bluetooth — dos motores B+C avanzan
+Archivo: ev3_bt_05_dos_motores.py
+"""
+import time
+import ev3_dc as ev3
+
+MAC = "00:16:53:41:6A:1C"
+
+with ev3.EV3(protocol=ev3.BLUETOOTH, host=MAC) as brick:
+    izq = ev3.Motor(ev3.PORT_B, ev3_obj=brick, speed=45)
+    der = ev3.Motor(ev3.PORT_C, ev3_obj=brick, speed=45)
+
+    print("Avanzar...")
+    izq.start_move(speed=45, direction=1)
+    der.start_move(speed=45, direction=1)
+    time.sleep(2.0)
+
+    izq.stop(brake=True)
+    der.stop(brake=True)
+
+print("Listo (BT, dos motores).")
+#+end_src
+
+**** BT-5. Dos motores — giro en el sitio
+
+#+begin_src python
+"""
+EV3 Bluetooth — giro en el sitio (B adelante, C atrás)
+Archivo: ev3_bt_05b_girar.py
+"""
+import time
+import ev3_dc as ev3
+
+MAC = "00:16:53:41:6A:1C"
+
+with ev3.EV3(protocol=ev3.BLUETOOTH, host=MAC) as brick:
+    izq = ev3.Motor(ev3.PORT_B, ev3_obj=brick, speed=40)
+    der = ev3.Motor(ev3.PORT_C, ev3_obj=brick, speed=40)
+
+    print("Girar...")
+    izq.start_move(speed=40, direction=1)
+    der.start_move(speed=40, direction=-1)
+    time.sleep(1.0)
+
+    izq.stop(brake=True)
+    der.stop(brake=True)
+
+print("Listo (BT, giro).")
+#+end_src
+
+**** BT-6. Recorrido completo (avanzar, girar, avanzar)
+
+#+begin_src python
+"""
+EV3 Bluetooth — mini recorrido
+Archivo: ev3_bt_06_recorrido.py
+"""
+import time
+import ev3_dc as ev3
+
+MAC = "00:16:53:41:6A:1C"
+
+with ev3.EV3(protocol=ev3.BLUETOOTH, host=MAC) as brick:
+    izq = ev3.Motor(ev3.PORT_B, ev3_obj=brick, speed=40)
+    der = ev3.Motor(ev3.PORT_C, ev3_obj=brick, speed=40)
+
+    def ambos(dir_izq, dir_der, segundos, speed=40):
+        izq.start_move(speed=speed, direction=dir_izq)
+        der.start_move(speed=speed, direction=dir_der)
+        time.sleep(segundos)
+        izq.stop(brake=True)
+        der.stop(brake=True)
+
+    ambos(1, 1, 1.5)   # recto
+    ambos(1, -1, 0.8)  # giro
+    ambos(1, 1, 1.0)   # recto
+
+print("Recorrido BT terminado.")
+#+end_src
+
+**** BT-7. Tres motores (brazo A + ruedas B/C)
+
+#+begin_src python
+"""
+EV3 Bluetooth — brazo A + base B/C
+Archivo: ev3_bt_07_brazo.py
+"""
+import time
+import ev3_dc as ev3
+
+MAC = "00:16:53:41:6A:1C"
+
+with ev3.EV3(protocol=ev3.BLUETOOTH, host=MAC) as brick:
+    brazo = ev3.Motor(ev3.PORT_A, ev3_obj=brick, speed=40)
+    izq = ev3.Motor(ev3.PORT_B, ev3_obj=brick, speed=40)
+    der = ev3.Motor(ev3.PORT_C, ev3_obj=brick, speed=40)
+
+    izq.start_move(speed=40, direction=1)
+    der.start_move(speed=40, direction=1)
+    time.sleep(1.2)
+    izq.stop(brake=True)
+    der.stop(brake=True)
+
+    brazo.move_for(0.8, speed=50, direction=1, brake=True)()
+    brazo.move_for(0.8, speed=50, direction=-1, brake=True)()
+
+print("Listo (BT, brazo + base).")
+#+end_src
+
+**** BT-8. Mismo código USB/BT (una sola variable)
+
+#+begin_src python
+"""
+EV3 — elige cable o Bluetooth cambiando PROTOCOLO
+Archivo: ev3_bt_08_elige_protocolo.py
+"""
+import time
+import ev3_dc as ev3
+
+PROTOCOLO = ev3.BLUETOOTH           # o: ev3.USB
+MAC = "00:16:53:41:6A:1C"           # solo con BLUETOOTH
+
+kwargs = {"protocol": PROTOCOLO}
+if PROTOCOLO == ev3.BLUETOOTH:
+    kwargs["host"] = MAC
+
+with ev3.EV3(**kwargs) as brick:
+    juke = ev3.Jukebox(ev3_obj=brick)
+    juke.play_tone("c'", duration=0.25)
+
+    motor = ev3.Motor(ev3.PORT_A, ev3_obj=brick, speed=50)
+    motor.start_move(speed=50, direction=1)
+    time.sleep(2)
+    motor.stop(brake=True)
+
+print("Listo.")
+#+end_src
+
+**** NXT por Bluetooth
+
+Con NXT normalmente *no* cambias el código: =find()= usa USB o BT si está emparejado.
+
+#+begin_src python
+"""
+NXT — USB o Bluetooth automático
+Archivo: nxt_01_un_motor.py (el mismo)
+"""
+import time
+import nxt.locator
+from nxt.motor import Motor, Port
+
+brick = nxt.locator.find()
+motor = Motor(brick, Port.A)
+motor.run(power=70)
+time.sleep(2)
+motor.brake()
+brick.close()
+print("Listo.")
+#+end_src
+
+*** B11. Errores típicos (EV3) — Windows y Linux
+
+| Síntoma | Qué hacer |
+|---------|-----------|
+| =No EV3 device found= | Cable USB / EV3 encendido; en BT: desconecta otras apps; Linux: =rfcomm release 0= |
+| =TimeoutError= | Usa USB; pantallazo de inicio; acerca el brick |
+| =Access denied= / no aparece USB (Windows) | Instala WinUSB con *Zadig* |
+| =no motor connected at PORT_A= | Motor en otra letra; corre el ejemplo B4 |
+| Beep sí, motor no | Puerto equivocado o motor flojo |
+| =move_for= no mueve | Faltan los =()= finales: =move_for(2)()= |
+| Script “Listo” sin movimiento | Comprueba USB; usa los ejemplos B2/B3 |
+| BT emparejado pero no conecta (Linux) | Perfil serie fallando → *pasa a USB* |
+
+** Parte C — NXT vs EV3 
+
+| Quiero…     | NXT                     | EV3 (USB)                               |
+|-------------+-------------------------+-----------------------------------------|
+| Conectar    | =nxt.locator.find()=      | =ev3.EV3(protocol=ev3.USB)=               |
+| Motor A     | =Motor(brick, Port.A)=    | =ev3.Motor(ev3.PORT_A, ev3_obj=brick)=    |
+| Encender    | =motor.run(power=60)=     | =motor.start_move(speed=60, direction=1)= |
+| Tiempo fijo | =sleep= + =brake=           | =move_for(2, speed=60)()=                 |
+| Frenar      | =motor.brake()=           | =motor.stop(brake=True)=                  |
+| Cerrar      | =brick.close()=           | sale del =with= solo                      |
+| Tacto       | =Touch(...).is_pressed()= | =Touch(...).touched=                      |
+| Ultrasonido | =.get_distance()=         | =.distance=                               |
+
+** Parte D — Scripts listos en disco
+
+Carpeta: =~/Scripts/ejemplos_nxt_ev3/=
+
+| Archivo | Descripción |
+|---------|-------------|
+| =nxt_01_un_motor.py= … =nxt_06_recorrido.py= | NXT (USB/BT automático) |
+| =ev3_01_beep.py= … =ev3_06_recorrido.py= | EV3 por *USB* |
+| =ev3_bt_01_beep.py= | EV3 BT — beep |
+| =ev3_bt_02_un_motor.py= | EV3 BT — 1 motor |
+| =ev3_bt_03_move_for.py= | EV3 BT — move_for |
+| =ev3_bt_05_dos_motores.py= | EV3 BT — 2 motores |
+| =ev3_bt_05b_girar.py= | EV3 BT — giro |
+| =ev3_bt_06_recorrido.py= | EV3 BT — recorrido |
+| =ev3_bt_07_brazo.py= | EV3 BT — brazo + base |
+| =ev3_bt_08_elige_protocolo.py= | EV3 — USB o BT |
+
+#+begin_src shell
+source ~/entornos/programacion/bin/activate
+cd ~/Scripts/ejemplos_nxt_ev3
+python nxt_01_un_motor.py
+python ev3_01_beep.py
+#+end_src
+
+
+
+* Mover NXT y EV3 con landmarks (MediaPipe)
+
+Usar la *cámara* + MediaPipe para detectar tu mano (landmarks) y mandar
+órdenes a un motor del *NXT* o del *EV3*.
+
+La PC es el cerebro. El ladrillo solo mueve el motor.
+
+#+begin_quote
+No te damos el robot “terminado”: el esqueleto ya conecta cámara + brick.
+*Tú* decides cómo convertir la posición de la mano en potencia.
+#+end_quote
+
+** Idea en 30 segundos
+
+MediaPipe te da puntos de la mano (landmarks). El más útil al inicio:
+
+| Landmark | Índice | Para qué |
+|----------|--------|----------|
+| Muñeca (=WRIST=) | 0 | Saber *dónde* está la mano (izquierda / centro / derecha) |
+
+Coordenadas normalizadas (0.0 → 1.0):
+
+- =x= ≈ 0 → lado izquierdo de la imagen
+- =x= ≈ 0.5 → centro
+- =x= ≈ 1 → lado derecho
+
+Flujo:
+
+#+begin_example
+Cámara → landmarks (muñeca.x) → ¿izquierda / centro / derecha?
+                              → motor.run / start_move / freno
+#+end_example
+
+** Requisitos
+
+1. Entorno con: =pip install mediapipe opencv-python nxt-python ev3-dc=
+2. Modelo (ya debería estar):
+
+#+begin_src shell
+ls ~/Scripts/models/hand_landmarker.task
+# si falta:
+mkdir -p ~/Scripts/models
+curl -L -o ~/Scripts/models/hand_landmarker.task \
+  "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task"
+#+end_src
+
+3. NXT o EV3 por *USB* (recomendado), motor en puerto *A*.
+4. Cámara libre (cierra Zoom/Meet).
+
+
+** Cómo funciona el esqueleto 
+
+El programa ya hace esto por ti:
+
+1. Abre la cámara.
+2. Detecta la mano con MediaPipe.
+3. Te entrega =muñeca.x= (un número entre 0 y 1).
+4. Llama a *tu* función (=decidir_potencia= o =decidir_movimiento=) ← *aquí piensas tú*.
+5. Manda esa potencia al motor.
+6. Con =Q= sales y frena.
+
+Regla sugerida (puedes cambiarla):
+
+| Mano en la imagen | Potencia |
+|-------------------|----------|
+| Izquierda (=x < 0.4=) | atrás (negativo / =direction=-1=) |
+| Centro | 0 → freno |
+| Derecha (=x > 0.6=) | adelante |
+
+** Reto 1 — NXT con landmarks
+
+1. Copia el código de abajo a =landmarks_nxt_simple.py= (o ábrelo en =ejemplos_nxt_ev3/=).
+2. Completa la función =decidir_potencia(x)= (está marcada con =TODO=).
+3. Ejecuta:
+
+#+begin_src shell
+source ~/entornos/programacion/bin/activate
+cd ~/Scripts/ejemplos_nxt_ev3
+python landmarks_nxt_simple.py
+#+end_src
+
+4. Mueve la mano izquierda/derecha (imagen en espejo) y mira el motor A.
+
+Pistas (no copies ciego; piénsalo):
+
+#+begin_src python
+# if x < 0.4: return -60
+# if x > 0.6: return 60
+# return 0
+#+end_src
+
+*** Código completo NXT 
+
+Guárdalo como =landmarks_nxt_simple.py=.
+
+#+begin_src python
+"""
+NXT + MediaPipe (simple) — control por landmark de la muñeca.
+
+YA HECHO: cámara, detección de mano, motor A, tecla Q.
+TU PARTE: completa decidir_potencia(x)  ← TODO
+
+Ejecutar:
+  python landmarks_nxt_simple.py
+"""
+
+from pathlib import Path
+import time
+
+import cv2
+import mediapipe as mp
+import nxt.locator
+from mediapipe.tasks import python as mp_python
+from mediapipe.tasks.python import vision
+from nxt.motor import Motor, Port
+
+# Si el .py está en ejemplos_nxt_ev3/:
+MODELO = Path(__file__).resolve().parent.parent / "models" / "hand_landmarker.task"
+# Si lo guardas en ~/Scripts/ junto a models/, usa en su lugar:
+# MODELO = Path(__file__).resolve().parent / "models" / "hand_landmarker.task"
+
+CAMARA = 0
+PUERTO = Port.A
+
+
+# ---------------------------------------------------------------------------
+# TODO: completa esta función
+# Entrada: x de la muñeca (0.0 = izquierda de la imagen, 1.0 = derecha)
+# Salida: potencia del motor (-100..100). 0 = freno.
+# Idea: izquierda → negativo, centro → 0, derecha → positivo
+# ---------------------------------------------------------------------------
+def decidir_potencia(x: float) -> int:
+    # Ejemplo de estructura (borra el return 0 y pon tu lógica):
+    #
+    # if x < 0.4:
+    #     return -60
+    # if x > 0.6:
+    #     return 60
+    # return 0
+    #
+    return 0  # ← cámbialo
+
+
+def main() -> None:
+    if not MODELO.exists():
+        raise FileNotFoundError(f"Falta el modelo: {MODELO}")
+
+    brick = nxt.locator.find()
+    motor = Motor(brick, PUERTO)
+    potencia_actual = None
+
+    options = vision.HandLandmarkerOptions(
+        base_options=mp_python.BaseOptions(model_asset_path=str(MODELO)),
+        running_mode=vision.RunningMode.VIDEO,
+        num_hands=1,
+    )
+    landmarker = vision.HandLandmarker.create_from_options(options)
+
+    cap = cv2.VideoCapture(CAMARA)
+    if not cap.isOpened():
+        brick.close()
+        raise RuntimeError("No se pudo abrir la cámara")
+
+    print("NXT listo. Mueve la mano. Q para salir.")
+    t0 = time.time()
+
+    try:
+        while True:
+            ok, frame = cap.read()
+            if not ok:
+                break
+
+            frame = cv2.flip(frame, 1)  # espejo
+            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+            result = landmarker.detect_for_video(
+                mp_image, int((time.time() - t0) * 1000)
+            )
+
+            potencia = 0
+            texto = "sin mano"
+
+            if result.hand_landmarks:
+                lm = result.hand_landmarks[0]
+                x = lm[0].x  # landmark 0 = muñeca
+                potencia = decidir_potencia(x)
+                texto = f"x={x:.2f}  pot={potencia}"
+
+                # dibuja la muñeca
+                h, w = frame.shape[:2]
+                cv2.circle(frame, (int(x * w), int(lm[0].y * h)), 8, (0, 255, 255), -1)
+
+            if potencia != potencia_actual:
+                if potencia == 0:
+                    motor.brake()
+                else:
+                    motor.run(power=potencia)
+                potencia_actual = potencia
+
+            cv2.putText(
+                frame, texto, (20, 40),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2,
+            )
+            cv2.imshow("Landmarks NXT (simple)", frame)
+
+            if cv2.waitKey(1) & 0xFF in (ord("q"), ord("Q"), 27):
+                break
+    finally:
+        motor.brake()
+        landmarker.close()
+        cap.release()
+        cv2.destroyAllWindows()
+        brick.close()
+        print("Cerrado.")
+
+
+if __name__ == "__main__":
+    main()
+#+end_src
+
+**  EV3 con landmarks (USB)
+
+1. Copia el código de abajo a =landmarks_ev3_simple.py=.
+2. Completa =decidir_movimiento(x)=.
+3. Ejecuta:
+
+#+begin_src shell
+python landmarks_ev3_simple.py
+#+end_src
+
+Debe devolver algo como =("adelante", 40)=, =("atras", 40)= o =("stop", 0)=.
+El esqueleto ya traduce eso a =start_move= / =stop=.
+
+*** Código completo EV3 (copiar y pegar)
+
+Guárdalo como =landmarks_ev3_simple.py=.
+
+#+begin_src python
+"""
+EV3 + MediaPipe (simple) — control por landmark de la muñeca (USB).
+
+YA HECHO: cámara, detección, motor A por USB, tecla Q.
+TU PARTE: completa decidir_movimiento(x)  ← TODO
+
+Ejecutar:
+  python landmarks_ev3_simple.py
+"""
+
+from pathlib import Path
+import time
+
+import cv2
+import ev3_dc as ev3
+import mediapipe as mp
+from mediapipe.tasks import python as mp_python
+from mediapipe.tasks.python import vision
+
+# Si el .py está en ejemplos_nxt_ev3/:
+MODELO = Path(__file__).resolve().parent.parent / "models" / "hand_landmarker.task"
+# Si lo guardas en ~/Scripts/ junto a models/, usa en su lugar:
+# MODELO = Path(__file__).resolve().parent / "models" / "hand_landmarker.task"
+
+CAMARA = 0
+PUERTO = ev3.PORT_A
+
+
+# ---------------------------------------------------------------------------
+# TODO: completa esta función
+# Entrada: x de la muñeca (0.0 .. 1.0)
+# Salida: (accion, velocidad)
+#   accion = "adelante" | "atras" | "stop"
+#   velocidad = 1..100 (si stop, usa 0)
+# ---------------------------------------------------------------------------
+def decidir_movimiento(x: float) -> tuple[str, int]:
+    # Ejemplo de estructura:
+    #
+    # if x < 0.4:
+    #     return ("atras", 40)
+    # if x > 0.6:
+    #     return ("adelante", 40)
+    # return ("stop", 0)
+    #
+    return ("stop", 0)  # ← cámbialo
+
+
+def main() -> None:
+    if not MODELO.exists():
+        raise FileNotFoundError(f"Falta el modelo: {MODELO}")
+
+    brick = ev3.EV3(protocol=ev3.USB)
+    motor = ev3.Motor(PUERTO, ev3_obj=brick, speed=40)
+    estado_actual = None
+
+    options = vision.HandLandmarkerOptions(
+        base_options=mp_python.BaseOptions(model_asset_path=str(MODELO)),
+        running_mode=vision.RunningMode.VIDEO,
+        num_hands=1,
+    )
+    landmarker = vision.HandLandmarker.create_from_options(options)
+
+    cap = cv2.VideoCapture(CAMARA)
+    if not cap.isOpened():
+        brick.__exit__(None, None, None)
+        raise RuntimeError("No se pudo abrir la cámara")
+
+    print("EV3 USB listo. Mueve la mano. Q para salir.")
+    t0 = time.time()
+
+    try:
+        while True:
+            ok, frame = cap.read()
+            if not ok:
+                break
+
+            frame = cv2.flip(frame, 1)
+            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+            result = landmarker.detect_for_video(
+                mp_image, int((time.time() - t0) * 1000)
+            )
+
+            accion, velocidad = "stop", 0
+            texto = "sin mano"
+
+            if result.hand_landmarks:
+                lm = result.hand_landmarks[0]
+                x = lm[0].x
+                accion, velocidad = decidir_movimiento(x)
+                texto = f"x={x:.2f}  {accion} {velocidad}"
+
+                h, w = frame.shape[:2]
+                cv2.circle(frame, (int(x * w), int(lm[0].y * h)), 8, (0, 255, 255), -1)
+
+            if (accion, velocidad) != estado_actual:
+                if accion == "stop" or velocidad == 0:
+                    motor.stop(brake=True)
+                elif accion == "adelante":
+                    motor.start_move(speed=velocidad, direction=1)
+                elif accion == "atras":
+                    motor.start_move(speed=velocidad, direction=-1)
+                estado_actual = (accion, velocidad)
+
+            cv2.putText(
+                frame, texto, (20, 40),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2,
+            )
+            cv2.imshow("Landmarks EV3 (simple)", frame)
+
+            if cv2.waitKey(1) & 0xFF in (ord("q"), ord("Q"), 27):
+                break
+    finally:
+        motor.stop(brake=True)
+        landmarker.close()
+        cap.release()
+        cv2.destroyAllWindows()
+        brick.__exit__(None, None, None)
+        print("Cerrado.")
+
+
+if __name__ == "__main__":
+    main()
+#+end_src
+
+** Retos extra 
+
+1. *Zona muerta más grande:* que el centro no tiemble (prueba 0.35–0.65).
+2. *Más lejos = más rápido:* si =x= está muy a la derecha, potencia 80; si apenas pasa 0.6, potencia 30.
+3. *Dos motores (B y C):* izquierda = girar, derecha = girar al otro lado, centro = avanzar. (¡Diseña la tabla tú!)
+4. *Seguridad:* si no hay mano 1 segundo → freno obligatorio.
+5. *Jaeger de 1.8 m:* limita la pista; si el cable se tensa, abortas con la mano al centro.
+
+** Errores frecuentes
+
+| Problema                     | Qué revisar                                     |
+|------------------------------+-------------------------------------------------|
+| No abre cámara               | Cierra otras apps; prueba =CAMARA = 1=            |
+| No detecta mano              | Luz de frente; aleja/acerca la mano             |
+| Motor no mueve               | USB, puerto A, potencia ≠ 0                     |
+| EV3 =No EV3=                   | Cable USB; pantallazo de inicio                 |
+| =hand_landmarker.task= missing | Descarga el modelo (arriba)                     |
+| =FileNotFoundError= del modelo | Ajusta la ruta =MODELO= (comentario en el código) |
+
+** Mini chuleta de código
+
+NXT:
+
+#+begin_src python
+motor.run(power=60)    # -100..100
+motor.brake()
+#+end_src
+
+EV3 (USB):
+
+#+begin_src python
+motor.start_move(speed=40, direction=1)   # o -1
+motor.stop(brake=True)
+#+end_src
+
+Landmark:
+
+#+begin_src python
+x = landmarks[0].x   # muñeca
+#+end_src
 
 ** Cierre
 
-MediaPipe Tasks separa *modelo*, *modo de ejecución* y *post-proceso* (dibujar,
-gestos). Domine primero IMAGE → VIDEO → heurísticas geométricas sobre landmarks;
-solo entonces combine varias tareas o pase a LIVE_STREAM asíncrono.
+Cuando =decidir_potencia= / =decidir_movimiento= ya te obedezcan:
 
-Orden recomendado en una sesión de laboratorio:
-
-#+begin_example
-descargar_modelos.py
- → manos_imagen.py / manos_webcam.py
- → rostro_imagen.py / rostro_webcam.py
- → gestos_contar_dedos.py
- → manos_y_rostro_webcam.py
-#+end_example
+- Combina con las *misiones Jaeger* (pasillo / rescate / estacionamiento).
+- Luego, si quieres, añade “mano abierta vs puño”… pero *eso ya es tu siguiente invento*.
 
 
 * Reconocimiento de rostros con OpenCV — Eigenfaces, Fisherfaces y LBPH
